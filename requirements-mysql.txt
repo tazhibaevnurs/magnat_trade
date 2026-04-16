@@ -1,0 +1,4 @@
+# Драйвер MySQL для Django. Устанавливайте на серверах с MySQL (Docker, VPS), где есть
+# пакеты default-libmysqlclient-dev / mariadb-dev или задайте MYSQLCLIENT_CFLAGS/LDFLAGS.
+# Не используется при чистом SQLite (Vercel, локально без DB_NAME).
+mysqlclient>=2.2.7

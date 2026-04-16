@@ -141,7 +141,22 @@ source venv/bin/activate
 3. **Install project dependencies**
 ```bash
 pip install -r requirements.txt
+# Если в .env задан MySQL (DB_NAME), установите драйвер (нужны dev-пакеты MySQL в системе):
+pip install -r requirements-mysql.txt
 ```
+На **Vercel** и при работе только с **SQLite** (переменная `DB_NAME` не задана) файл `requirements-mysql.txt` не нужен — так избегают ошибки сборки `mysqlclient` без `pkg-config` для MySQL. Если деплой идёт через **uv** и в репозитории есть `pyproject.toml` / `uv.lock` с зависимостью `mysqlclient`, уберите её оттуда или удалите эти файлы, чтобы сборка брала только `requirements.txt`.
+
+### Деплой с базой данных (Vercel / облако)
+
+Чтобы на продакшене отображались товары и заказы, нужна **постоянная БД** (SQLite на serverless не подходит). В проекте поддерживается **PostgreSQL** через переменную **`DATABASE_URL`** (Neon, Supabase, Vercel Postgres и т.п.).
+
+1. Создайте базу (например [Neon](https://neon.tech) — есть бесплатный тариф) и скопируйте строку подключения `postgresql://...` (часто с `?sslmode=require`).
+2. В панели Vercel: **Settings → Environment Variables** добавьте `DATABASE_URL` (Production и при необходимости Preview).
+3. Задайте также `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false`, `DJANGO_ALLOWED_HOSTS=ваш-домен.vercel.app` (и свой домен, если есть).
+4. При деплое выполняется `python manage.py migrate --noinput` (см. `vercel.json`). Чтобы **заполнить каталог**, один раз выполните локально (с тем же `DATABASE_URL` в `.env`): `python manage.py migrate` и при необходимости импорт/синхронизацию с 1С или `loaddata`.
+
+Локально по-прежнему можно не задавать `DATABASE_URL` — будет SQLite.
+
 4. **Configure environment variables**
 Create a ``.env`` file in the root directory:
 ```bash

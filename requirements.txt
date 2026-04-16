@@ -1,5 +1,9 @@
 Django>=5.2.6
-mysqlclient>=2.2.7
+# mysqlclient вынесен в requirements-mysql.txt — нужен системный MySQL dev SDK при pip install
+# (на Vercel/serverless сборка падает). Для SQLite (по умолчанию без DB_NAME в .env) достаточно этого файла.
+# PostgreSQL (DATABASE_URL / Neon / Supabase / Vercel Postgres) — бинарные wheels, без pkg-config
+dj-database-url>=2.2.0
+psycopg[binary]>=3.2.0
 python-dotenv>=1.1.1
 django-browser-reload>=1.21.0
 django-watchfiles>=1.4.0
