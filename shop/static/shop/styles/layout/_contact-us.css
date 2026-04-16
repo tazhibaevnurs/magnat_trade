@@ -1,0 +1,39 @@
+@media only screen and (max-width: 1680px) {
+    .contact_us-wrapper {
+        padding: 4rem 8rem;
+    }
+}
+
+@media only screen and (max-width: 1500px) {
+    .contact_us-wrapper {
+        padding: 2rem 4rem;
+    }
+}
+
+@media only screen and (max-width: 830px) {
+    .contact_us-contact_info,
+    .contact_us-contact_form,
+    .contact_us-our_promise {
+        flex-direction: column;
+    }
+}
+
+@media only screen and (max-width: 500px) {
+    .contact_us-contact_info-customer_support,
+    .contact_us-contact_info-address,
+    .contact_us-contact_info-social_media,
+    .contact_us-contact_info-social_media-ctas {
+        flex-direction: column;
+        align-self: flex-start;
+    }
+
+    .contact_us-contact_info-social_media-ctas button {
+        align-self: flex-start;
+    }
+}
+
+@media only screen and (max-width: 720px) {
+    .contact_us-wrapper {
+        padding: 1rem 2rem;
+    }
+}

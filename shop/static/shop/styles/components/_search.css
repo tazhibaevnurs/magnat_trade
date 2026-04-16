@@ -1,0 +1,61 @@
+.search {
+    border-radius: 0.5rem;
+    align-items: center;
+    transition: 0.25s ease all;
+    overflow: hidden;
+    display: flex;
+    padding: 0 0.75rem 0 0;
+    border: 0.15rem solid var(--bg-outline);
+    height: 3rem;
+    color: var(--tg-primary);
+    gap: 0.75rem;
+}
+
+.search i {
+    background-color: var(--bg-secondary);
+    place-content: center;
+    border-right: 2px solid var(--bg-outline);
+    flex-shrink: 0;
+    transition: 0.25s ease all;
+    font-size: 1rem;
+    display: grid;
+    height: 3rem;
+    width: 3rem;
+}
+
+.search:focus-within {
+    background-color: var(--bg-outline);
+    border-color: var(--accent);
+}
+
+.search:focus-within i {
+    background-color: var(--bg-outline);
+    border-color: var(--accent);
+}
+
+.search .input-nested:focus {
+    outline: none;
+}
+
+.search:has(.input-nested:disabled) {
+    background-color: var(--bg-disabled);
+    border-color: var(--bg-disabled);
+    cursor: not-allowed;
+    color: var(--tg-disabled) !important;
+}
+
+.search:has(.input-nested:disabled) i {
+    background-color: var(--bg-disabled);
+    border-color: var(--bg-disabled);
+    color: var(--tg-disabled);
+}
+
+.search:has(.input-nested:disabled):focus-within {
+    background-color: var(--bg-disabled);
+    border-color: var(--bg-disabled);
+}
+
+.search:has(.input-nested:disabled):focus-within i {
+    background-color: var(--bg-disabled);
+    border-color: var(--bg-disabled);
+}

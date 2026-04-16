@@ -1,0 +1,25 @@
+@media only screen and (max-width: 1680px) {
+    .about_us-wrapper {
+        padding: 4rem 8rem;
+    }
+}
+
+@media only screen and (max-width: 1500px) {
+    .about_us-wrapper {
+        padding: 2rem 4rem;
+    }
+}
+
+@media only screen and (max-width: 830px) {
+    .about_us-our_story,
+    .about_us-mission_and_values,
+    .about_us-meet_the_team {
+        flex-direction: column;
+    }
+}
+
+@media only screen and (max-width: 720px) {
+    .about_us-wrapper {
+        padding: 1rem 2rem;
+    }
+}

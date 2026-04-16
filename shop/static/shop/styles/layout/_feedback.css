@@ -1,0 +1,26 @@
+@media (max-width: 768px) {
+    .feedback-wrapper {
+        padding: 1rem;
+    }
+
+    .feedback-container {
+        padding: 1.5rem;
+    }
+
+    .feedback-header-title {
+        font-size: 1.5rem;
+    }
+
+    .feedback-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .feedback-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .feedback-form-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+}

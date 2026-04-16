@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block content %}
+<div class="container page-block">
+    {% include "includes/breadcrumbs.html" %}
+
+    <div style="margin-bottom:var(--spacing-xl);">
+        <h1 class="page-title">Оформление заказа</h1>
+        <p class="page-lead">Проверьте состав и укажите данные для доставки</p>
+    </div>
+
+    <div class="cart-container">
+        <div class="cart-list" style="flex:1;">
+            <div class="cart-list-header">
+                <h2 class="section-title" style="font-size:var(--text-lg);margin:0;">Состав заказа</h2>
+            </div>
+            <ul style="list-style:none;margin:0;padding:0;">
+                {% for item in items %}
+                <li class="cart-list-item" style="border-bottom:1px solid var(--color-border-light);">
+                    <div style="display:flex;gap:var(--spacing-md);align-items:flex-start;">
+                        <div class="cart-list-item-image" style="width:80px;height:80px;">
+                            {% if item.catalog_product %}
+                                <img src="{{ item.catalog_product.image_url }}" alt="{{ item.catalog_product.name }}" width="80" height="80" loading="lazy">
+                            {% else %}
+                                <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" width="80" height="80" loading="lazy">
+                            {% endif %}
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <p style="font-weight:600;margin:0;">
+                                {% if item.catalog_product %}
+                                    <a href="{% url 'catalog_pdp' product_id=item.catalog_product_id %}" style="color:inherit;text-decoration:none;">{{ item.catalog_product.name }}</a>
+                                {% else %}
+                                    <a href="{{ item.product.get_absolute_url }}" style="color:inherit;text-decoration:none;">{{ item.product.name }}</a>
+                                {% endif %}
+                            </p>
+                            <p class="section-desc" style="margin-top:var(--spacing-xs);">Кол-во: {{ item.quantity }}</p>
+                        </div>
+                        <div style="font-weight:600;white-space:nowrap;">{{ item.total_price|floatformat:2 }} сом</div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="cart-summary" style="width:100%;max-width:22rem;">
+            <h2 class="cart-summary-header">Итого</h2>
+            <div class="cart-summary-list">
+                <div class="cart-summary-list-item">
+                    <label>Товары</label>
+                    <span>{{ subtotal|floatformat:2 }} сом</span>
+                </div>
+                <div class="cart-summary-list-item">
+                    <label>Доставка</label>
+                    <span>{{ shipping_fee|floatformat:2 }} сом</span>
+                </div>
+                <hr class="horizontal-divider">
+                <div class="cart-summary-list-item">
+                    <label style="font-weight:600;">Всего</label>
+                    <span class="cart-summary-total">{{ grand_total|floatformat:2 }} сом</span>
+                </div>
+            </div>
+
+            <form method="post" class="form-field" style="margin-top:var(--spacing-xl);">
+                {% csrf_token %}
+                <h2 class="section-title" style="font-size:var(--text-lg);margin-bottom:var(--spacing-md);">Данные для доставки</h2>
+                <div class="form-field">
+                    <label for="full_name">ФИО *</label>
+                    <input type="text" id="full_name" name="full_name" required class="input-unnested"
+                           value="{% if checkout_form %}{{ checkout_form.full_name }}{% elif user.is_authenticated %}{{ user.get_full_name|default:user.email }}{% endif %}">
+                </div>
+                <div class="form-field">
+                    <label for="email">Эл. почта *</label>
+                    <input type="email" id="email" name="email" required class="input-unnested"
+                           value="{% if checkout_form %}{{ checkout_form.email }}{% elif user.is_authenticated %}{{ user.email }}{% endif %}">
+                </div>
+                <div class="form-field">
+                    <label for="address">Адрес доставки *</label>
+                    <input type="text" id="address" name="address" required placeholder="Токтогула 68, г. Бишкек" class="input-unnested"
+                           value="{% if checkout_form %}{{ checkout_form.address }}{% endif %}">
+                </div>
+
+                <div class="form-field" style="margin-top:var(--spacing-lg);">
+                    <h3 class="section-title" style="font-size:var(--text-base);">Способ оплаты</h3>
+                    <label class="filter-checkbox" style="margin-top:var(--spacing-sm);">
+                        <input type="radio" id="cod" name="payment_method" value="COD" checked required>
+                        <span>Наличными при получении</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="cart-summary-proceed_to_checkout" style="margin-top:var(--spacing-lg);">
+                    Подтвердить заказ
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

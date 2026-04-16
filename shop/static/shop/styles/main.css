@@ -1,0 +1,57 @@
+/* VENDORS - Third-party CSS libraries */
+@import url('vendors/_poppins-google-fonts.css');
+@import url('vendors/_font-awesome.css');
+
+/* ABSTRACTS - Variables and theme definitions */
+@import url('abstracts/_light-theme.css');
+@import url('abstracts/_dark-theme.css');
+
+/* BASE - Foundation styles */
+@import url('base/_reset.css');
+
+/* COMPONENTS - Reusable component styles */
+@import url('components/_divider.css');
+@import url('components/_button.css');
+@import url('components/_anchor.css');
+@import url('components/_header.css');
+@import url('components/_footer.css');
+@import url('components/_search.css');
+@import url('components/_input.css');
+@import url('components/_modal.css');
+@import url('components/_product_card.css');
+@import url('components/_counter.css');
+
+/* PAGES - Page-specific styles */
+@import url('pages/_landing.css');
+@import url('pages/_landing-bazaar.css');
+@import url('pages/_sign-in.css');
+@import url('pages/_sign-up.css');
+@import url('pages/_pdp.css');
+@import url('pages/_shop.css');
+@import url('pages/_cart.css');
+@import url('pages/_about-us.css');
+@import url('pages/_contact-us.css');
+@import url('pages/_feedback.css');
+@import url('pages/_profile.css');
+@import url('pages/_checkout.css');
+@import url('pages/_checkout-success.css');
+@import url('pages/_orders.css');
+
+/* LAYOUT - Layout-related styles */
+@import url('layout/_header.css');
+@import url('layout/_footer.css');
+@import url('layout/_landing.css');
+@import url('layout/_sign-in.css');
+@import url('layout/_sign-up.css');
+@import url('layout/_modal.css');
+@import url('layout/_pdp.css');
+@import url('layout/_shop.css');
+@import url('layout/_cart.css');
+@import url('layout/_about-us.css');
+@import url('layout/_contact-us.css');
+@import url('layout/_feedback.css');
+@import url('layout/_profile.css');
+@import url('layout/_checkout.css');
+@import url('layout/_checkout-success.css');
+@import url('layout/_orders.css');
+@import url('layout/_mobile-all.css');

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container page-block pdp-page">
+    {% include "includes/breadcrumbs.html" %}
+
+    <div class="product-detail pdp-card-wrap">
+        <div class="product-gallery">
+            <div class="product-gallery__main">
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" width="800" height="800" />
+            </div>
+        </div>
+
+        <div>
+            <p class="section-kicker" style="margin-bottom:var(--spacing-sm);">{{ product.category.name }}</p>
+            <h1 class="product-info__title">{{ product.name }}</h1>
+            <p class="section-desc" style="margin-bottom:var(--spacing-lg);">{{ product.description }}</p>
+
+            <div class="product-info__price-block">
+                {% if product.discount_price and product.discount_price < product.price %}
+                    <span class="product-info__price-old">{{ product.price }} сом</span>
+                    <span class="product-info__badge-sale">Акция</span>
+                {% endif %}
+                <span class="product-info__price">{{ product.current_price }} сом</span>
+            </div>
+
+            <p class="section-desc">
+                <span class="tag" style="display:inline-flex;margin-right:var(--spacing-sm);">{{ product.stock_status }}</span>
+                {% if product.is_active and product.stock > 0 %}
+                    В наличии: {{ product.stock }}
+                {% endif %}
+            </p>
+
+            {% if product.category or product.weight or product.dimensions %}
+            <div class="product-specs">
+                <h2 class="section-title" style="font-size:var(--text-lg);margin-bottom:var(--spacing-md);">Характеристики</h2>
+                {% if product.category %}
+                <div class="product-spec-row">
+                    <span class="product-spec-row__label">Категория</span>
+                    <span class="product-spec-row__value"><a href="{% url 'shop' %}?categories={{ product.category.slug }}" style="color:var(--color-primary);">{{ product.category.name }}</a></span>
+                </div>
+                {% endif %}
+                {% if product.weight %}
+                <div class="product-spec-row">
+                    <span class="product-spec-row__label">Вес</span>
+                    <span class="product-spec-row__value">{{ product.weight }} г</span>
+                </div>
+                {% endif %}
+                {% if product.dimensions %}
+                <div class="product-spec-row">
+                    <span class="product-spec-row__label">Размеры</span>
+                    <span class="product-spec-row__value">{{ product.dimensions }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="product-specs">
+                <h2 class="section-title" style="font-size:var(--text-lg);margin-bottom:var(--spacing-md);">Дополнительно</h2>
+                <div class="product-spec-row">
+                    <span class="product-spec-row__label">Артикул</span>
+                    <span class="product-spec-row__value">#{{ product.id }}</span>
+                </div>
+                <div class="product-spec-row">
+                    <span class="product-spec-row__label">Добавлен</span>
+                    <span class="product-spec-row__value">{{ product.created_at|date:"d.m.Y" }}</span>
+                </div>
+                {% if product.modified_at != product.created_at %}
+                <div class="product-spec-row">
+                    <span class="product-spec-row__label">Обновлён</span>
+                    <span class="product-spec-row__value">{{ product.modified_at|date:"d.m.Y" }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-md);margin-top:var(--spacing-xl);">
+                {% if product.is_in_stock %}
+                    <button
+                        type="button"
+                        class="btn-add-cart-large add-to-cart-btn"
+                        data-product-id="{{ product.id }}"
+                        data-product-name="{{ product.name }}">
+                        В корзину
+                    </button>
+                {% else %}
+                    <button type="button" class="btn-secondary" disabled style="opacity:0.6;cursor:not-allowed;">{{ product.stock_status }}</button>
+                {% endif %}
+                <a href="{% url 'shop' %}" class="btn-secondary">В каталог</a>
+            </div>
+        </div>
+    </div>
+
+    {% if related_products %}
+    <section class="section" style="padding-top:var(--spacing-3xl);">
+        <div class="section-header">
+            <h2 class="section-title">Похожие товары</h2>
+            <a href="{% url 'shop' %}?categories={{ product.category.slug }}" class="section-link">Смотреть все →</a>
+        </div>
+        <div class="product-grid">
+            {% for product in related_products %}
+                {% include "shop/includes/product_card_bazaar.html" %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

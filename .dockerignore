@@ -1,0 +1,11 @@
+venv
+.pip_packages
+__pycache__
+*.pyc
+.git
+.gitignore
+*.sqlite3
+.env
+media
+*.md
+storefront/node_modules

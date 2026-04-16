@@ -1,0 +1,70 @@
+<div class="manager-products">
+    <h2 class="contact-page__form-title">Каталог 1С — розница и опт</h2>
+
+    <form method="get" class="manager-products-search manager-products-search--bar" data-manager-products-search>
+        <input type="search" name="q" value="{{ search_q }}" placeholder="Артикул, название, код…" class="manager-products-search__input" autocomplete="off">
+        <button type="submit" class="btn-primary contact-page__btn-submit">Найти</button>
+        <label class="manager-products-search__inactive">
+            <input type="checkbox" name="include_inactive" value="1" {% if include_inactive %}checked{% endif %}>
+            <span>Неактивные в 1С</span>
+        </label>
+    </form>
+
+    {% if edit_product %}
+    <div class="manager-price-edit manager-price-edit--panel">
+        <form method="post" class="contact-page__form feedback-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_product_prices">
+            <input type="hidden" name="product_id" value="{{ edit_product.pk }}">
+            <p class="manager-price-edit__title">{{ edit_product.name }}</p>
+            <p class="manager-price-edit__meta">{{ edit_product.pk }} · {{ edit_product.sku }}</p>
+            <div class="feedback-form-row">
+                <div class="form-field">
+                    <label for="edit-retail-price">Розница</label>
+                    <input id="edit-retail-price" name="retail_price" type="text" value="{{ edit_product.retail_price }}">
+                </div>
+                <div class="form-field">
+                    <label for="edit-wholesale-price">Опт</label>
+                    <input id="edit-wholesale-price" name="wholesale_price" type="text" value="{{ edit_product.wholesale_price }}">
+                </div>
+            </div>
+            <div class="feedback-form-actions">
+                <button type="submit" class="btn-primary contact-page__btn-submit">Сохранить цены</button>
+                <a href="{% url 'manager_products_panel' %}?q={{ search_q|urlencode }}{% if include_inactive %}&include_inactive=1{% endif %}" data-manager-edit-link class="btn-secondary contact-page__btn-reset">Закрыть</a>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="manager-table-wrap manager-table-wrap--short manager-table-wrap--products">
+        <table class="manager-table manager-table--products">
+            <thead>
+                <tr>
+                    <th scope="col">Товар</th>
+                    <th scope="col" class="manager-table__col-price">Розница</th>
+                    <th scope="col" class="manager-table__col-price">Опт</th>
+                    <th scope="col" class="manager-table__col-action"><span class="sr-only">Действие</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products_list %}
+                <tr>
+                    <td class="manager-product-cell">
+                        <span class="manager-product-cell__name">{{ p.name }}</span>
+                        <span class="manager-product-cell__sku">{{ p.sku }}</span>
+                    </td>
+                    <td class="manager-table__price manager-table__price--retail">{{ p.retail_price }}</td>
+                    <td class="manager-table__price manager-table__price--wholesale">{{ p.wholesale_price }}</td>
+                    <td class="manager-table__action">
+                        <a href="{% url 'manager_products_panel' %}?q={{ search_q|urlencode }}{% if include_inactive %}&include_inactive=1{% endif %}&edit_product={{ p.pk }}"
+                           data-manager-edit-link
+                           class="manager-product-edit-btn">Изменить</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="manager-table__empty">Ничего не найдено.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

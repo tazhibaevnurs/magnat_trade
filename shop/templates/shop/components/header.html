@@ -1,0 +1,81 @@
+{% load static %}
+
+<header class="header">
+    <a href="/" class="header-logo logo-text">Magnat Trade</a>
+
+    <nav class="header-nav">
+        <a class="header-nav-link" href="/">Главная</a>
+        <a class="header-nav-link" href="/shop">Магазин</a>
+        <a class="header-nav-link" href="/about-us">О нас</a>
+        <a class="header-nav-link" href="/contact-us">Контакты</a>
+    </nav>
+
+    <div class="header-actions">
+        <a class="header-cart-btn" href="/cart" id="cart-link">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span class="header-cart-count" id="cart-count">{{ cart_item_count|default:0 }}</span>
+        </a>
+
+        {% if user.is_authenticated %}
+            <div class="user-dropdown">
+                <button class="button-secondary dropdown-trigger">
+                    <i class="fa-solid fa-user"></i>
+                    {{ user.first_name|default:user.email }}
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div class="dropdown-menu" data-open="false">
+                    <a href="/profile" class="dropdown-item">
+                        <i class="fa-solid fa-user-circle"></i>
+                        Профиль
+                    </a>
+                    <a href="/orders" class="dropdown-item">
+                        <i class="fa-solid fa-receipt"></i>
+                        Мои заказы
+                    </a>
+                    <button type="button" class="dropdown-item dropdown-button" id="logout-trigger">
+                        <i class="fa-solid fa-sign-out-alt"></i>
+                        Выйти
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <a class="button-secondary" href="/sign-in">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Войти
+            </a>
+        {% endif %}
+
+        <button class="button-icon_outlined theme-switcher-btn">
+            <i class="fa-solid fa-moon"></i>
+        </button>
+    </div>
+</header>
+
+<!-- Logout Confirmation Modal -->
+{% if user.is_authenticated %}
+<div class="modal-overlay logout-modal-overlay" style="display: none;">
+    <div class="modal logout-modal">
+        <div class="modal-header">
+            <h3 class="modal-header-title">Подтверждение выхода</h3>
+            <button type="button" class="button-icon modal-header-exit" id="logout-modal-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <p class="modal-description">
+            Вы уверены, что хотите выйти? Для доступа к аккаунту потребуется войти снова.
+        </p>
+        <div class="modal-ctas">
+            <button type="button" class="button-secondary modal-ctas-btn" id="logout-modal-cancel">
+                Отмена
+            </button>
+            <form action="{% url 'logout' %}" method="POST" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="button-primary modal-ctas-btn">
+                    <i class="fa-solid fa-sign-out-alt"></i>
+                    Выйти
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,53 @@
+<div class="manager-categories-head">
+    <h2 class="contact-page__form-title">Разделы (1С)</h2>
+    <p class="manager-categories-head__hint">
+        Те же корневые разделы, что в каталоге на сайте (дерево 1С N-*, порядок categoryProductList). Остальные коды категорий — в базе и синхронизации 1С.
+    </p>
+</div>
+
+<form method="get" class="manager-products-search" data-manager-categories-search action="{% url 'manager_dashboard' %}">
+    <input type="hidden" name="tab" value="categories">
+    <input type="search" name="category_q" value="{{ category_q }}" placeholder="Название, slug, код категории…" class="manager-products-search__input" autocomplete="off">
+    <button type="submit" class="btn-primary contact-page__btn-submit">Найти</button>
+</form>
+
+<div class="manager-table-wrap manager-table-wrap--medium mt-4">
+    <table class="manager-table">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Slug</th>
+                <th>Активна</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in categories_list %}
+            <tr>
+                <td>
+                    <form method="post" class="inline-flex flex-wrap items-center gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_category">
+                        <input type="hidden" name="category_id" value="{{ c.pk }}">
+                        <input name="name" value="{{ c.name }}" class="manager-inline-field max-w-[200px] py-1.5">
+                        <label class="flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
+                            <input type="checkbox" name="is_active" value="1" {% if c.is_active %}checked{% endif %}> активна
+                        </label>
+                        <button type="submit" class="manager-link-action">Сохранить</button>
+                    </form>
+                </td>
+                <td class="manager-table__muted">{{ c.slug }}</td>
+                <td>{% if c.is_active %}да{% else %}нет{% endif %}</td>
+                <td>
+                    <form method="post" action="{% url 'manager_category_delete' c.pk %}" onsubmit="return confirm('Удалить категорию «{{ c.name|escapejs }}»?');">
+                        {% csrf_token %}
+                        <button type="submit" class="manager-link-danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="manager-empty">Ничего не найдено.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

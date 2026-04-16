@@ -1,0 +1,12 @@
+{% if breadcrumb_items %}
+<nav class="breadcrumbs" aria-label="Навигационная цепочка">
+  {% for item in breadcrumb_items %}
+    {% if item.url %}
+      <a href="{{ item.url }}">{{ item.name }}</a>
+    {% else %}
+      <span>{{ item.name }}</span>
+    {% endif %}
+    {% if not forloop.last %}<span class="breadcrumbs__sep" aria-hidden="true">/</span>{% endif %}
+  {% endfor %}
+</nav>
+{% endif %}

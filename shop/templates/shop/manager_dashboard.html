@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Панель менеджера{% endblock %}
+
+{% block content %}
+<div class="container page-block manager-page" x-data="{ tab: '{{ manager_initial_tab|default:"requests"|escapejs }}' }">
+    {% include "includes/breadcrumbs.html" %}
+
+    <header class="profile-hero">
+        <h1 class="profile-hero__title">Панель менеджера</h1>
+        <p class="profile-hero__subtitle">Заявки на опт, цены каталога 1С, категории и пользователи</p>
+    </header>
+
+    <div class="manager-tabs" role="tablist" aria-label="Разделы панели">
+        <button type="button" role="tab" class="manager-tab" :class="{ 'manager-tab--active': tab === 'requests' }" @click="tab = 'requests'; window.syncManagerTabUrl && window.syncManagerTabUrl('requests')" :aria-selected="tab === 'requests'">Заявки на опт</button>
+        <button type="button" role="tab" class="manager-tab" :class="{ 'manager-tab--active': tab === 'products' }" @click="tab = 'products'; window.syncManagerTabUrl && window.syncManagerTabUrl('products')" :aria-selected="tab === 'products'">Товары и цены</button>
+        <button type="button" role="tab" class="manager-tab" :class="{ 'manager-tab--active': tab === 'categories' }" @click="tab = 'categories'; window.syncManagerTabUrl && window.syncManagerTabUrl('categories')" :aria-selected="tab === 'categories'">Категории</button>
+        <button type="button" role="tab" class="manager-tab" :class="{ 'manager-tab--active': tab === 'users' }" @click="tab = 'users'; window.syncManagerTabUrl && window.syncManagerTabUrl('users')" :aria-selected="tab === 'users'">Пользователи</button>
+    </div>
+
+    {# Заявки #}
+    <section x-show="tab === 'requests'" x-cloak class="space-y-6">
+        <div class="auth-card contact-page__form-card">
+            <h2 class="contact-page__form-title">Ожидают решения</h2>
+            {% if pending_wholesale %}
+            <ul class="manager-list">
+                {% for w in pending_wholesale %}
+                <li class="manager-list__item">
+                    <div>
+                        <p class="manager-list__email">{{ w.user.email }}</p>
+                        <p class="manager-list__date">{{ w.created_at|date:"d.m.Y H:i" }}</p>
+                        {% if w.comment %}<p class="manager-list__comment">{{ w.comment }}</p>{% endif %}
+                    </div>
+                    <div class="manager-list__actions">
+                        <form method="post" action="{% url 'manager_wholesale_approve' w.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="manager-btn-approve">Одобрить</button>
+                        </form>
+                        <form method="post" action="{% url 'manager_wholesale_reject' w.pk %}" class="flex flex-wrap items-end gap-2">
+                            {% csrf_token %}
+                            <input type="text" name="manager_note" placeholder="Причина отказа" class="manager-inline-field">
+                            <button type="submit" class="btn-secondary contact-page__btn-reset">Отклонить</button>
+                        </form>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="manager-empty">Нет заявок в очереди.</p>
+            {% endif %}
+        </div>
+        <div class="auth-card contact-page__form-card">
+            <h2 class="contact-page__form-title">Последние заявки</h2>
+            <div class="manager-table-wrap">
+                <table class="manager-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Менеджер</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recent_wholesale %}
+                        <tr>
+                            <td>{{ r.user.email }}</td>
+                            <td>{{ r.get_status_display }}</td>
+                            <td class="manager-table__muted">{{ r.created_at|date:"d.m.Y H:i" }}</td>
+                            <td class="manager-table__muted">{% if r.reviewed_by %}{{ r.reviewed_by.email }}{% else %}—{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="manager-empty">Пока нет записей.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Товары #}
+    <section x-show="tab === 'products'" x-cloak>
+        <div class="auth-card contact-page__form-card">
+            <div id="manager-products-panel">
+                {% include "shop/partials/manager_products_panel.html" %}
+            </div>
+        </div>
+    </section>
+
+    {# Категории #}
+    <section x-show="tab === 'categories'" x-cloak class="space-y-6">
+        <div class="auth-card contact-page__form-card">
+            <h2 class="contact-page__form-title">Новая категория</h2>
+            <form method="post" class="contact-page__form feedback-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_category">
+                <div class="form-field">
+                    <label for="manager-new-cat-name">Название</label>
+                    <input id="manager-new-cat-name" name="name" required type="text" placeholder="Название категории">
+                </div>
+                <div class="form-field">
+                    <label for="manager-new-cat-parent">Родитель (код категории из 1С, необязательно)</label>
+                    <input id="manager-new-cat-parent" name="parent_id" type="text" placeholder="НФ-000479">
+                </div>
+                <div class="feedback-form-actions">
+                    <button type="submit" class="btn-primary contact-page__btn-submit">Создать</button>
+                </div>
+            </form>
+        </div>
+        <div class="auth-card contact-page__form-card">
+            <div id="manager-categories-panel">
+                {% include "shop/partials/manager_categories_panel.html" %}
+            </div>
+        </div>
+    </section>
+
+    {# Пользователи #}
+    <section x-show="tab === 'users'" x-cloak class="auth-card contact-page__form-card">
+        <h2 class="contact-page__form-title">Пользователи (без менеджеров и суперпользователей)</h2>
+        <div id="manager-users-panel">
+            {% include "shop/partials/manager_users_panel.html" %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        window.syncManagerTabUrl = function (tab) {
+            try {
+                const u = new URL(window.location.href);
+                if (tab === 'requests') {
+                    u.searchParams.delete('tab');
+                } else {
+                    u.searchParams.set('tab', tab);
+                }
+                window.history.replaceState({}, '', u);
+            } catch (e) {
+                // ignore
+            }
+        };
+
+        const panel = document.getElementById('manager-products-panel');
+        const categoriesPanel = document.getElementById('manager-categories-panel');
+        const usersPanel = document.getElementById('manager-users-panel');
+        if (!panel && !categoriesPanel && !usersPanel) return;
+
+        const panelUrl = "{% url 'manager_products_panel' %}";
+        const categoriesPanelUrl = "{% url 'manager_categories_panel' %}";
+        const usersPanelUrl = "{% url 'manager_users_panel' %}";
+        const dashboardUrl = "{% url 'manager_dashboard' %}";
+
+        var usersSubtab = 'retail';
+
+        function updateAddressBar(urlStr) {
+            try {
+                const url = new URL(urlStr, window.location.origin);
+                const params = new URLSearchParams();
+                if (urlStr.indexOf('/categories-panel/') !== -1) {
+                    params.set('tab', 'categories');
+                } else if (urlStr.indexOf('/products-panel/') !== -1) {
+                    params.set('tab', 'products');
+                } else if (urlStr.indexOf('/users-panel/') !== -1) {
+                    params.set('tab', 'users');
+                } else {
+                    const cur = new URL(window.location.href);
+                    const t = cur.searchParams.get('tab');
+                    if (t) params.set('tab', t);
+                }
+                const q = url.searchParams.get('q') || '';
+                const editProduct = url.searchParams.get('edit_product') || '';
+                const categoryQ = url.searchParams.get('category_q') || '';
+                const includeInactive = url.searchParams.get('include_inactive') || '';
+                const userQ = url.searchParams.get('user_q') || '';
+                if (q) params.set('q', q);
+                if (editProduct) params.set('edit_product', editProduct);
+                if (categoryQ) params.set('category_q', categoryQ);
+                if (includeInactive) params.set('include_inactive', includeInactive);
+                if (userQ) params.set('user_q', userQ);
+                const nextUrl = params.toString() ? `${dashboardUrl}?${params.toString()}` : dashboardUrl;
+                window.history.replaceState({}, '', nextUrl);
+            } catch (e) {
+                // ignore URL parse issues in old browsers
+            }
+        }
+
+        function applyUsersSubtab(tab) {
+            if (!usersPanel) return;
+            usersPanel.querySelectorAll('[data-manager-users-subtab]').forEach(function (btn) {
+                var t = btn.getAttribute('data-manager-users-subtab');
+                var active = t === tab;
+                btn.classList.toggle('manager-tab--active', active);
+                btn.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            usersPanel.querySelectorAll('[data-manager-users-pane]').forEach(function (pane) {
+                var t = pane.getAttribute('data-manager-users-pane');
+                var show = t === tab;
+                pane.classList.toggle('hidden', !show);
+            });
+        }
+
+        function bindPanelEvents() {
+            if (!panel) return;
+            const searchForm = panel.querySelector('[data-manager-products-search]');
+
+            if (searchForm) {
+                searchForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const formData = new FormData(searchForm);
+                    const params = new URLSearchParams(formData);
+                    loadPanel(`${panelUrl}?${params.toString()}`);
+                });
+            }
+
+            panel.querySelectorAll('[data-manager-edit-link]').forEach(function (link) {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    loadPanel(link.href);
+                });
+            });
+        }
+
+        async function loadPanel(url) {
+            if (!panel) return;
+            try {
+                panel.classList.add('opacity-70');
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                if (!response.ok) return;
+                panel.innerHTML = await response.text();
+                updateAddressBar(url);
+                bindPanelEvents();
+            } finally {
+                panel.classList.remove('opacity-70');
+            }
+        }
+
+        function bindCategoriesPanelEvents() {
+            if (!categoriesPanel) return;
+            const searchForm = categoriesPanel.querySelector('[data-manager-categories-search]');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const formData = new FormData(searchForm);
+                    const params = new URLSearchParams(formData);
+                    loadCategoriesPanel(`${categoriesPanelUrl}?${params.toString()}`);
+                });
+            }
+        }
+
+        async function loadCategoriesPanel(url) {
+            if (!categoriesPanel) return;
+            try {
+                categoriesPanel.classList.add('opacity-70');
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                if (!response.ok) return;
+                categoriesPanel.innerHTML = await response.text();
+                updateAddressBar(url);
+                bindCategoriesPanelEvents();
+            } finally {
+                categoriesPanel.classList.remove('opacity-70');
+            }
+        }
+
+        function bindUsersPanelEvents() {
+            if (!usersPanel) return;
+            const searchForm = usersPanel.querySelector('[data-manager-users-search]');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const formData = new FormData(searchForm);
+                    const params = new URLSearchParams(formData);
+                    loadUsersPanel(`${usersPanelUrl}?${params.toString()}`);
+                });
+            }
+            usersPanel.querySelectorAll('[data-manager-users-subtab]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var t = btn.getAttribute('data-manager-users-subtab');
+                    usersSubtab = t || 'retail';
+                    applyUsersSubtab(usersSubtab);
+                });
+            });
+        }
+
+        async function loadUsersPanel(url) {
+            if (!usersPanel) return;
+            try {
+                usersPanel.classList.add('opacity-70');
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                if (!response.ok) return;
+                usersPanel.innerHTML = await response.text();
+                updateAddressBar(url);
+                bindUsersPanelEvents();
+                applyUsersSubtab(usersSubtab);
+            } finally {
+                usersPanel.classList.remove('opacity-70');
+            }
+        }
+
+        bindPanelEvents();
+        bindCategoriesPanelEvents();
+        bindUsersPanelEvents();
+    })();
+</script>
+{% endblock %}

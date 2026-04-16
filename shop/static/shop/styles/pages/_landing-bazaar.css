@@ -1,0 +1,514 @@
+/* Главная в духе Bazaar Market 1 — цвета из токенов темы Magnat Trade */
+
+.store-home .store-bzr-wrap {
+    width: min(1240px, 100%);
+    margin: 0 auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.store-home .store-bzr-stack {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.5rem, 5vw, 3.75rem);
+    padding-bottom: 2.5rem;
+}
+
+/* —— Верхняя полоса —— */
+.store-home .store-bzr-ribbon {
+    background: color-mix(in srgb, var(--bg-secondary) 75%, var(--bg-primary) 25%);
+    border-bottom: 1px solid color-mix(in srgb, var(--bg-outline) 22%, var(--bg-primary) 78%);
+    font-size: 0.8125rem;
+}
+
+.store-home .store-bzr-ribbon-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem 1.5rem;
+    padding: 0.45rem 1rem;
+}
+
+.store-home .store-bzr-hot {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--tg-on-accent);
+    background: var(--accent);
+    padding: 0.2rem 0.55rem;
+    border-radius: 2px;
+}
+
+.store-home .store-bzr-ribbon-text {
+    color: var(--tg-primary);
+    font-weight: 500;
+}
+
+/* —— Hero-слайдер —— */
+.store-home .hero.store-bzr-hero {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+}
+
+.store-home .store-bzr-hero-viewport {
+    border-radius: 0;
+    overflow: hidden;
+    background: var(--bg-primary);
+    border-bottom: 1px solid color-mix(in srgb, var(--bg-outline) 18%, var(--bg-primary) 82%);
+}
+
+.store-home .store-bzr-hero-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.store-home .store-bzr-hero-track::-webkit-scrollbar {
+    display: none;
+}
+
+.store-home .store-bzr-slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(240px, 1fr);
+    gap: clamp(1rem, 3vw, 2.5rem);
+    align-items: center;
+    min-height: min(420px, 78vh);
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 2.5rem);
+    background: linear-gradient(105deg, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-secondary) 65%, var(--bg-primary) 35%) 100%);
+}
+
+.store-home .store-bzr-slide-copy {
+    max-width: 32rem;
+}
+
+.store-home .store-bzr-slide-kicker {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+
+.store-home .store-bzr-slide-title {
+    margin: 0;
+    font-size: clamp(1.75rem, 4.5vw, 3rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--tg-primary);
+}
+
+.store-home .store-bzr-slide-desc {
+    margin: 0.85rem 0 0;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    color: var(--tg-secondary);
+}
+
+.store-home .store-bzr-slide-cta {
+    margin-top: 1.35rem;
+}
+
+.store-home .store-bzr-slide-media {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 24px 48px color-mix(in srgb, var(--tg-primary) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bg-outline) 25%, var(--bg-primary) 75%);
+}
+
+.store-home .store-bzr-slide-media img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+}
+
+.store-home .store-bzr-hero-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.65rem 0 0;
+}
+
+.store-home .store-bzr-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--bg-outline) 55%, var(--bg-primary) 45%);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.store-home .store-bzr-dot[aria-current="true"] {
+    background: var(--accent);
+    transform: scale(1.15);
+}
+
+/* —— Секции товаров —— */
+.store-home .store-bzr-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.15rem;
+}
+
+.store-home .store-bzr-h2 {
+    margin: 0;
+    font-size: clamp(1.35rem, 2.5vw, 1.65rem);
+    font-weight: 800;
+    color: var(--tg-primary);
+    letter-spacing: -0.02em;
+}
+
+.store-home .store-bzr-link-more {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.store-home .store-bzr-link-more:hover {
+    text-decoration: underline;
+}
+
+.store-home .store-bzr-flash-card {
+    position: relative;
+}
+
+.store-home .store-bzr-pct-badge {
+    position: absolute;
+    top: 0.55rem;
+    left: 0.55rem;
+    z-index: 4;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--tg-on-accent);
+    background: var(--accent);
+    padding: 0.28rem 0.5rem;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+/* —— Категории-круги —— */
+.store-home .store-bzr-cats-head {
+    text-align: center;
+    max-width: 36rem;
+    margin: 0 auto 1.75rem;
+}
+
+.store-home .store-bzr-cats-head .store-bzr-h2 {
+    font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+}
+
+.store-home .store-bzr-cats-lead {
+    margin: 0.5rem 0 0;
+    font-size: 0.9375rem;
+    color: var(--tg-secondary);
+    line-height: 1.5;
+}
+
+.store-home .store-bzr-cats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.store-home .store-bzr-cat {
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.store-home .store-bzr-cat-figure {
+    margin: 0 auto 0.65rem;
+    width: min(100%, 132px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid color-mix(in srgb, var(--bg-outline) 35%, var(--bg-primary) 65%);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--tg-primary) 7%, transparent);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+    background: var(--bg-secondary);
+}
+
+.store-home .store-bzr-cat:hover .store-bzr-cat-figure {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+}
+
+.store-home .store-bzr-cat-figure img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.store-home .store-bzr-cat-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--tg-primary);
+}
+
+/* —— Двойные баннеры —— */
+.store-home .store-bzr-banners {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.store-home .store-bzr-banner {
+    position: relative;
+    display: block;
+    min-height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    color: #fff;
+}
+
+.store-home .store-bzr-banner img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.store-home .store-bzr-banner:hover img {
+    transform: scale(1.05);
+}
+
+.store-home .store-bzr-banner-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    padding: 1.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 0.5rem;
+    background: linear-gradient(
+        180deg,
+        transparent 0%,
+        color-mix(in srgb, var(--tg-primary) 78%, transparent) 100%
+    );
+}
+
+.store-home .store-bzr-banner-title {
+    margin: 0;
+    font-size: clamp(1.1rem, 2.2vw, 1.45rem);
+    font-weight: 800;
+    line-height: 1.2;
+    color: #fff;
+    text-shadow: 0 2px 20px color-mix(in srgb, var(--tg-primary) 55%, transparent);
+}
+
+.store-home .store-bzr-banner-text {
+    margin: 0;
+    font-size: 0.875rem;
+    max-width: 22rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.store-home .store-bzr-banner-cta {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* —— Блог —— */
+.store-home .store-bzr-blog-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+
+.store-home .store-bzr-blog-card {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--bg-outline) 28%, var(--bg-primary) 72%);
+    background: var(--bg-primary);
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--tg-primary) 5%, transparent);
+    transition: box-shadow 0.2s ease;
+}
+
+.store-home .store-bzr-blog-card:hover {
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--tg-primary) 9%, transparent);
+}
+
+.store-home .store-bzr-blog-card img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    display: block;
+}
+
+.store-home .store-bzr-blog-body {
+    padding: 1rem 1.15rem 1.25rem;
+}
+
+.store-home .store-bzr-blog-date {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+}
+
+.store-home .store-bzr-blog-title {
+    margin: 0.4rem 0;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--tg-primary);
+}
+
+.store-home .store-bzr-blog-excerpt {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--tg-secondary);
+}
+
+.store-home .store-bzr-blog-more {
+    display: inline-block;
+    margin-top: 0.65rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+/* —— Полоса доверия —— */
+.store-home .store-bzr-trust {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding: 1.5rem 1.25rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--bg-outline) 22%, var(--bg-primary) 78%);
+    background: color-mix(in srgb, var(--bg-secondary) 45%, var(--bg-primary) 55%);
+}
+
+.store-home .store-bzr-trust-item {
+    text-align: center;
+    padding: 0.35rem;
+}
+
+.store-home .store-bzr-trust-item i {
+    font-size: 1.35rem;
+    color: var(--accent);
+    margin-bottom: 0.45rem;
+    display: block;
+}
+
+.store-home .store-bzr-trust-item h3 {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--tg-primary);
+}
+
+.store-home .store-bzr-trust-item p {
+    margin: 0.2rem 0 0;
+    font-size: 0.75rem;
+    color: var(--tg-secondary);
+    line-height: 1.4;
+}
+
+/* —— Рассылка (Bazaar: широкий блок) —— */
+.store-home .store-bzr-newsletter {
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--bg-outline) 30%, var(--bg-primary) 70%);
+    background: linear-gradient(
+        120deg,
+        color-mix(in srgb, var(--bg-secondary) 88%, var(--bg-primary) 12%),
+        var(--bg-primary)
+    );
+}
+
+.store-home .store-bzr-newsletter .store-daisy-newsletter-inner {
+    gap: 1.5rem;
+}
+
+/* —— Горизонтальные ряды товаров (как Flash / Just for you) —— */
+.flash_deals-container,
+.just_for_you-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.flash_deals-list,
+.just_for_you-list {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+}
+
+.flash_deals-list .product_card,
+.just_for_you-list .product_card {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+}
+
+.flash_deals-pagination,
+.just_for_you-pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+@media (min-width: 1024px) {
+    .flash_deals-list,
+    .just_for_you-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        overflow-x: visible;
+        scroll-snap-type: none;
+    }
+
+    .flash_deals-list .product_card,
+    .just_for_you-list .product_card {
+        width: 100%;
+        max-width: none;
+        flex-shrink: 1;
+    }
+
+    .flash_deals-pagination,
+    .just_for_you-pagination {
+        display: none;
+    }
+}

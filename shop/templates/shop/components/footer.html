@@ -1,0 +1,68 @@
+{% load static %}
+
+<footer class="footer">
+    <div class="footer-inner">
+
+        <!-- Col 1: Brand -->
+        <div class="footer-col footer-brand">
+            <a href="/" class="footer-logo-text">Magnat Trade</a>
+            <p class="footer-brand-desc">
+                Канцтовары с доставкой по Бишкеку. Всё для учёбы, офиса и творчества в одном месте.
+            </p>
+            <div class="footer-socials">
+                <a href="#" class="footer-social-btn" aria-label="Facebook">
+                    <i class="fa-brands fa-facebook"></i>
+                </a>
+                <a href="#" class="footer-social-btn" aria-label="Instagram">
+                    <i class="fa-brands fa-instagram"></i>
+                </a>
+                <a href="#" class="footer-social-btn" aria-label="Telegram">
+                    <i class="fa-brands fa-telegram"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Col 2: Shop -->
+        <div class="footer-col">
+            <h4 class="footer-col-title">Магазин</h4>
+            <nav class="footer-col-nav">
+                <a href="{% url 'shop' %}" class="footer-col-link">Все товары</a>
+                <a href="{% url 'shop' %}?category=Ручки" class="footer-col-link">Ручки</a>
+                <a href="{% url 'shop' %}?category=Тетради" class="footer-col-link">Тетради</a>
+                <a href="{% url 'shop' %}?category=Бумага" class="footer-col-link">Бумага</a>
+                <a href="{% url 'shop' %}?category=Карандаши" class="footer-col-link">Карандаши</a>
+            </nav>
+        </div>
+
+        <!-- Col 3: Info -->
+        <div class="footer-col">
+            <h4 class="footer-col-title">Компания</h4>
+            <nav class="footer-col-nav">
+                <a href="/about-us" class="footer-col-link">О нас</a>
+                <a href="/contact-us" class="footer-col-link">Контакты</a>
+                <a href="/feedback" class="footer-col-link">Обратная связь</a>
+            </nav>
+        </div>
+
+        <!-- Col 4: Newsletter -->
+        <div class="footer-col">
+            <h4 class="footer-col-title">Подписка</h4>
+            <p class="footer-col-desc">Получайте акции и новости Magnat Trade на почту.</p>
+            <div class="footer-newsletter">
+                <input class="footer-newsletter-input" type="email" placeholder="example@mail.kg" />
+                <button class="footer-newsletter-btn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+            <button class="button-icon_outlined theme-switcher-btn footer-theme-btn">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <div class="footer-bottom">
+        <p class="footer-address">Токтогула 68, г. Бишкек &nbsp;·&nbsp; +996 500 600 600</p>
+        <p class="footer-copy">© 2025 Magnat Trade. Все права защищены.</p>
+    </div>
+</footer>

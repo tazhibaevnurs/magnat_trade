@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html data-theme="light" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказ №{{ order.id }} | Magnat Trade</title>
+    <link rel="stylesheet" href="{% static 'shop/styles/main.css' %}">
+</head>
+<body>
+    
+	{% include "./components/header.html" %}
+
+    <main class="orders-wrapper">
+        <div class="order-detail-header">
+            <h1 class="orders-title">Заказ №{{ order.id }}</h1>
+            <a href="/orders" class="btn-back">
+                <i class="fa-solid fa-arrow-left"></i>
+                К списку заказов
+            </a>
+        </div>
+        
+        <div class="order-detail-container">
+            <div class="detail-card">
+                <h2>Статус заказа</h2>
+                <div class="status-info">
+                    <span class="status-badge status-{{ order.status|lower }}">
+                        {{ order.get_status_display }}
+                    </span>
+                    <p class="order-date">
+                        <i class="fa-solid fa-calendar"></i>
+                        Оформлен {{ order.placed_at|date:"d.m.Y - H:i" }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h2>Адрес доставки</h2>
+                <div class="address-info">
+                    <p><strong>{{ order.full_name }}</strong></p>
+                    <p>{{ order.address }}</p>
+                    <p><i class="fa-solid fa-envelope"></i> {{ order.email }}</p>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h2>Товары в заказе</h2>
+                <div class="order-items">
+                    {% for item in order.items.all %}
+                    <div class="order-item-detail">
+                        <div class="item-image">
+                            {% if item.product %}
+                            <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}">
+                            {% else %}
+                            <div class="item-placeholder">
+                                <i class="fa-solid fa-image"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="item-info">
+                            <h3>{{ item.product.name }}</h3>
+                            <p class="item-quantity">Кол-во: {{ item.quantity }}</p>
+                            <p class="item-unit-price">Цена: {{ item.price }} сом</p>
+                        </div>
+                        <div class="item-subtotal">
+                            <p>Сумма</p>
+                            <strong>{{ item.get_subtotal }} сом</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h2>Итого</h2>
+                <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Сумма товаров:</span>
+                        <span>{{ order.get_price_without_shipping }} сом</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Доставка:</span>
+                        <span>{{ order.shipping_fee }} сом</span>
+                    </div>
+                    <div class="summary-row total-row">
+                        <strong>Всего:</strong>
+                        <strong class="total-amount">{{ order.total_amount }} сом</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Способ оплаты:</span>
+                        <span>Наличными при получении</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {% include "./components/footer.html" %}
+    
+    <script type="module" src="{% static 'shop/scripts/main.js' %}"></script>
+</body>
+</html>

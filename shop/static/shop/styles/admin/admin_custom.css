@@ -1,0 +1,196 @@
+:root {
+    --bg-primary: #fce4ec; 
+    --tg-primary: #880e4f; 
+    --tg-secondary: #ad1457; 
+    --accent: #e91e63; 
+    --border-color: #f8bbd9; 
+    --module-bg: #fce4ec; 
+}
+
+body {
+    background: var(--bg-primary) !important;
+    color: var(--tg-primary) !important;
+}
+
+#content {
+    background: var(--bg-primary) !important;
+}
+
+#content-main {
+    background: var(--bg-primary) !important;
+}
+
+.module {
+    background: var(--module-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.5rem;
+}
+
+.module h2 {
+    color: var(--tg-primary) !important;
+}
+
+.module-content {
+    color: var(--tg-secondary) !important;
+}
+
+.quick-links-module {
+    margin-top: 1.5rem !important;
+    padding: 1rem !important;
+}
+
+.quick-links-list {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 1rem !important;
+}
+
+.quick-links-list li {
+    flex: 1 1 auto !important;
+    min-width: 200px !important;
+}
+
+.quick-links-list .button {
+    display: block !important;
+    text-align: center !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.quick-links-list .button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.module:first-child {
+    margin-bottom: 2rem !important; 
+}
+
+.button, a.button {
+    background: var(--accent) !important;
+    color: var(--bg-primary) !important;
+    border: none !important;
+    border-radius: 0.25rem;
+    padding: 0.5rem 1rem !important;
+    text-decoration: none !important;
+}
+
+.button:hover, a.button:hover {
+    background: #d81b60 !important; 
+}
+
+h1, h2, h3 {
+    color: var(--tg-primary) !important;
+}
+
+table {
+    border-color: var(--border-color) !important;
+}
+
+th, td {
+    border-color: var(--border-color) !important;
+    color: var(--tg-primary) !important;
+}
+
+#sidebar {
+    background: var(--module-bg) !important;
+}
+
+@media (max-width: 768px) {
+    .quick-links-list {
+        flex-direction: column !important;
+    }
+    .quick-links-list li {
+        min-width: auto !important;
+    }
+}
+
+.analytics-metrics-container, .analytics-status-container {
+    display: flex !important;
+    gap: 20px !important;
+    margin-bottom: 20px !important;
+    flex-wrap: wrap !important;
+}
+
+.analytics-metric-box, .analytics-status-box {
+    flex: 1 1 calc(33.333% - 20px) !important;
+    min-width: 200px !important;
+    padding: 20px !important;
+    background: var(--module-bg) !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 0.5rem !important;
+    text-align: center !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.analytics-metric-box:hover, .analytics-status-box:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.analytics-metric-box h3, .analytics-status-box h4 {
+    color: var(--tg-primary) !important;
+    margin-bottom: 10px !important;
+    font-size: 1.2rem !important;
+}
+
+.analytics-metric-box p, .analytics-status-box p {
+    font-size: 2rem !important;
+    font-weight: bold !important;
+    color: var(--accent) !important;
+    margin: 0 !important;
+}
+
+.analytics-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-bottom: 20px !important;
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden !important;
+}
+
+.analytics-table th {
+    background: var(--module-bg) !important;
+    color: var(--tg-primary) !important;
+    padding: 12px !important;
+    text-align: left !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.analytics-table td {
+    padding: 12px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--tg-secondary) !important;
+}
+
+.analytics-table tr:nth-child(even) {
+    background: var(--module-bg) !important;
+}
+
+.analytics-table tr:hover {
+    background: var(--border-color) !important;
+}
+
+#topProductsChart, #bottomProductsChart {
+    max-width: 100% !important;
+    height: 400px !important;
+    margin-bottom: 20px !important;
+}
+
+@media (max-width: 768px) {
+    .analytics-metrics-container, .analytics-status-container {
+        flex-direction: column !important;
+    }
+    .analytics-metric-box, .analytics-status-box {
+        flex: 1 1 100% !important;
+    }
+}

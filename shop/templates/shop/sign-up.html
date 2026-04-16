@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block content %}
+<div class="container page-block sign_up-page">
+    {% include "includes/breadcrumbs.html" %}
+
+    <header class="auth-page-heading">
+        <h1 class="page-title">Создать аккаунт</h1>
+        <p class="page-lead auth-page-heading__lead">Заполните шаги ниже — сначала контакты и тип контрагента, затем почту и пароль.</p>
+    </header>
+
+    <section class="sign_up" aria-labelledby="sign-up-title">
+        <h2 id="sign-up-title" class="sr-only">Форма регистрации</h2>
+        <div class="sign_up-form">
+            <div class="sign_up-form-container">
+                <div class="sign_up-form-info">
+                    <p class="sign_up-form-info-subheader sign_up-quiz-lead" id="sign-up-step-label">Шаг 1 из 2 — контакты</p>
+                </div>
+
+                <div class="sign_up-quiz-steps" role="tablist" aria-label="Шаги регистрации">
+                    <span class="sign_up-quiz-step sign_up-quiz-step--active" data-quiz-marker="1" role="tab" aria-selected="true">1 · Контакты</span>
+                    <span class="sign_up-quiz-step" data-quiz-marker="2" role="tab" aria-selected="false">2 · Почта и пароль</span>
+                </div>
+
+                <div class="sign_up-form-progress_bar" aria-hidden="true">
+                    <div class="sign_up-form-progress_bar-level" style="width: 50%;"></div>
+                </div>
+
+                <div class="sign_up-form-error" style="display: none;" role="alert">
+                    <i class="sign_up-form-error-icon fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    <p class="sign_up-form-error-text"></p>
+                </div>
+
+                <form class="sign_up-form-group feedback-form" novalidate>
+                    {% csrf_token %}
+
+                    <div class="sign_up-form-group-container" data-step="1">
+                        <div class="feedback-form-row">
+                            <div class="form-field sign_up-form-group-input">
+                                <label for="first_name">Имя <span class="sign_up-req" aria-hidden="true">*</span></label>
+                                <input class="input-unnested" name="first_name" id="first_name" type="text" required autocomplete="given-name" placeholder="Иван">
+                                <span class="form-input-error" style="display: none;"></span>
+                            </div>
+                            <div class="form-field sign_up-form-group-input">
+                                <label for="last_name">Фамилия <span class="sign_up-req" aria-hidden="true">*</span></label>
+                                <input class="input-unnested" name="last_name" id="last_name" type="text" required autocomplete="family-name" placeholder="Иванов">
+                                <span class="form-input-error" style="display: none;"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-field sign_up-form-group-input">
+                            <label for="entity_type">Тип контрагента <span class="sign_up-req" aria-hidden="true">*</span></label>
+                            <select class="input-unnested" name="entity_type" id="entity_type" required>
+                                <option value="individual">Физлицо</option>
+                                <option value="legal_entity">Юрлицо</option>
+                            </select>
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+
+                        <div class="form-field sign_up-form-group-input">
+                            <label for="house_address">Адрес</label>
+                            <input class="input-unnested" name="house_address" id="house_address" type="text" autocomplete="street-address" placeholder="Необязательно">
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+
+                        <div class="form-field sign_up-form-group-input">
+                            <label for="contact_number">Телефон <span class="sign_up-req" aria-hidden="true">*</span></label>
+                            <input class="input-unnested" name="contact_number" id="contact_number" type="tel" required autocomplete="tel" placeholder="+996 700 123 456">
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+                    </div>
+
+                    <div class="sign_up-form-group-container" data-step="2" style="display: none;">
+                        <div class="form-field sign_up-form-group-input">
+                            <label for="email_address">Эл. почта <span class="sign_up-req" aria-hidden="true">*</span></label>
+                            <input class="input-unnested" name="email_address" id="email_address" type="email" required autocomplete="email" placeholder="you@example.com">
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+
+                        <div class="form-field sign_up-form-group-input">
+                            <label for="password">Пароль <span class="sign_up-req" aria-hidden="true">*</span></label>
+                            <div class="input-with-btn sign_up-form-group-input-container">
+                                <input class="input-nested" name="password" id="password" type="password" required autocomplete="new-password" placeholder="Не менее 8 символов">
+                                <button type="button" data-toggle="password" aria-label="Показать пароль">
+                                    <i class="fa-solid fa-eye-slash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+
+                        <div class="form-field sign_up-form-group-input">
+                            <label for="confirm_password">Повторите пароль <span class="sign_up-req" aria-hidden="true">*</span></label>
+                            <div class="input-with-btn sign_up-form-group-input-container">
+                                <input class="input-nested" name="confirm_password" id="confirm_password" type="password" required autocomplete="new-password" placeholder="Ещё раз">
+                                <button type="button" data-toggle="password" aria-label="Показать пароль">
+                                    <i class="fa-solid fa-eye-slash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+                    </div>
+
+                    <div class="sign_up-form-group-ctas">
+                        <div class="sign_up-form-group-ctas-container" data-step="1">
+                            <button class="sign_up-form-group-ctas-btn sign_up-form-group-ctas-btn--icon" type="reset" aria-label="Очистить шаг" title="Очистить">
+                                <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
+                            </button>
+                            <button class="sign_up-form-group-ctas-btn sign_up-form-group-ctas-btn--primary" type="submit" disabled>
+                                Далее <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                            </button>
+                        </div>
+
+                        <div class="sign_up-form-group-ctas-container" data-step="2" style="display: none;">
+                            <button class="sign_up-form-group-ctas-btn sign_up-form-group-ctas-btn--icon" type="button" aria-label="Назад к шагу 1" title="Назад">
+                                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                            </button>
+                            <button class="sign_up-form-group-ctas-btn sign_up-form-group-ctas-btn--icon" type="reset" aria-label="Очистить форму" title="Сбросить">
+                                <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
+                            </button>
+                            <button class="sign_up-form-group-ctas-btn sign_up-form-group-ctas-btn--primary" type="submit" disabled>
+                                Создать <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                            </button>
+                        </div>
+
+                        <p class="sign_up-form-group-ctas-helper">
+                            Уже есть аккаунт?
+                            <a class="anchor-link" href="{% url 'sign-in' %}">Войти</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div id="sign-up-success-modal" class="sign-up-success-modal hidden" aria-hidden="true">
+    <div class="sign-up-success-modal__backdrop"></div>
+    <div class="sign-up-success-modal__card" role="dialog" aria-modal="true" aria-labelledby="sign-up-success-title">
+        <div class="sign-up-success-modal__icon" aria-hidden="true">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <h2 id="sign-up-success-title" class="sign-up-success-modal__title">Аккаунт создан</h2>
+        <p class="sign-up-success-modal__text">Регистрация прошла успешно. Нажмите кнопку ниже, чтобы перейти на главную.</p>
+        <button type="button" id="sign-up-success-ok" class="btn-primary contact-page__btn-submit sign-up-success-modal__btn">На главную</button>
+    </div>
+</div>
+{% endblock %}

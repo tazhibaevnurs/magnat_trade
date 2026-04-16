@@ -1,0 +1,50 @@
+{# Ожидается переменная prefix: "add" | "edit" #}
+<div class="feedback-form-row">
+    <div class="form-field">
+        <label for="{{ prefix }}-label">Название *</label>
+        <input type="text" id="{{ prefix }}-label" name="label" required
+               {% if prefix == "add" %}placeholder="Дом, работа"{% endif %}>
+    </div>
+    <div class="form-field">
+        <label for="{{ prefix }}-address-type">Тип</label>
+        <select id="{{ prefix }}-address-type" name="address_type">
+            <option value="home">Дом</option>
+            <option value="work">Работа</option>
+            <option value="other">Другое</option>
+        </select>
+    </div>
+</div>
+<div class="form-field">
+    <label for="{{ prefix }}-street-address">Улица, дом *</label>
+    <input type="text" id="{{ prefix }}-street-address" name="street_address" required>
+</div>
+<div class="feedback-form-row">
+    <div class="form-field">
+        <label for="{{ prefix }}-city">Город *</label>
+        <input type="text" id="{{ prefix }}-city" name="city" required>
+    </div>
+    <div class="form-field">
+        <label for="{{ prefix }}-state-province">Область *</label>
+        <input type="text" id="{{ prefix }}-state-province" name="state_province" required>
+    </div>
+</div>
+<div class="feedback-form-row">
+    <div class="form-field">
+        <label for="{{ prefix }}-postal-code">Индекс *</label>
+        <input type="text" id="{{ prefix }}-postal-code" name="postal_code" required>
+    </div>
+    <div class="form-field">
+        <label for="{{ prefix }}-country">Страна</label>
+        <select id="{{ prefix }}-country" name="country">
+            <option value="Kyrgyzstan" {% if prefix == "add" %}selected{% endif %}>Кыргызстан</option>
+            <option value="Russia">Россия</option>
+            <option value="Other">Другая</option>
+        </select>
+    </div>
+</div>
+<div class="form-field">
+    <label class="profile-address-default-label">
+        <input type="checkbox" name="is_default" id="{{ prefix }}-is-default">
+        Сделать адресом по умолчанию
+    </label>
+</div>

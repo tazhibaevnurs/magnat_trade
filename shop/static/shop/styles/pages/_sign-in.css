@@ -1,0 +1,156 @@
+.sign_in-wrapper {
+    flex-direction: column;
+    min-height: 100vh;
+    display: flex;
+}
+
+.sign_in {
+    background-color: var(--bg-primary);
+    flex-direction: row;
+    align-items: center;
+    padding: 4rem 16rem;
+    display: flex;
+    width: 100%;
+    flex: 1;
+    gap: 4rem;
+}
+
+.sign_in-img {
+    border-radius: 0.5rem;
+    object-fit: cover;
+    display: flex;
+    height: auto;
+    width: 100%;
+    flex: 1;
+}
+
+.sign_in-form {
+    background-color: var(--bg-secondary);
+    flex-direction: column;
+    border-radius: 0.5rem;
+    flex-shrink: 0;
+    padding: 3rem 2rem;
+    display: flex;
+    border: 1px solid var(--bg-outline);
+    height: auto;
+    width: 25rem;
+    gap: 2rem;
+}
+
+.sign_in-form-container {
+    flex-direction: column;
+    display: flex;
+    height: 100%;
+    gap: 2rem;
+}
+
+.sign_in-form-error {
+    background-color: var(--bg-outline);
+    border-radius: 0.25rem;
+    align-items: center;
+    padding: 0.5rem 0.5rem;
+    border: 1px solid var(--accent);
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.sign_in-form-error-icon {
+    color: var(--tg-primary);
+}
+
+.sign_in-form-error-text {
+    font-weight: 500;
+    font-size: 0.75rem;
+    color: var(--tg-primary);
+}
+
+.sign_in-form-info {
+    flex-direction: column;
+    display: flex;
+}
+
+.sign_in-form-info-header {
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--tg-primary);
+}
+
+.sign_in-form-info-subheader {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--tg-secondary);
+}
+
+.sign_in-form-group {
+    justify-content: space-between;
+    flex-direction: column;
+    display: flex;
+    height: 100%;
+    gap: 1rem;
+}
+
+.sign_in-form-group-container {
+    flex-direction: column;
+    display: flex;
+    gap: 1rem;
+}
+
+.sign_in-form-group-input {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sign_in-form-group-input-container {
+    border-radius: 0.25rem;
+}
+
+.sign_in-form-group-input label {
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: var(--tg-primary);
+}
+
+.sign_in-form-group-input input {
+    border-radius: 0.25rem;
+}
+
+.sign_in-form-group-input-helper {
+    align-self: flex-start;
+    color: var(--tg-primary);
+}
+.sign_in-form-group-ctas {
+    flex-direction: column;
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+}
+
+.sign_in-form-group-ctas-container {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.sign_in-form-group-ctas-btn[type="submit"] {
+    border-radius: 0.25rem;
+    flex-shrink: 1;
+    width: 100%;
+}
+
+.sign_in-form-group-ctas-helper {
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: var(--tg-secondary);
+}
+
+.sign_in .sign_in-form-container,
+.sign_in .sign_in-form-group {
+    height: auto;
+    min-height: 0;
+}
+
+.sign_in .sign_in-form-group {
+    justify-content: flex-start;
+}

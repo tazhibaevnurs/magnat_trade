@@ -1,0 +1,177 @@
+.pdp-container {
+    background-color: var(--bg-primary);
+    flex-direction: column;
+    padding: 4rem 16rem;
+    display: flex;
+    gap: 4rem;
+}
+
+.pdp {
+    display: flex;
+    gap: 2rem;
+}
+
+.pdp-image {
+    background-color: var(--bg-secondary);
+    border-radius: 0.5rem;
+    align-self: flex-start;
+    padding: 2rem;
+    display: flex;
+    border: 1px solid var(--bg-outline);
+}
+
+.pdp-image img {
+    object-position: center;
+    object-fit: contain;
+    width: 24rem;
+}
+
+.pdp-info {
+    flex-direction: column;
+    display: flex;
+    gap: 2rem;
+}
+
+.pdp-info-header {
+    flex-direction: column;
+    display: flex;
+}
+
+.pdp-info-header h1 {
+    font-weight: 700;
+    font-size: 3rem;
+    color: var(--tg-primary);
+}
+
+.pdp-info-header p {
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: var(--tg-secondary);
+}
+
+.pdp-info-price {
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--tg-primary);
+}
+
+.pdp-info-stocks {
+    align-items: center;
+    display: flex;
+    color: var(--tg-secondary);
+    gap: 0.5rem;
+}
+
+.pdp-info-stocks span {
+    font-weight: 500;
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.25rem;
+}
+
+.pdp-info-stocks i {
+    font-size: 0.25rem;
+}
+
+.pdp-info-stocks span.in_stock {
+    background-color: var(--bg-success);
+    color: var(--tg-success);
+}
+
+.pdp-info-stocks span.low_stock {
+    background-color: var(--bg-warn);
+    color: var(--tg-warn);
+}
+
+.pdp-info-stocks span.out_of_stock {
+    background-color: var(--bg-danger);
+    color: var(--tg-danger);
+}
+
+.pdp-info-stocks span.discontinued {
+    background-color: var(--bg-disabled);
+    color: var(--tg-disabled);
+}
+
+.pdp-info-stocks p {
+    font-weight: 500;
+}
+
+.pdp-info-specifications, .pdp-info-meta {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pdp-info-specifications-header, .pdp-info-meta-header {
+    font-size: 1rem;
+    color: var(--tg-primary);
+}
+
+.pdp-info-specifications-list, .pdp-info-meta-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.pdp-info-specifications-list-item, .pdp-info-meta-list-item {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--tg-secondary);
+}
+
+.pdp-info-specifications-list-item strong, .pdp-info-meta-list-item strong {
+    color: var(--tg-primary);
+}
+
+.pdp-info-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.related_products {
+    flex-direction: column;
+    display: flex;
+    gap: 2rem;
+}
+
+.related_products-header {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    display: flex;
+    gap: 1rem;
+}
+
+.related_products-header h3 {
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--tg-primary);
+}
+
+.related_products-container {
+    flex-direction: column;
+    display: flex;
+    gap: 1rem;
+}
+
+.related_products-list {
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    gap: 1rem;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.related_products-list .product_card {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+}
+
+.related_products-pagination {
+    align-items: center;
+    align-self: flex-end;
+    display: flex;
+    gap: 0.5rem;
+}

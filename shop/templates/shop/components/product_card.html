@@ -1,0 +1,51 @@
+{% load static %}
+
+<div class="product_card">
+    <div class="product_card-image-container">
+        <img class="product_card-image" src="{{ product.image_url }}" alt="{{ product.name }} product image" />
+    </div>
+    
+    <div class="product_card-wrapper">
+        <div class="product_card-info">
+            <small class="product_card-info-status">
+                <span class="{% if not product.is_active %}discontinued{% elif product.stock_quantity == 0 %}out_of_stock{% elif product.stock_quantity <= 5 %}low_stock{% else %}in_stock{% endif %}">
+                    {{ product.stock_status }}
+                </span>
+                <i class="fa-solid fa-circle"></i>
+                {{ product.get_category_display }}
+            </small>
+            <h4 class="product_card-info-label">
+                {{ product.name }}
+            </h4>
+            <p class="product_card-info-description">
+                {{ product.description|truncatewords:20 }}
+            </p>
+        </div>
+        <h3 class="product_card-price">
+            {{ product.price }} сом
+        </h3>
+
+        <!-- C A R T-->
+        <div class="product_card-ctas">
+            {% if product.is_in_stock and product.stock_quantity > 0 and product.is_active %}
+                <button 
+                    type="button" 
+                    class="button-secondary product_card-ctas-primary_btn product-card-add-to-cart"
+                    data-product-id="{{ product.id }}"
+                    data-product-name="{{ product.name }}">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    В корзину
+                </button>
+            {% else %}
+                <button class="button-secondary product_card-ctas-primary_btn" disabled>
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    {{ product.stock_status }}
+                </button>
+            {% endif %}
+            <a href="{{ product.get_absolute_url }}" class="button-icon_outlined product_card-ctas-secondary_btn">
+                <i class="fa-solid fa-square-up-right"></i>
+            </a>
+        </div>
+    </div>
+    
+</div>

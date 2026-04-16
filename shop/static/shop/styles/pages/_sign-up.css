@@ -1,0 +1,225 @@
+.sign_up-wrapper {
+    flex-direction: column;
+    min-height: 100vh;
+    display: flex;
+}
+
+.sign_up {
+    background-color: var(--bg-primary);
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 4rem 16rem;
+    display: flex;
+    width: 100%;
+    flex: 1;
+    gap: 4rem;
+}
+
+.sign_up-img {
+    border-radius: 0.5rem;
+    align-items: flex-start;
+    align-self: stretch;
+    object-fit: cover;
+    display: flex;
+    height: auto;
+    width: 100%;
+    flex: 1;
+}
+
+.sign_up-form {
+    background-color: var(--bg-secondary);
+    flex-direction: column;
+    border-radius: 0.5rem;
+    flex-shrink: 0;
+    padding: 3rem 2rem;
+    display: flex;
+    border: 1px solid var(--bg-outline);
+    width: 25rem;
+    gap: 2rem;
+}
+
+.sign_up-form-container {
+    flex-direction: column;
+    display: flex;
+    height: 100%;
+    gap: 2rem;
+}
+
+.sign_up-form-error {
+    background-color: var(--bg-outline);
+    border-radius: 0.25rem;
+    align-items: center;
+    padding: 0.5rem 0.5rem;
+    border: 1px solid var(--accent);
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.sign_up-form-error-icon {
+    color: var(--tg-primary);
+}
+
+.sign_up-form-error-text {
+    font-weight: 500;
+    font-size: 0.75rem;
+    color: var(--tg-primary);
+}
+
+.sign_up-form-info {
+    flex-direction: column;
+    display: flex;
+}
+
+.sign_up-form-info-header {
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--tg-primary);
+}
+
+.sign_up-form-info-subheader {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--tg-secondary);
+}
+
+.sign_up-form-steps {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sign_up-form-progress_bar {
+    background-color: var(--bg-outline);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    height: 0.5rem;
+    width: 100%;
+}
+
+.sign_up-form-progress_bar-level {
+    background-color: var(--accent);
+    transition: 0.25s ease all;
+    height: 0.5rem;
+    width: 50%;
+}
+
+.sign_up-form-group {
+    justify-content: space-between;
+    flex-direction: column;
+    display: flex;
+    height: 100%;
+    gap: 2rem;
+}
+
+.sign_up-form-group-horizontal {
+    display: flex;
+    width: 100%;
+    gap: 1rem;
+}
+
+.sign_up-form-group-container {
+    flex-direction: column;
+    display: flex;
+    gap: 1rem;
+}
+
+.sign_up-form-group-input {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sign_up-form-group-input-container {
+    border-radius: 0.25rem;
+}
+
+.sign_up-form-group-input label {
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: var(--tg-primary);
+}
+
+.sign_up-form-group-input input {
+    border-radius: 0.25rem;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sign_up-form-group-input-helper {
+    align-self: flex-start;
+    color: var(--tg-primary);
+}
+.sign_up-form-group-ctas {
+    flex-direction: column;
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+}
+
+.sign_up-form-group-ctas-container {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.sign_up-form-group-ctas-btn {
+    border-radius: 0.25rem;
+}
+
+.sign_up-form-group-ctas-btn[type="submit"] {
+    flex-shrink: 1;
+    width: 100%;
+}
+
+.sign_up-form-group-ctas-helper {
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: var(--tg-secondary);
+}
+
+/* Страница с Tailwind: не растягивать форму на 100% родителя — иначе поля сжимаются/наезжают */
+.sign_up .sign_up-form-container,
+.sign_up .sign_up-form-group {
+    height: auto;
+    min-height: 0;
+}
+
+.sign_up .sign_up-form-group {
+    justify-content: flex-start;
+}
+
+/* Tailwind-страница: flex-родитель не сжимает поля; строка с паролем на всю ширину */
+.sign_up > .relative.z-10 {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    max-width: 28rem;
+    height: auto !important;
+}
+
+.sign_up .sign_up-form-group-container[data-step] {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    width: 100%;
+    flex-shrink: 0;
+    align-items: stretch;
+    box-sizing: border-box;
+}
+
+.sign_up .sign_up-form-group-input {
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+.sign_up .sign_up-form-group-input .input-with-btn {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sign_up .sign_up-form-group-input .input-nested {
+    min-width: 0 !important;
+}

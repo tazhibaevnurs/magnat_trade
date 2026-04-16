@@ -1,0 +1,116 @@
+{% load nav_extras %}
+<header class="header">
+    {% csrf_token %}
+    <div class="top-bar">
+        <div class="top-bar__inner">
+            <div class="top-bar__left">
+                <span>Доставка по городу · Пн–Вс 8:00–23:00</span>
+            </div>
+            <div class="top-bar__right">
+                <a href="tel:+996500600600" class="top-bar__link">+996 500 600 600</a>
+                {% if user.is_authenticated %}
+                <span class="top-bar__sep">|</span>
+                <a href="{% url 'profile' %}" class="top-bar__link">Личный кабинет</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="main-header main-header--home">
+        <div class="main-header__row main-header__row--home">
+            {% if show_static_sidebar %}
+            <button type="button"
+                    class="icon-btn hide-desktop"
+                    @click="mobileSidebar = true"
+                    aria-label="Открыть категории">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+            </button>
+            {% endif %}
+
+            <a href="{% url 'landing' %}" class="main-header__brand">
+                <span class="main-header__logo-mark" aria-hidden="true">МТ</span>
+                <span class="main-header__logo-text">Magnat Trade</span>
+            </a>
+
+            <div class="main-header__search">
+                <form action="{% url 'shop' %}" method="get" class="header-search-form">
+                    <label class="sr-only" for="header-search-category">Категория</label>
+                    <select name="categories" id="header-search-category">
+                        <option value="">Все категории</option>
+                        {% for cat in root_categories %}
+                        <option value="{{ cat.slug }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="search" name="search" placeholder="Поиск товаров…" autocomplete="off" value="{{ request.GET.search|default:'' }}">
+                    <button type="submit">Найти</button>
+                </form>
+            </div>
+
+            <div class="main-header__actions">
+                <button type="button"
+                        class="icon-btn hide-desktop"
+                        @click="mobileSearch = !mobileSearch"
+                        :aria-expanded="mobileSearch ? 'true' : 'false'"
+                        aria-label="Поиск">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10.8 18a7.2 7.2 0 100-14.4 7.2 7.2 0 000 14.4z"/></svg>
+                </button>
+
+                {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}" class="icon-btn header-profile-link" title="Профиль">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
+                </a>
+                {% else %}
+                <a href="{% url 'sign-in' %}" class="btn-secondary header-signin-link" style="padding:8px 16px;font-size:var(--text-sm);">Войти</a>
+                {% endif %}
+
+                <a href="{% url 'cart' %}" id="cart-link" class="cart-btn" title="Корзина">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 3.818M12 3c-1.268 0-2.39.63-3.068 1.593m-3.032 6.594A60.98 60.98 0 0 1 12 12c2.76 0 5.46.37 8.06 1.106"/></svg>
+                    <span class="cart-btn__badge" id="cart-count">{{ cart_item_count|default:0 }}</span>
+                </a>
+            </div>
+        </div>
+
+        <div x-show="mobileSearch" x-transition class="mobile-search-panel hide-desktop" style="display:none;">
+            <form action="{% url 'shop' %}" method="get" class="header-search-form">
+                <select name="categories">
+                    <option value="">Все</option>
+                    {% for cat in root_categories %}
+                    <option value="{{ cat.slug }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="search" name="search" placeholder="Поиск…" autocomplete="off" value="{{ request.GET.search|default:'' }}">
+                <button type="submit">Найти</button>
+            </form>
+        </div>
+
+        <nav class="sub-nav sub-nav--main" aria-label="Основное меню">
+            <div class="sub-nav__inner sub-nav__inner--home">
+                <div class="sub-nav__dropdown-wrap"
+                     x-data="{ open: false }"
+                     @click.outside="open = false"
+                     @keydown.escape.window="open = false">
+                    <button type="button" class="sub-nav__dropdown-btn" @click="open = !open">
+                        Каталог
+                        <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" :class="open ? 'rotate-180' : ''" style="transition:transform 0.2s"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                    </button>
+                    <div x-show="open" x-transition class="sub-nav__dropdown sub-nav__dropdown--catalog" style="display:none;">
+                        {% include 'includes/category_dropdown.html' %}
+                    </div>
+                </div>
+                <a href="{% url 'shop' %}" class="sub-nav__link {% nav_active request '/shop' '/catalog/product' %}">Каталог</a>
+                <a href="{% url 'shop' %}?sort_by=recently-added" class="sub-nav__link">Новинки</a>
+                <a href="{% url 'shop' %}" class="sub-nav__link">Акции</a>
+                <a href="{% url 'contact-us' %}" class="sub-nav__link {% nav_active request '/contact-us' %}">Доставка</a>
+                <a href="{% url 'about-us' %}" class="sub-nav__link {% nav_active request '/about-us' %}">О нас</a>
+                <div class="sub-nav__more" x-data="{ open: false }">
+                    <button type="button" class="sub-nav__dropdown-btn" @click="open = !open" @click.outside="open = false">Ещё ▾</button>
+                    <div x-show="open" x-transition class="sub-nav__dropdown" style="display:none;right:0;left:auto;">
+                        <a href="{% url 'cart' %}" class="sub-nav__link" style="display:block;">Корзина</a>
+                        <a href="{% url 'orders' %}" class="sub-nav__link" style="display:block;">Заказы</a>
+                        <a href="{% url 'feedback' %}" class="sub-nav__link" style="display:block;">Обратная связь</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>

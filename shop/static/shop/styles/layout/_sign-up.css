@@ -1,0 +1,38 @@
+@media only screen and (max-width: 1680px) {
+    .sign_up {
+        padding: 4rem 8rem;
+    }
+}
+
+@media only screen and (max-width: 1500px) {
+    .sign_up {
+        background-image: url('../../images/auth-light.png');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        padding: 2rem 4rem;
+    }
+    .sign_up-img {
+        display: none;
+    }
+}
+
+@media only screen and (max-width: 1080px) {
+    .sign_up {
+        justify-self: flex-start;
+    }
+}
+
+@media only screen and (max-width: 720px) {
+    .sign_up {
+        padding: 1rem 2rem;
+    }
+}
+
+@media only screen and (max-width: 410px) {
+    .sign_up-form {
+        padding: 2rem 1rem;
+    }
+}
+
+

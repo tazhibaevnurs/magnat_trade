@@ -1,0 +1,126 @@
+.shop-wrapper {
+    background-color: var(--bg-primary);
+    flex-direction: column;
+    padding: 4rem 16rem;
+    display: flex;
+    gap: 2rem;
+}
+
+.shop-header {
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--tg-primary);
+}
+
+.shop-container {
+    display: flex;
+    gap: 2rem;
+    width: 100%;
+}
+
+.shop-sidebar {
+    background-color: var(--bg-secondary);
+    flex-direction: column;
+    border-radius: 0.5rem;
+    justify-self: flex-start;
+    flex-shrink: 0;
+    align-self: flex-start;
+    display: flex;
+    padding: 1rem;
+    border: 1px solid var(--bg-outline);
+    width: 22rem;
+    gap: 1rem;
+}
+
+.shop-sidebar-header {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--tg-primary);
+}
+
+.shop-sidebar-sort_by, .shop-sidebar-categories {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.shop-sidebar-sort_by-header, .shop-sidebar-categories-header {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--tg-primary);
+}
+
+.shop-sidebar-sort_by-options, .shop-sidebar-categories-options {
+    flex-direction: column;
+    display: flex;
+    gap: 0.25rem;
+}
+
+.shop-sidebar-sort_by-options label, .shop-sidebar-categories-options label {
+    align-self: stretch;
+}
+
+.shop-list {
+    flex-direction: column;
+    display: flex;
+    width: 100%;
+    gap: 1rem;
+}
+
+.shop-list-header {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+}
+
+.shop-list-header-search {
+    width: 100%;
+}
+
+.shop-list-header-filters {
+    display: none;
+}
+
+.shop-list-wrapper {
+    grid-template-columns: repeat(3, minmax(12rem, 1fr));
+    justify-items: center;
+    display: grid;
+    gap: 1rem;
+}
+
+.modal-wrapper {
+    background-color: #000000ce;
+    place-content: center;
+    position: fixed;
+    z-index: 9999;
+    display: none;
+    height: 100vh;
+    width: 100vw;
+    left: 0;
+    top: 0;
+}
+
+.modal-body {
+    flex-direction: column;
+    display: flex;
+    margin: 1rem;
+    gap: 1rem;
+}
+
+.modal-filters-sort_by, .modal-filters-categories {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.modal-filters-sort_by-header, .modal-filters-categories-header {
+	font-weight: 600;
+	font-size: 0.875rem;
+	color: var(--tg-primary);
+}
+
+.modal-filters-sort_by-options, .modal-filters-categories-options {
+    flex-wrap: wrap;
+    display: flex;
+    gap: 0.5rem;
+}

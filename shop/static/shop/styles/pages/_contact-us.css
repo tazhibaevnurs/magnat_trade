@@ -1,0 +1,209 @@
+.contact_us-wrapper {
+    background-color: var(--bg-primary);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 4rem 16rem;
+    display: flex;
+    gap: 4rem;
+}
+
+.contact_us-header {
+    flex-direction: column;
+    display: flex;
+    gap: 2rem;
+}
+
+.contact_us-header h1 {
+    font-weight: 700;
+    font-size: 4rem;
+    color: var(--tg-primary);
+}
+
+.contact_us-header h2 {
+    font-weight: 500;
+    font-size: 2rem;
+    color: var(--tg-secondary);
+}
+
+.contact_us-container {
+    flex-direction: column;
+    display: flex;
+    gap: 8rem;
+}
+
+.contact_us-contact_info,
+.contact_us-contact_form,
+.contact_us-our_promise {
+    display: flex;
+    gap: 2rem;
+}
+
+.contact_us-contact_info-container {
+    flex-direction: column;
+    display: flex;
+    gap: 1rem;
+}
+
+.contact_us-contact_info h3,
+.contact_us-contact_form h3,
+.contact_us-our_promise h3 {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 2rem;
+    width: 16rem;
+    color: var(--tg-primary);
+}
+
+.contact_us-contact_info-customer_support,
+.contact_us-contact_info-address,
+.contact_us-contact_info-social_media {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.contact_us-contact_info-customer_support-count,
+.contact_us-contact_info-address-count,
+.contact_us-contact_info-social_media-count {
+    background-color: var(--bg-secondary);
+    place-content: center;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    display: grid;
+    height: 3rem;
+    border: 1px solid var(--bg-outline);
+    color: var(--tg-primary);
+    width: 3rem;
+}
+
+.contact_us-contact_info-customer_support-container,
+.contact_us-contact_info-address-container,
+.contact_us-contact_info-social_media-container {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.contact_us-contact_info-customer_support-header,
+.contact_us-contact_info-address-header,
+.contact_us-contact_info-social_media-header {
+    background-color: var(--accent);
+    border-radius: 0.5rem;
+    font-weight: 600;
+    align-self: flex-start;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    color: var(--tg-primary);
+}
+
+.contact_us-contact_info-social_media-info {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.contact_us-contact_info-customer_support-container p,
+.contact_us-contact_info-address-info p,
+.contact_us-contact_info-social_media-info p {
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: var(--tg-secondary);
+}
+
+.contact_us-contact_info-customer_support-container strong,
+.contact_us-contact_info-address-info strong {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--tg-primary);
+}
+
+.contact_us-contact_info-social_media-ctas {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.contact_us-contact_form-form {
+    background-color: var(--bg-secondary);
+    flex-direction: column;
+    border-radius: 0.5rem;
+    align-items: flex-start;
+    display: flex;
+    padding: 2rem;
+    width: 100%;
+    border: 1px solid var(--bg-outline);
+    gap: 2rem;
+}
+
+.contact_us-contact_form-form-info {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.contact_us-contact_form-form-info h4 {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--tg-primary);
+}
+
+.contact_us-contact_form-form-info h5 {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--tg-secondary);
+}
+
+.contact_us-contact_form-form-form_group {
+    flex-direction: column;
+    display: flex;
+    width: 100%;
+    gap: 2rem;
+}
+
+.contact_us-contact_form-form-form_group-container {
+    flex-direction: column;
+    display: flex;
+    gap: 1rem;
+}
+
+.contact_us-contact_form-form-form_group-input {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.contact_us-contact_form-form-form_group-input-container {
+    border-radius: 0.25rem;
+}
+
+.contact_us-contact_form-form-form_group-input label {
+    font-weight: 400;
+    font-size: 0.875rem;
+    color: var(--tg-primary);
+}
+
+.contact_us-contact_form-form-form_group-input input {
+    border-radius: 0.25rem;
+}
+
+.contact_us-contact_form-form-form_group-input textarea {
+    border-radius: 0.25rem;
+    height: 8rem;
+}
+
+.contact_us-contact_form-form-form_group-ctas {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.contact_us-contact_form-form-form_group-ctas-btn[type="submit"] {
+    border-radius: 0.25rem;
+    flex-shrink: 1;
+    width: 100%;
+}
+
+.contact_us-our_promise p {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--tg-secondary);
+}

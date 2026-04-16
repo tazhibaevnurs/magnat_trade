@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+{{ pdp_gallery_urls|json_script:"pdp-gallery-json" }}
+<div class="container page-block pdp-page"
+     x-data="galleryModal()"
+     x-init="init()"
+     @keydown.window="onKey($event)">
+    {% include "includes/breadcrumbs.html" %}
+
+    <div class="product-detail pdp-card-wrap">
+        <div class="product-gallery">
+            <div class="product-gallery__main pdp-image cursor-zoom"
+                 role="button"
+                 tabindex="0"
+                 @click="openAt(0)"
+                 @keydown.enter.prevent="openAt(0)">
+                <img src="{{ product.image_url }}"
+                     alt="{{ product.name }}"
+                     width="600"
+                     height="600">
+            </div>
+            {% if pdp_gallery_urls|length > 1 %}
+            <div class="product-gallery__thumbs">
+                {% for url in pdp_gallery_urls %}
+                <button type="button"
+                        class="product-gallery__thumb {% if forloop.first %}active{% endif %}"
+                        data-gallery-index="{{ forloop.counter0 }}"
+                        @click="openAt({{ forloop.counter0 }})"
+                        aria-label="Фото {{ forloop.counter }}">
+                    <img src="{{ url }}" alt="" loading="lazy" width="72" height="72">
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div>
+            <p class="section-kicker" style="margin-bottom:var(--spacing-sm);">{{ product.category.name }}</p>
+            <h1 class="product-info__title">{{ product.name }}</h1>
+            <p class="section-desc" style="margin-bottom:var(--spacing-md);">
+                {% if product.sku %}Артикул: {{ product.sku }} · {% endif %}{{ product.unit }}
+            </p>
+
+            <div class="product-info__price-block">
+                <span class="product-info__price">{{ catalog_facade.current_price }} сом</span>
+            </div>
+            {% if user.is_authenticated and user.user_type == 'wholesale' %}
+            <p class="section-desc" style="color:var(--color-sale);font-weight:600;">Оптовая цена</p>
+            {% endif %}
+
+            <p class="section-desc" style="margin-bottom:var(--spacing-lg);">
+                <span class="tag" style="display:inline-flex;margin-right:var(--spacing-sm);">
+                    {% if not product.is_active %}Снято с продажи{% elif product.stock == 0 %}Нет в наличии{% elif product.stock <= 5 %}Мало на складе{% else %}В наличии{% endif %}
+                </span>
+                {% if product.is_active and product.stock > 0 %}
+                    Остаток: {{ product.stock }}
+                {% endif %}
+            </p>
+
+            {% if product.is_active and product.stock > 0 %}
+            <form method="post" action="{% url 'add_to_cart' %}" class="form-field" style="margin-bottom:var(--spacing-lg);">
+                {% csrf_token %}
+                <input type="hidden" name="catalog_product_id" value="{{ product.pk }}">
+                <label for="qty-catalog">Количество</label>
+                <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-md);align-items:flex-end;">
+                    <input id="qty-catalog" name="quantity" type="number" min="1" max="{{ product.stock }}" value="1" class="price-input" style="width:6rem;">
+                    <button type="submit" class="btn-add-cart-large" style="width:auto;margin:0;">В корзину</button>
+                </div>
+            </form>
+            {% else %}
+            <p class="section-desc">Товар недоступен для заказа.</p>
+            {% endif %}
+
+            <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-md);">
+                <a href="{% url 'shop' %}?categories={{ product.category.slug }}" class="btn-secondary">Другие товары категории</a>
+                <a href="{% url 'shop' %}" class="btn-secondary">В каталог</a>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="open"
+         x-cloak
+         x-transition.opacity
+         class="pdp-gallery-modal"
+         @click.self="close()"
+         role="dialog"
+         aria-modal="true"
+         aria-label="Просмотр фото">
+        <button type="button"
+                class="pdp-gallery-modal__close"
+                @click="close()"
+                aria-label="Закрыть">
+            <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+        <button type="button"
+                x-show="open && imgs.length > 1"
+                class="pdp-gallery-modal__nav pdp-gallery-modal__nav--prev"
+                @click.stop="prev()"
+                aria-label="Предыдущее фото">
+            <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+        </button>
+        <div class="pdp-gallery-modal__content" @click.stop>
+            <img :src="imgs[idx]" alt="" width="1200" height="1200">
+            <p x-show="imgs.length > 1" class="pdp-gallery-modal__counter" x-text="(idx + 1) + ' / ' + imgs.length"></p>
+        </div>
+        <button type="button"
+                x-show="open && imgs.length > 1"
+                class="pdp-gallery-modal__nav pdp-gallery-modal__nav--next"
+                @click.stop="next()"
+                aria-label="Следующее фото">
+            <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+        </button>
+    </div>
+
+    {% if related_products %}
+    <section class="section" style="padding-top:var(--spacing-2xl);">
+        <h2 class="section-title">Смотрите также</h2>
+        <div class="product-grid" style="margin-top:var(--spacing-lg);">
+            {% for rf in related_facades %}
+            <a href="{% url 'catalog_pdp' product_id=rf.id %}" class="category-card" style="text-align:left;">
+                <div class="product-card__name">{{ rf.name }}</div>
+                <div class="product-card__price" style="margin-top:var(--spacing-sm);">{{ rf.current_price }} сом</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function galleryModal() {
+    return {
+        imgs: [],
+        idx: 0,
+        open: false,
+        init() {
+            const el = document.getElementById('pdp-gallery-json');
+            try {
+                this.imgs = el ? JSON.parse(el.textContent) : [];
+            } catch (e) {
+                this.imgs = [];
+            }
+            if (!this.imgs.length) {
+                const main = document.querySelector('.product-gallery__main img');
+                if (main && main.src) this.imgs = [main.src];
+            }
+        },
+        openAt(i) {
+            if (!this.imgs.length) return;
+            this.idx = Math.min(Math.max(0, i), this.imgs.length - 1);
+            this.open = true;
+            document.body.style.overflow = 'hidden';
+        },
+        close() {
+            this.open = false;
+            document.body.style.overflow = '';
+        },
+        next() {
+            if (this.imgs.length < 2) return;
+            this.idx = (this.idx + 1) % this.imgs.length;
+        },
+        prev() {
+            if (this.imgs.length < 2) return;
+            this.idx = (this.idx - 1 + this.imgs.length) % this.imgs.length;
+        },
+        onKey(e) {
+            if (!this.open) return;
+            if (e.key === 'Escape') this.close();
+            if (e.key === 'ArrowRight') this.next();
+            if (e.key === 'ArrowLeft') this.prev();
+        },
+    };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% load static %}
+<div class="product-grid product-grid--skeleton">
+    {% for _ in "12345678" %}
+    <div class="product-card" style="pointer-events:none;">
+        <div class="product-card__image-wrap skeleton-pulse" style="background:var(--color-border);"></div>
+        <div class="product-card__body">
+            <div class="skeleton-line skeleton-pulse" style="height:12px;width:66%;border-radius:var(--radius-sm);background:var(--color-border);"></div>
+            <div class="skeleton-line skeleton-pulse" style="height:12px;width:100%;border-radius:var(--radius-sm);background:var(--color-border-light);margin-top:8px;"></div>
+            <div class="skeleton-line skeleton-pulse" style="height:20px;width:40%;border-radius:var(--radius-sm);background:var(--color-border);margin-top:12px;"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

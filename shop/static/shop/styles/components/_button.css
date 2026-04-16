@@ -1,0 +1,142 @@
+.button-primary {
+    background-color: var(--accent);
+    justify-content: center;
+    border-radius: 3rem;
+    align-items: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: 0.25s ease all;
+    font-size: 0.9rem;
+    padding: 0 1.5rem;
+    display: flex;
+    border: 0;
+    height: 3rem;
+    color: var(--tg-on-accent);
+    gap: 0.5rem;
+    letter-spacing: 0.02em;
+    &:hover {
+        background-color: var(--accent-hover);
+        cursor: pointer;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 20px rgba(13, 148, 136, 0.35);
+    }
+    &:active {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+    &:disabled {
+        background-color: var(--bg-disabled);
+        border-color: var(--bg-disabled);
+        cursor: not-allowed;
+        color: var(--tg-disabled);
+        box-shadow: none;
+        transform: none;
+    }
+}
+
+.button-secondary {
+    background-color: transparent;
+    justify-content: center;
+    border-radius: 3rem;
+    align-items: center;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: 0.25s ease all;
+    font-size: 0.875rem;
+    padding: 0 1.25rem;
+    display: flex;
+    border: 2px solid var(--bg-outline);
+    height: 3rem;
+    color: var(--tg-primary);
+    gap: 0.5rem;
+    &.active {
+        background-color: var(--bg-outline);
+    }
+    &:hover {
+        background-color: var(--bg-hovered);
+        border-color: var(--bg-hovered);
+        cursor: pointer;
+    }
+    &:disabled {
+        background-color: var(--bg-disabled);
+        border-color: var(--bg-disabled);
+        cursor: not-allowed;
+        color: var(--tg-disabled);
+    }
+}
+
+.button-tertiary {
+    background-color: transparent;
+    border-radius: 3rem;
+    align-items: center;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: 0.25s ease all;
+    font-size: 0.875rem;
+    border: none;
+    display: flex;
+    color: var(--tg-secondary);
+    gap: 0.25rem;
+    &.active {
+        background-color: var(--bg-outline);
+    }
+    &:hover {
+        color: var(--tg-primary);
+        cursor: pointer;
+    }
+    &:disabled {
+        cursor: not-allowed;
+        color: var(--tg-disabled);
+    }  
+}
+
+.button-icon {
+    background-color: transparent;
+    border-radius: 50%;
+    place-content: center;
+    flex-shrink: 0;
+    transition: 0.25s ease all;
+    display: grid;
+    border: none;
+    height: 2rem;
+    width: 2rem;
+    color: var(--tg-primary);
+    &.active {
+        background-color: var(--bg-outline);
+    }
+    &:hover {
+        background-color: var(--bg-outline);
+        cursor: pointer;
+    }
+    &:disabled {
+        background-color: transparent;
+        cursor: not-allowed;
+        color: var(--tg-disabled);
+    }
+}
+
+.button-icon_outlined {
+    background-color: transparent;
+    border-radius: 50%;
+    place-content: center;
+    flex-shrink: 0;
+    transition: 0.25s ease all;
+    display: grid;
+    border: 2px solid var(--bg-outline);
+    height: 3rem;
+    width: 3rem;
+    color: var(--tg-primary);
+    &.active {
+        background-color: var(--bg-outline);
+    }
+    &:hover {
+        background-color: var(--bg-outline);
+        cursor: pointer;
+    }
+    &:disabled {
+        background-color: var(--bg-disabled);
+        border-color: var(--bg-disabled);
+        cursor: not-allowed;
+        color: var(--tg-disabled);
+    }
+}

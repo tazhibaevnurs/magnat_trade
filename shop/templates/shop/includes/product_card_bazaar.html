@@ -1,0 +1,50 @@
+{% load static %}
+<article class="product-card product-card--av">
+    {% if product.discount_price and product.discount_price < product.price %}
+        <span class="product-card__badge">Акция</span>
+    {% endif %}
+    {% if product.stock <= 0 %}
+        <span class="product-card__badge product-card__badge--muted" style="left:auto;right:var(--spacing-sm);">Нет в наличии</span>
+    {% endif %}
+    <div class="product-card__image-wrap">
+        <a href="{{ product.get_absolute_url }}" class="product-card__image-link">
+            {% with image_url=product.image_url %}
+            <img src="{% if 'placeholder-product.svg' in image_url %}{% static 'shop/images/placeholder-product.svg' %}{% else %}{{ image_url }}{% endif %}"
+                 alt="{{ product.name }}"
+                 class="product-card__image"
+                 {% if forloop.first %}fetchpriority="high" loading="eager"{% else %}loading="lazy"{% endif %} width="400" height="400">
+            {% endwith %}
+        </a>
+        <span class="product-card__wish" title="Избранное" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16" width="18" height="16" aria-hidden="true"><path stroke="var(--color-primary)" stroke-width="1.2" d="M9.092 15.32 9 15.385l-.092-.067a39.984 39.984 0 0 1-4.061-3.402c-1.111-1.07-2.208-2.277-3.024-3.506C1 7.173.5 5.967.5 4.889.5 2.47 2.486.5 4.95.5a4.8 4.8 0 0 1 2.722.843c.313.212.552.424.71.58a4 4 0 0 1 .215.232l.008.01h.001v.001L9 2.672l.394-.506v-.001l.009-.01.04-.047q.056-.066.175-.185c.158-.156.397-.368.71-.58A4.8 4.8 0 0 1 13.05.5c2.464 0 4.45 1.97 4.45 4.389 0 1.078-.501 2.284-1.323 3.522-.816 1.229-1.913 2.437-3.024 3.507a40 40 0 0 1-4.061 3.401Z"/></svg>
+        </span>
+    </div>
+    <div class="product-card__body">
+        <div class="product-card__before-name">
+            <span class="product-card__measure">{{ product.measure_line }}</span>
+            {% include "shop/includes/product_card_stars.html" %}
+        </div>
+        <h3 class="product-card__name product-card__name--av">
+            <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+        </h3>
+        <div class="product-card__price-info">
+            <div class="product-card__price-block">
+                {% if product.discount_price and product.discount_price < product.price %}
+                    <span class="product-card__price-old">{{ product.price }} сом</span>
+                    <span class="product-card__price product-card__price--av">{{ product.current_price }} сом</span>
+                {% else %}
+                    <span class="product-card__price product-card__price--av">{{ product.current_price }} сом</span>
+                {% endif %}
+            </div>
+            {% if product.stock > 0 and product.is_active %}
+            <button type="button"
+                    onclick="{% if product.is_catalog_product %}window.magnatAddCatalogToCart('{{ product.id }}'){% else %}window.magnatAddToCart({{ product.id }}){% endif %}"
+                    class="product-card__cart-btn"
+                    title="В корзину"
+                    aria-label="В корзину">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M.676 0a.6.6 0 0 0-.258.052.7.7 0 0 0-.22.155.7.7 0 0 0-.146.235.77.77 0 0 0 .147.79q.095.102.219.156.125.054.258.052h1.252c.15 0 .276.102.319.259l2.84 10.431c.248.916 1.032 1.55 1.916 1.55h7.314c.898 0 1.692-.656 1.929-1.592l1.73-6.858a.78.78 0 0 0-.113-.627.7.7 0 0 0-.234-.208.6.6 0 0 0-.295-.075H4.35l-.824-3.028h-.001C3.317.53 2.663 0 1.928 0zm6.663 15.12c-.354 0-.692.152-.942.422a1.5 1.5 0 0 0-.39 1.018c0 .382.14.748.39 1.018s.588.422.942.422c.353 0 .692-.152.942-.422a1.5 1.5 0 0 0 .39-1.018 1.5 1.5 0 0 0-.39-1.018 1.28 1.28 0 0 0-.942-.422m6.663 0c-.353 0-.692.152-.942.422a1.5 1.5 0 0 0-.39 1.018c0 .382.14.748.39 1.018s.589.422.942.422.692-.152.942-.422a1.5 1.5 0 0 0 .39-1.018 1.5 1.5 0 0 0-.39-1.018 1.28 1.28 0 0 0-.942-.422"/></svg>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</article>

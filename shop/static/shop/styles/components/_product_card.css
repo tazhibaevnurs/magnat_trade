@@ -1,0 +1,115 @@
+.product_card {
+    background-color: var(--bg-secondary);
+    flex-direction: column;
+    border-radius: 1rem;
+    max-width: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    border: 1px solid color-mix(in srgb, var(--bg-outline) 40%, var(--bg-primary) 60%);
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+    width: 20rem;
+}
+
+.product_card-image-container {
+    justify-content: center;
+    padding: 1rem;
+    display: flex;
+    height: 12rem;
+}
+
+.product_card-image {
+    object-fit: contain;
+    color: var(--tg-secondary);
+    height: 100%;
+}
+
+.product_card-wrapper {
+    flex-direction: column;
+    display: flex;
+    margin: 1rem;
+    gap: 1rem;
+}
+
+.product_card-info {
+    flex-direction: column;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.product_card-info-status {
+    color: var(--tg-secondary);
+    font-size: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.product_card-info-status span {
+    font-weight: 500;
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.25rem;
+}
+
+.product_card-info-status i {
+    font-size: 0.25rem;
+}
+
+.product_card-info-status span.in_stock {
+    background-color: var(--bg-success);
+    color: var(--tg-success);
+}
+
+.product_card-info-status span.low_stock {
+    background-color: var(--bg-warn);
+    color: var(--tg-warn);
+}
+
+.product_card-info-status span.out_of_stock {
+    background-color: var(--bg-danger);
+    color: var(--tg-danger);
+}
+
+.product_card-info-status span.discontinued {
+    background-color: var(--bg-disabled);
+    color: var(--tg-disabled);
+}
+
+.product_card-info-label {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+    font-size: 1rem;
+    overflow: hidden;
+    color: var(--tg-primary);
+}
+
+.product_card-info-description {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+    font-size: 0.875rem;
+    overflow: hidden;
+    color: var(--tg-secondary);
+}
+
+.product_card-price {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--tg-primary);
+}
+
+.product_card-ctas {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.product_card-ctas-btn {
+    border-radius: 0.25rem;
+}
+
+.product_card-ctas-primary_btn {
+    flex-shrink: 1;
+    width: 100%;
+}

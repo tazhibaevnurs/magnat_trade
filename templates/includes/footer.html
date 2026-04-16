@@ -1,0 +1,29 @@
+{% load static %}
+<footer class="site-footer">
+    <div class="site-footer__grid">
+        <div>
+            <a href="{% url 'landing' %}" class="site-footer__brand">Magnat Trade</a>
+            <p class="site-footer__desc">Продукты и товары для дома с доставкой. Свежие предложения и удобный заказ онлайн.</p>
+        </div>
+        <div>
+            <p class="site-footer__col-title">Покупателям</p>
+            <a href="{% url 'shop' %}" class="site-footer__link">Каталог</a>
+            <a href="{% url 'cart' %}" class="site-footer__link">Корзина</a>
+            <a href="{% url 'orders' %}" class="site-footer__link">Мои заказы</a>
+        </div>
+        <div>
+            <p class="site-footer__col-title">Компания</p>
+            <a href="{% url 'about-us' %}" class="site-footer__link">О нас</a>
+            <a href="{% url 'contact-us' %}" class="site-footer__link">Контакты</a>
+            <a href="{% url 'feedback' %}" class="site-footer__link">Обратная связь</a>
+        </div>
+        <div>
+            <p class="site-footer__col-title">Связь</p>
+            <p class="site-footer__desc" style="max-width:none;">Токтогула 68, г. Бишкек<br>+996 500 600 600</p>
+        </div>
+    </div>
+    <div class="site-footer__bottom">
+        <span>© {% now "Y" %} Magnat Trade. Все права защищены.</span>
+        <span>Информация на сайте не является публичной офертой.</span>
+    </div>
+</footer>

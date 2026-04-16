@@ -1,0 +1,82 @@
+import logging
+
+from celery import shared_task
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task(bind=True, max_retries=5, default_retry_delay=60)
+def export_order_to_onec(self, order_id: str, request_id: str | None = None) -> dict:
+    from orders.services.order_export import OrderExportService
+    from integrations.clients.onec import OneCAPIError
+
+    try:
+        return OrderExportService.export_to_onec(order_id, request_id=request_id)
+    except OneCAPIError as exc:
+        from orders.models import Order
+        import uuid
+
+        try:
+            o = Order.objects.get(id=uuid.UUID(str(order_id)))
+            o.last_export_error = str(exc)[:2000]
+            o.save(update_fields=["last_export_error", "updated_at"])
+        except Exception:  # noqa: BLE001
+            pass
+        raise self.retry(exc=exc) from exc
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=120)
+def pull_counterparties_from_onec(self) -> dict:
+    """Фоновая загрузка контрагентов из 1С (counterpartyList) в локальную БД."""
+    from integrations.clients.onec import OneCAPIError, OneCClient
+    from users.services import CustomerSyncService
+
+    try:
+        client = OneCClient()
+        items = client.fetch_counterparty_list()
+        return CustomerSyncService.sync_batch(items)
+    except OneCAPIError as exc:
+        raise self.retry(exc=exc) from exc
+
+
+@shared_task(bind=True, max_retries=2, default_retry_delay=120)
+def sync_products_from_onec(self) -> dict:
+    """
+    Периодическая синхронизация номенклатуры: GET productList; при пустом кэше — ещё categoryProductList.
+
+    Расписание Celery Beat: каждые ``ONEC_BEAT_PRODUCT_SYNC_MINUTES`` (по умолчанию 5).
+    """
+    from integrations.clients.onec import OneCAPIError
+    from integrations.services.onec_full_sync import run_product_list_sync_only
+
+    if not getattr(settings, "ONEC_BEAT_SYNC_ENABLED", True):
+        return {"skipped": True, "reason": "ONEC_BEAT_SYNC_ENABLED=false"}
+
+    try:
+        return run_product_list_sync_only()
+    except OneCAPIError as exc:
+        logger.warning("sync_products_from_onec failed: %s", exc)
+        raise self.retry(exc=exc) from exc
+
+
+@shared_task(bind=True, max_retries=2, default_retry_delay=180)
+def sync_all_from_onec(self) -> dict:
+    """
+    Полная синхронизация с 1С: GET categoryProductList, productList, counterpartyList (опционально).
+
+    Расписание Beat: каждые ``ONEC_BEAT_FULL_SYNC_MINUTES`` (по умолчанию 60), отдельно от
+    частого обновления цен через ``sync_products_from_onec``.
+    """
+    from integrations.clients.onec import OneCAPIError
+    from integrations.services.onec_full_sync import run_full_onec_sync
+
+    if not getattr(settings, "ONEC_BEAT_SYNC_ENABLED", True):
+        return {"skipped": True, "reason": "ONEC_BEAT_SYNC_ENABLED=false"}
+
+    skip_cust = getattr(settings, "ONEC_BEAT_SKIP_CUSTOMERS", False)
+    try:
+        return run_full_onec_sync(skip_customers=skip_cust)
+    except OneCAPIError as exc:
+        logger.warning("sync_all_from_onec failed: %s", exc)
+        raise self.retry(exc=exc) from exc

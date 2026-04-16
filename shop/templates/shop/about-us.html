@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}О нас{% endblock %}
+
+{% block content %}
+<div class="container page-block about-page">
+    {% include "includes/breadcrumbs.html" %}
+
+    <section class="delivery-hero about-page__hero">
+        <div class="about-page__hero-inner">
+            <div class="about-page__hero-copy">
+                <p class="section-kicker about-page__hero-kicker">Magnat Trade</p>
+                <h1 class="delivery-hero__title">Продукты и сервис для дома и офиса</h1>
+                <p class="about-page__hero-lead">Подбираем ассортимент так, чтобы покупки были удобными, а качество — предсказуемым.</p>
+                <div class="about-page__hero-actions">
+                    <a href="{% url 'shop' %}" class="hero__cta">В каталог</a>
+                    <a href="{% url 'contact-us' %}" class="hero__cta hero__cta--ghost">Связаться</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="delivery-info-grid about-page__stats">
+        <div class="delivery-info-card">
+            <div class="delivery-info-card__icon">5+</div>
+            <h3 class="delivery-info-card__title">Лет на рынке</h3>
+            <p class="delivery-info-card__text">Развиваем каталог и сервис под запросы клиентов.</p>
+        </div>
+        <div class="delivery-info-card">
+            <div class="delivery-info-card__icon">✓</div>
+            <h3 class="delivery-info-card__title">Проверенные позиции</h3>
+            <p class="delivery-info-card__text">Понятные описания и актуальные остатки.</p>
+        </div>
+        <div class="delivery-info-card">
+            <div class="delivery-info-card__icon">24/7</div>
+            <h3 class="delivery-info-card__title">Оформление онлайн</h3>
+            <p class="delivery-info-card__text">Корзина и заказ в удобное время.</p>
+        </div>
+    </div>
+
+    <section class="about-page__section" aria-labelledby="about-store-heading">
+        <h2 id="about-store-heading" class="section-title">О магазине</h2>
+        <p class="section-desc about-page__prose">
+            Magnat Trade работает в Бишкеке: доставляем заказы по городу и помогаем с выбором — от повседневных покупок до комплектов для офиса.
+        </p>
+    </section>
+
+    <section class="about-page__section about-page__section--tinted about-page__mission section--tinted" aria-labelledby="about-mission-heading">
+        <div class="about-page__mission-inner">
+            <h2 id="about-mission-heading" class="section-title about-page__mission-title">Миссия</h2>
+            <p class="about-page__mission-text">
+                Давать понятный выбор и честные условия: качественные товары по справедливой цене и без лишних сюрпризов при оформлении.
+            </p>
+        </div>
+    </section>
+
+    <section class="cta-band about-page__cta" aria-labelledby="about-cta">
+        <h2 id="about-cta" class="cta-band__title">Готовы сделать заказ?</h2>
+        <p class="about-page__cta-lead">Загляните в каталог или напишите нам.</p>
+        <div class="cta-band__actions">
+            <a href="{% url 'shop' %}" class="hero__cta">Перейти в магазин</a>
+            <a href="{% url 'contact-us' %}" class="hero__cta hero__cta--ghost">Контакты</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

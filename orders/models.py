@@ -1,0 +1,74 @@
+import uuid
+
+from django.conf import settings
+from django.db import models
+
+
+class Order(models.Model):
+    """Заказ сайта; external_id — номер/ид из 1С после выгрузки."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    external_id = models.CharField(
+        max_length=120,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="ID заказа в 1С (например ORDER-000124)",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="catalog_orders",
+    )
+    total_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    status = models.CharField(max_length=64, default="draft", db_index=True)
+    payment_status = models.CharField(max_length=64, default="pending", db_index=True)
+    delivery_status = models.CharField(max_length=64, default="pending", db_index=True)
+
+    payment_url = models.URLField(max_length=2000, blank=True, default="")
+    payment_provider = models.CharField(max_length=64, blank=True, default="")
+    payment_external_id = models.CharField(max_length=255, blank=True, default="")
+
+    currency = models.CharField(max_length=8, default="KGS")
+    price_type = models.CharField(max_length=20, default="retail")
+    warehouse_id = models.CharField(max_length=64, blank=True, default="")
+    comment = models.TextField(blank=True, default="")
+
+    export_task_id = models.CharField(max_length=255, blank=True, default="")
+    last_export_error = models.TextField(blank=True, default="")
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Заказ"
+        verbose_name_plural = "Заказы"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["external_id"]),
+            models.Index(fields=["user", "created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Order {self.id} ({self.external_id or '—'})"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    product_id = models.CharField(max_length=64, db_index=True)
+    quantity = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=14, decimal_places=2)
+    name_snapshot = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Наименование на момент заказа (для 1С)",
+    )
+
+    class Meta:
+        verbose_name = "Позиция заказа"
+        verbose_name_plural = "Позиции заказа"
+
+    def __str__(self) -> str:
+        return f"{self.product_id} × {self.quantity}"

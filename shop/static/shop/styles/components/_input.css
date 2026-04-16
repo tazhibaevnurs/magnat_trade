@@ -1,0 +1,245 @@
+.input-nested {
+    background-color: transparent;
+    font-weight: 500;
+    font-size: 0.875rem;
+    outline: none;
+    border: none;
+    height: 100%;
+    width: 100%;
+    color: var(--tg-secondary);
+}
+
+.input-unnested {
+    background-color: transparent;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: 0.25s ease all;
+    font-size: 0.875rem;
+    outline: none;
+    padding: 0 1rem;
+    border: 2px solid var(--bg-outline);
+    height: 3rem;
+    color: var(--tg-secondary);
+    &:focus {
+        background-color: var(--bg-outline);
+        border-color: var(--accent);
+    }
+    &:disabled {
+        background-color: var(--bg-disabled);
+        border-color: var(--bg-disabled);
+        cursor: not-allowed;
+        color: var(--tg-disabled);
+    }
+}
+
+.input-with-btn {
+    border-radius: 0.5rem;
+    align-items: center;
+    transition: 0.25s ease all;
+    overflow: hidden;
+    display: flex;
+    padding: 0 0 0 0.75rem;
+    border: 0.15rem solid var(--bg-outline);
+    height: 3rem;
+    color: var(--tg-primary);
+    gap: 0.75rem;
+}
+
+.input-with-btn i {
+    place-content: center;
+    border-left: 2px solid var(--bg-outline);
+    flex-shrink: 0;
+    transition: 0.25s ease all;
+    font-size: 1rem;
+    display: grid;
+    height: 3rem;
+    width: 3rem;
+}
+
+.input-with-btn i:hover {
+    background-color: var(--bg-outline);
+    cursor: pointer;
+    color: var(--accent);
+}
+
+.input-with-btn:focus-within {
+    background-color: var(--bg-outline);
+    border-color: var(--accent);
+}
+
+.input-with-btn:focus-within i {
+    border-color: var(--accent);
+}
+
+.input-with-btn .input-nested:focus {
+    outline: none;
+}
+
+.input-radio {
+    border-radius: 0.5rem;
+    align-items: center;
+    transition: 0.25s ease all;
+    display: flex;
+    padding: 0.25rem 0.5rem;
+    color: var(--tg-primary);
+    gap: 0.5rem;
+}
+
+.input-radio:hover {
+    background-color: var(--bg-outline);
+    cursor: pointer;
+}
+
+.input-radio input[type="radio"] {
+    justify-content: center;
+    border-radius: 50%;
+    align-items: center;
+    flex-shrink: 0;
+    appearance: none;
+    display: flex;
+    margin: 0;
+    border: 0.15rem solid currentColor;
+    height: 1.25rem;
+    width: 1.25rem;
+    color: var(--tg-primary);
+}
+
+.input-radio input[type="radio"]:hover {
+    cursor: pointer;
+}
+
+.input-radio input[type="radio"]::before {
+    content: "";
+    background-color: var(--tg-primary);
+    border-radius: 50%;
+    transition: 0.05s transform ease;
+    transform: scale(0);
+    height: 0.75rem;
+    width: 0.75rem;
+}
+
+.input-radio input[type="radio"]:checked::before {
+    transform: scale(1);
+}
+
+.input-radio input[type="radio"]:disabled,
+.input-radio:has(input[type="radio"]:disabled) {
+    border-color: var(--tg-disabled);
+    cursor: not-allowed;
+    color: var(--tg-disabled);
+}
+
+.input-checkbox {
+    border-radius: 0.5rem;
+    align-items: center;
+    transition: 0.25s ease all;
+    display: flex;
+    padding: 0.25rem 0.5rem;
+    color: var(--tg-primary);
+    gap: 0.5rem;
+}
+
+.input-checkbox:hover {
+    background-color: var(--bg-outline);
+    cursor: pointer;
+}
+
+.input-checkbox input[type="checkbox"] {
+    justify-content: center;
+    border-radius: 0.25rem;
+    align-items: center;
+    appearance: none;
+    display: flex;
+    margin: 0;
+    height: 1.25rem;
+    border: 0.15rem solid currentColor;
+    width: 1.25rem;
+    color: var(--tg-primary);
+}
+
+.input-checkbox input[type="checkbox"]:hover {
+    cursor: pointer;
+}
+
+.input-checkbox input[type="checkbox"]::before {
+    content: "";
+    background-color: var(--tg-primary);
+    border-radius: 0.125rem;
+    transition: 0.05s transform ease;
+    transform: scale(0);
+    height: 0.75rem;
+    width: 0.75rem;
+}
+
+.input-checkbox input[type="checkbox"]:checked::before {
+    transform: scale(1);
+}
+
+.input-checkbox input[type="checkbox"]:disabled,
+.input-checkbox:has(input[type="checkbox"]:disabled) {
+    border-color: var(--tg-disabled);
+    cursor: not-allowed;
+    color: var(--tg-disabled);
+}
+
+.input-checkbox input[type="checkbox"]:disabled::before {
+    background-color: var(--tg-disabled);
+}
+
+.input-radio:has(input[type="radio"]:disabled):hover,
+.input-checkbox:has(input[type="checkbox"]:disabled):hover {
+    background-color: transparent;
+    cursor: not-allowed;
+}
+
+
+.input-textarea {
+    background-color: transparent;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+    font-size: 0.875rem;
+    outline: none;
+    padding: 1rem;
+    resize: vertical;
+    border: 2px solid var(--bg-outline);
+    height: 3rem;
+    color: var(--tg-secondary);
+    &:focus {
+        background-color: var(--bg-outline);
+        border-color: var(--accent);
+    }
+    &:disabled {
+        background-color: var(--bg-disabled);
+        border-color: var(--bg-disabled);
+        cursor: not-allowed;
+        color: var(--tg-disabled);
+    }
+}
+
+.form-input-error {
+    color: var(--tg-error);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+    padding-left: 0.5rem;
+}
+
+.input-unnested.error,
+.input-with-btn.error {
+    border-color: var(--tg-error);
+}
+
+.input-unnested.error:focus {
+    border-color: var(--tg-error);
+    background-color: rgba(233, 32, 79, 0.05);
+}
+
+.input-with-btn.error:focus-within {
+    border-color: var(--tg-error);
+    background-color: rgba(233, 32, 79, 0.05);
+}
+
+.input-with-btn.error i {
+    border-color: var(--tg-error);
+}

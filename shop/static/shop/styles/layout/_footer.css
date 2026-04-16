@@ -1,0 +1,11 @@
+@media only screen and (max-width: 1400px) {
+    .footer-inner {
+        padding: 0 3rem 3rem;
+    }
+}
+
+@media only screen and (max-width: 720px) {
+    .footer-inner {
+        padding: 0 1.5rem 2rem;
+    }
+}

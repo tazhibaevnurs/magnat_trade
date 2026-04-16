@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Контакты{% endblock %}
+
+{% block content %}
+<div class="container page-block contact-page">
+    {% include "includes/breadcrumbs.html" %}
+
+    <section class="delivery-hero contact-page__hero">
+        <div class="contact-page__hero-inner">
+            <div class="contact-page__hero-copy">
+                <p class="section-kicker contact-page__hero-kicker">Связь</p>
+                <h1 class="delivery-hero__title">Контакты и обратная связь</h1>
+                <p class="contact-page__hero-lead">Позвоните, напишите или оставьте сообщение — ответим в рабочее время.</p>
+                <div class="contact-page__hero-actions">
+                    <a href="{% url 'shop' %}" class="hero__cta">В каталог</a>
+                    <a href="{% url 'about-us' %}" class="hero__cta hero__cta--ghost">О нас</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="delivery-info-grid contact-page__stats">
+        <div class="delivery-info-card">
+            <div class="delivery-info-card__icon" aria-hidden="true">☎</div>
+            <h3 class="delivery-info-card__title">Телефон</h3>
+            <p class="delivery-info-card__text">
+                <a href="tel:+996500600600" class="contact-page__accent-link">+996 500 600 600</a>
+            </p>
+        </div>
+        <div class="delivery-info-card">
+            <div class="delivery-info-card__icon" aria-hidden="true">✉</div>
+            <h3 class="delivery-info-card__title">Эл. почта</h3>
+            <p class="delivery-info-card__text">
+                <a href="mailto:info@magnattrade.kg" class="contact-page__accent-link">info@magnattrade.kg</a>
+            </p>
+        </div>
+        <div class="delivery-info-card">
+            <div class="delivery-info-card__icon" aria-hidden="true">
+                <svg class="delivery-info-card__icon-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h3 class="delivery-info-card__title">Адрес и режим</h3>
+            <p class="delivery-info-card__text">
+                Токтогула 68, г. Бишкек<br>
+                Звонки: ежедневно 8:00–23:00
+            </p>
+        </div>
+    </div>
+
+    <div class="contact-page__layout">
+        <aside class="contact-page__aside" aria-labelledby="contact-aside-heading">
+            <h2 id="contact-aside-heading" class="contact-page__aside-title">Как с нами связаться</h2>
+            <p class="contact-page__aside-lead">
+                Для заказов и вопросов по каталогу удобнее звонок или почта. Отдельно можно оставить форму справа — ответим в течение 1–2 рабочих дней.
+            </p>
+            <ul class="contact-page__aside-list">
+                <li>
+                    <span class="contact-page__aside-label">Магазин</span>
+                    Бишкек, ул. Токтогула, 68
+                </li>
+                <li>
+                    <span class="contact-page__aside-label">Доставка</span>
+                    По городу — согласно условиям на сайте и при оформлении заказа.
+                </li>
+            </ul>
+            <p class="contact-page__aside-note">
+                История ваших обращений и отдельная форма — на странице
+                <a href="{% url 'feedback' %}" class="contact-page__inline-link">обратной связи</a>.
+            </p>
+        </aside>
+
+        <div class="contact-page__form-wrap">
+            <div class="auth-card contact-page__form-card">
+                <h2 class="contact-page__form-title">Написать нам</h2>
+                <p class="contact-page__form-lead">Заполните поля — сообщение попадёт в службу поддержки Magnat Trade.</p>
+
+                <form method="post" action="{% url 'contact-us' %}" class="contact-page__form feedback-form">
+                    {% csrf_token %}
+
+                    <div class="feedback-form-row">
+                        <div class="form-field">
+                            <label for="contact-name">Ваше имя *</label>
+                            <input type="text" id="contact-name" name="name" placeholder="Имя и фамилия"
+                                   value="{{ initial_data.name|default:'' }}"
+                                   {% if request.user.is_authenticated %}readonly{% endif %} required>
+                        </div>
+                        <div class="form-field">
+                            <label for="contact-email">Эл. почта *</label>
+                            <input type="email" id="contact-email" name="email" placeholder="you@example.kg"
+                                   value="{{ initial_data.email|default:'' }}"
+                                   {% if request.user.is_authenticated %}readonly{% endif %} required>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="contact-category">Категория *</label>
+                        <select id="contact-category" name="category" required>
+                            {% for value, label in category_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="contact-subject">Тема *</label>
+                        <input type="text" id="contact-subject" name="subject" placeholder="Кратко, о чём обращение" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="contact-message">Сообщение *</label>
+                        <textarea id="contact-message" name="message" rows="6" placeholder="Опишите вопрос или детали заказа" required></textarea>
+                    </div>
+
+                    <div class="feedback-form-actions">
+                        <button type="reset" class="btn-secondary contact-page__btn-reset">Очистить</button>
+                        <button type="submit" class="btn-primary contact-page__btn-submit">Отправить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

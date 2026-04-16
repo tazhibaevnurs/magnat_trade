@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="container page-block profile-page" role="region" aria-labelledby="profile-heading">
+    {% include "includes/breadcrumbs.html" %}
+
+    <header class="profile-hero">
+        <h1 class="profile-hero__title" id="profile-heading">Мой профиль</h1>
+        <p class="profile-hero__subtitle">Данные аккаунта, адреса доставки и безопасность</p>
+        <div class="profile-hero__badges">
+            {% if user.user_type == 'retail' %}
+                <span class="profile-badge">Розница</span>
+            {% elif user.user_type == 'wholesale' %}
+                <span class="profile-badge profile-badge--emphasis">Оптовый покупатель</span>
+            {% elif user.user_type == 'manager' %}
+                <span class="profile-badge profile-badge--accent">Менеджер</span>
+            {% elif user.is_staff %}
+                <span class="profile-badge profile-badge--muted">Персонал</span>
+            {% endif %}
+            {% if is_manager %}
+            <a href="{% url 'manager_dashboard' %}" class="btn-primary profile-hero__manager-cta">Панель менеджера</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="profile-layout grid gap-8 lg:grid-cols-12 lg:items-start">
+        <aside class="lg:col-span-4" aria-label="Краткая информация о профиле">
+            <div class="auth-card contact-page__form-card profile-sidebar-card">
+                <div class="profile-sidebar-card__inner">
+                    <div class="profile-sidebar-card__avatar-wrap">
+                    <div class="profile-sidebar-card__avatar">
+                        {% if user_profile and user_profile.profile_picture %}
+                            <img src="{{ user_profile.profile_picture.url }}" alt="Фото профиля: {{ user.first_name|default:user.email }} {{ user.last_name }}" width="112" height="112" decoding="async">
+                        {% else %}
+                            <span class="profile-sidebar-card__avatar-letter" aria-hidden="true">{{ user.first_name.0|default:user.email.0|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <button type="button" id="avatar-edit-btn"
+                            class="profile-sidebar-card__photo-btn"
+                            title="Сменить фото"
+                            aria-label="Загрузить новое фото профиля">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.994-.513 1.092-1.182 1.092-.48 0-.764-.212-.99-.698a2.382 2.382 0 0 1-.264-1.34c0-1.196.504-2.086 1.475-2.617.668-.38 1.35-.527 2.116-.527.995 0 1.734.217 2.37.666a59.784 59.784 0 0 1 2.732.732c.638.198 1.22.38 1.748.523.428.114.853.23 1.279.345.668.167.953 1.347.5 1.956-.311.417-.705.799-1.17 1.09-.43.27-.793.436-1.126.436-.352 0-.65-.129-.945-.384a22.41 22.41 0 0 1-.832-.727 16.709 16.709 0 0 0-1.35-.983 3.286 3.286 0 0 0-1.792-.506c-.433 0-.854.11-1.189.32-.335.21-.614.499-.795.875Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+                        Фото
+                    </button>
+                    <form method="POST" enctype="multipart/form-data" id="avatar-form" class="hidden" aria-hidden="true">
+                        {% csrf_token %}
+                        <input type="file" name="profile_picture" accept="image/*" id="profile-picture-input" tabindex="-1">
+                    </form>
+                </div>
+                <p class="profile-sidebar-card__name">{{ user.first_name|default:user.email }} {{ user.last_name }}</p>
+                <p class="profile-sidebar-card__email">{{ user.email }}</p>
+                <div class="profile-sidebar-card__meta">
+                    <p>На сайте с <time datetime="{{ user.date_joined|date:'c' }}">{{ user.date_joined|date:"d.m.Y" }}</time></p>
+                    <p>Последний вход: {% if user.last_login %}<time datetime="{{ user.last_login|date:'c' }}">{{ user.last_login|date:"d.m.Y H:i" }}</time>{% else %}—{% endif %}</p>
+                </div>
+            </div>
+            </div>
+        </aside>
+
+        <div class="profile-main min-w-0 space-y-6 lg:col-span-8">
+            {% if user.user_type == 'retail' and not is_manager %}
+            <section aria-labelledby="profile-wholesale-heading">
+                <div class="auth-card contact-page__form-card border-red-200/80 bg-gradient-to-br from-red-50/90 to-[var(--color-bg-card)]">
+                    <h2 class="contact-page__form-title" id="profile-wholesale-heading">Оптовые цены</h2>
+                    <p class="contact-page__form-lead">Перейдите на опт после проверки менеджером. Розничная регистрация не даёт оптовые цены автоматически.</p>
+                    {% if wholesale_pending %}
+                    <p class="text-sm font-medium text-red-800" role="status">Заявка отправлена и ожидает решения менеджера.</p>
+                    {% else %}
+                    <form method="post" class="contact-page__form feedback-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="request_wholesale" value="1">
+                        <div class="form-field">
+                            <label for="wholesale_comment">Комментарий для менеджера (необязательно)</label>
+                            <textarea id="wholesale_comment" name="wholesale_comment" rows="4" maxlength="2000" placeholder="ИНН, название организации, объём закупок…"></textarea>
+                        </div>
+                        <div class="feedback-form-actions">
+                            <button type="submit" class="btn-primary contact-page__btn-submit">Запросить оптовый доступ</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </section>
+            {% elif user.user_type == 'retail' and is_manager %}
+            <section aria-labelledby="profile-wholesale-managers-note">
+                <div class="auth-card contact-page__form-card border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)]">
+                    <h2 class="contact-page__form-title text-base" id="profile-wholesale-managers-note">Оптовые цены</h2>
+                    <p class="contact-page__form-lead text-sm text-[var(--color-text-secondary)]">
+                        Заявка на оптовый доступ здесь показывается только обычным розничным клиентам. У аккаунтов с доступом к панели менеджера (персонал сайта) эта форма скрыта — тип «опт» при необходимости назначают в
+                        <a href="{% url 'manager_dashboard' %}?tab=users" class="underline font-medium text-[var(--color-primary)]">панели менеджера</a>
+                        или в администрировании Django.
+                    </p>
+                </div>
+            </section>
+            {% endif %}
+
+            <div class="feedback-banner feedback-banner--note profile-note" role="note">
+                <svg class="profile-note__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+                <span>Перед сохранением проверьте данные: изменения заменят текущие.</span>
+            </div>
+
+            <section aria-labelledby="profile-personal-heading">
+                <div class="auth-card contact-page__form-card">
+                    <h2 class="contact-page__form-title" id="profile-personal-heading">Личные данные</h2>
+                    <p class="contact-page__form-lead">Имя, почта и телефон для доставки и уведомлений.</p>
+                    <form method="POST" id="personal-info-form" class="contact-page__form feedback-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="update_personal_info" value="1">
+                        <div class="feedback-form-row">
+                            <div class="form-field">
+                                <label for="first_name">Имя</label>
+                                <input type="text" value="{{ user.first_name }}" readonly name="first_name" id="first_name" autocomplete="given-name" class="profile-field">
+                            </div>
+                            <div class="form-field">
+                                <label for="last_name">Фамилия</label>
+                                <input type="text" value="{{ user.last_name }}" readonly name="last_name" id="last_name" autocomplete="family-name" class="profile-field">
+                            </div>
+                        </div>
+                        <div class="feedback-form-row">
+                            <div class="form-field">
+                                <label for="email">Эл. почта</label>
+                                <input type="email" value="{{ user.email }}" readonly name="email" id="email" autocomplete="email" class="profile-field">
+                            </div>
+                            <div class="form-field">
+                                <label for="contact_number">Телефон</label>
+                                <input type="tel" value="{% if user_profile %}{{ user_profile.contact_number|default:'' }}{% endif %}" readonly name="contact_number" id="contact_number" autocomplete="tel" class="profile-field">
+                            </div>
+                        </div>
+                        <div class="feedback-form-actions">
+                            <button type="button" id="edit-personal-info" class="btn-secondary contact-page__btn-reset">
+                                <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg>
+                                Изменить данные
+                            </button>
+                            <button type="button" id="reset-personal-info" class="hidden btn-secondary contact-page__btn-reset">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section aria-labelledby="profile-addresses-heading">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-lg font-bold text-slate-900" id="profile-addresses-heading">Адресная книга</h2>
+                    <button type="button" id="add-address-btn"
+                            class="btn-add-address btn-secondary contact-page__btn-reset">
+                        <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                        Добавить адрес
+                    </button>
+                </div>
+
+                <div id="add-address-form-container" class="mt-5 hidden">
+                    <div class="auth-card contact-page__form-card">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <h3 class="contact-page__form-title">Новый адрес</h3>
+                                <p class="contact-page__form-lead">Укажите адрес доставки и сохраните в книгу.</p>
+                            </div>
+                            <button type="button" id="cancel-add-address" class="shrink-0 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:text-[var(--color-primary)]">Отмена</button>
+                        </div>
+                        <form method="POST" action="{% url 'add_address' %}" class="contact-page__form feedback-form">
+                            {% csrf_token %}
+                            {% include "includes/profile_address_fields.html" with prefix="add" %}
+                            <div class="feedback-form-actions">
+                                <button type="submit" class="btn-primary contact-page__btn-submit">Добавить адрес</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="edit-address-form-container" class="mt-5 hidden">
+                    <div class="auth-card contact-page__form-card">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <h3 class="contact-page__form-title">Редактировать адрес</h3>
+                                <p class="contact-page__form-lead">Измените поля и сохраните.</p>
+                            </div>
+                            <button type="button" id="cancel-edit-address" class="shrink-0 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:text-[var(--color-primary)]">Отмена</button>
+                        </div>
+                        <form method="POST" id="edit-address-form" class="contact-page__form feedback-form">
+                            {% csrf_token %}
+                            {% include "includes/profile_address_fields.html" with prefix="edit" %}
+                            <div class="feedback-form-actions">
+                                <button type="submit" class="btn-primary contact-page__btn-submit">Сохранить адрес</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <ul class="address-list mt-5 space-y-3">
+                    {% if user_addresses %}
+                        {% for address in user_addresses %}
+                            <li>
+                                <article class="address-item flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-4 sm:flex-row sm:items-start sm:justify-between" data-address-id="{{ address.id }}">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <h3 class="font-semibold text-slate-900">{{ address.label }}</h3>
+                                            {% if address.is_default %}
+                                                <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">По умолчанию</span>
+                                            {% endif %}
+                                            <span class="text-xs text-slate-500">{{ address.get_address_type_display }}</span>
+                                        </div>
+                                        <p class="mt-2 text-sm text-slate-600">{{ address.full_address }}</p>
+                                    </div>
+                                    <div class="flex shrink-0 gap-2">
+                                        <button type="button" class="edit-address-btn inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-bazaar-red hover:text-bazaar-red" title="Изменить" aria-label="Изменить адрес «{{ address.label }}»" data-address-id="{{ address.id }}">
+                                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg>
+                                        </button>
+                                        <button type="button" class="delete-address-btn inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-red-200 hover:text-red-600" title="Удалить" aria-label="Удалить адрес «{{ address.label }}»" data-address-id="{{ address.id }}">
+                                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+                                        </button>
+                                    </div>
+                                </article>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 py-8 text-center text-sm text-slate-500 list-none">Адресов пока нет — добавьте доставку.</li>
+                    {% endif %}
+                </ul>
+            </section>
+
+            <section aria-labelledby="profile-account-heading">
+                <div class="auth-card contact-page__form-card">
+                    <h2 class="contact-page__form-title" id="profile-account-heading">Настройки аккаунта</h2>
+                    <p class="contact-page__form-lead">Пароль, выход из аккаунта и удаление профиля.</p>
+
+                    <div class="profile-settings-stack">
+                        <div class="profile-settings-item">
+                            <div class="profile-settings-item__text">
+                                <h3 class="profile-settings-item__title">Сменить пароль</h3>
+                                <p class="profile-settings-item__desc">Обновите пароль для защиты аккаунта.</p>
+                            </div>
+                            <button type="button" id="change-password-btn" class="btn-change-pw btn-secondary contact-page__btn-reset shrink-0">
+                                <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"/></svg>
+                                Сменить пароль
+                            </button>
+                        </div>
+
+                        <div id="change-password-form-container" class="profile-settings-nested hidden">
+                            <h3 class="profile-settings-nested__title">Новый пароль</h3>
+                            <form method="POST" action="{% url 'change_password' %}" class="contact-page__form feedback-form">
+                                {% csrf_token %}
+                                <div class="form-field">
+                                    <label for="current-password">Текущий пароль *</label>
+                                    <input type="password" id="current-password" name="current_password" required placeholder="••••••••" autocomplete="current-password">
+                                </div>
+                                <div class="form-field">
+                                    <label for="new-password">Новый пароль *</label>
+                                    <input type="password" id="new-password" name="new_password" required autocomplete="new-password">
+                                    <p class="mt-1 text-xs text-[var(--color-text-secondary)]">Не менее 8 символов.</p>
+                                </div>
+                                <div class="form-field">
+                                    <label for="confirm-password">Подтверждение *</label>
+                                    <input type="password" id="confirm-password" name="confirm_password" required autocomplete="new-password">
+                                </div>
+                                <div class="feedback-form-actions">
+                                    <button type="submit" class="btn-primary contact-page__btn-submit">Сохранить пароль</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="profile-settings-item">
+                            <div class="profile-settings-item__text">
+                                <h3 class="profile-settings-item__title">Выход</h3>
+                                <p class="profile-settings-item__desc">Завершите сеанс на этом устройстве.</p>
+                            </div>
+                            <form action="{% url 'logout' %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-secondary contact-page__btn-reset" aria-label="Выйти из аккаунта">
+                                    <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/></svg>
+                                    Выйти
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="profile-settings-item profile-settings-item--danger">
+                            <div class="profile-settings-item__text">
+                                <h3 class="profile-settings-item__title">Удаление аккаунта</h3>
+                                <p class="profile-settings-item__desc">Данные будут удалены безвозвратно: профиль и история заказов.</p>
+                            </div>
+                            <button type="button" id="delete-account-btn" class="btn-danger-solid contact-page__btn-submit shrink-0" aria-haspopup="dialog" aria-controls="delete-account-modal">
+                                <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+                                Удалить аккаунт
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="delete-account-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-dialog-title" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+                    <div class="auth-card contact-page__form-card w-full max-w-md">
+                        <h3 class="contact-page__form-title" id="delete-account-dialog-title">Удалить аккаунт?</h3>
+                        <p class="contact-page__form-lead">Это действие нельзя отменить.</p>
+                        <form id="delete-account-form" method="POST" action="{% url 'delete_account' %}" class="contact-page__form feedback-form">
+                            {% csrf_token %}
+                            <div class="form-field">
+                                <label for="password-confirmation" class="sr-only">Пароль для подтверждения</label>
+                                <input type="password" id="password-confirmation" name="password_confirmation" required placeholder="Пароль для подтверждения" autocomplete="current-password">
+                            </div>
+                            <div class="feedback-form-actions">
+                                <button type="button" id="cancel-delete" class="btn-secondary contact-page__btn-reset">Отмена</button>
+                                <button type="submit" id="confirm-delete" class="btn-danger-solid contact-page__btn-submit">Удалить навсегда</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <form id="profile-update-form" method="POST" enctype="multipart/form-data" class="hidden" aria-hidden="true">
+        {% csrf_token %}
+        <input type="hidden" name="house_address" value="{% if user_profile %}{{ user_profile.house_address }}{% endif %}">
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const BTN_EDIT_SECONDARY = 'btn-secondary contact-page__btn-reset';
+    const BTN_SAVE_PRIMARY = 'btn-primary contact-page__btn-submit';
+    const BTN_ADD_DEFAULT = 'btn-add-address btn-secondary contact-page__btn-reset';
+    const BTN_ADD_CANCEL = 'btn-add-address btn-secondary contact-page__btn-reset';
+    const BTN_PW_DEFAULT = 'btn-change-pw btn-secondary contact-page__btn-reset shrink-0';
+    const BTN_PW_CANCEL = 'btn-change-pw btn-secondary contact-page__btn-reset shrink-0';
+
+    const avatarEditBtn = document.getElementById('avatar-edit-btn');
+    const profilePictureInput = document.getElementById('profile-picture-input');
+    const avatarForm = document.getElementById('avatar-form');
+    if (avatarEditBtn && profilePictureInput && avatarForm) {
+        avatarEditBtn.addEventListener('click', function() { profilePictureInput.click(); });
+        profilePictureInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) avatarForm.submit();
+        });
+    }
+
+    const editPersonalInfoBtn = document.getElementById('edit-personal-info');
+    const resetPersonalInfoBtn = document.getElementById('reset-personal-info');
+    const personalInfoInputs = document.querySelectorAll('#personal-info-form .profile-field');
+    const personalInfoForm = document.getElementById('personal-info-form');
+    let originalValues = {};
+    let isEditing = false;
+    personalInfoInputs.forEach(function(input) { originalValues[input.name] = input.value; });
+
+    if (editPersonalInfoBtn) {
+        editPersonalInfoBtn.addEventListener('click', function() {
+            if (!isEditing) {
+                personalInfoInputs.forEach(function(input) {
+                    input.readOnly = false;
+                });
+                editPersonalInfoBtn.innerHTML = '<svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg> Сохранить';
+                editPersonalInfoBtn.className = BTN_SAVE_PRIMARY;
+                resetPersonalInfoBtn.classList.remove('hidden');
+                isEditing = true;
+            } else {
+                personalInfoForm.submit();
+            }
+        });
+    }
+    if (resetPersonalInfoBtn) {
+        resetPersonalInfoBtn.addEventListener('click', function() {
+            personalInfoInputs.forEach(function(input) {
+                input.value = originalValues[input.name];
+                input.readOnly = true;
+            });
+            editPersonalInfoBtn.innerHTML = '<svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg> Изменить данные';
+            editPersonalInfoBtn.className = BTN_EDIT_SECONDARY;
+            resetPersonalInfoBtn.classList.add('hidden');
+            isEditing = false;
+        });
+    }
+
+    const deleteAccountBtn = document.getElementById('delete-account-btn');
+    const deleteAccountModal = document.getElementById('delete-account-modal');
+    const cancelDelete = document.getElementById('cancel-delete');
+    function closeDeleteModal() {
+        deleteAccountModal.classList.add('hidden');
+        deleteAccountModal.classList.remove('flex');
+        document.body.style.overflow = '';
+        if (deleteAccountBtn) deleteAccountBtn.focus();
+    }
+    function openDeleteModal() {
+        deleteAccountModal.classList.remove('hidden');
+        deleteAccountModal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        var pw = document.getElementById('password-confirmation');
+        if (pw) {
+            pw.value = '';
+            pw.focus();
+        }
+    }
+    if (deleteAccountBtn && deleteAccountModal) {
+        deleteAccountBtn.addEventListener('click', openDeleteModal);
+        if (cancelDelete) cancelDelete.addEventListener('click', closeDeleteModal);
+        deleteAccountModal.addEventListener('click', function(e) {
+            if (e.target === deleteAccountModal) closeDeleteModal();
+        });
+        const deleteForm = document.getElementById('delete-account-form');
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function(e) {
+                if (!confirm('Удалить аккаунт безвозвратно?')) e.preventDefault();
+            });
+        }
+    }
+
+    const changePasswordBtn = document.getElementById('change-password-btn');
+    const changePasswordFormContainer = document.getElementById('change-password-form-container');
+    const addAddressBtn = document.getElementById('add-address-btn');
+    const addAddressFormContainer = document.getElementById('add-address-form-container');
+    const editAddressFormContainer = document.getElementById('edit-address-form-container');
+    const editAddressForm = document.getElementById('edit-address-form');
+
+    if (changePasswordBtn && changePasswordFormContainer) {
+        changePasswordBtn.addEventListener('click', function() {
+            if (addAddressFormContainer) { addAddressFormContainer.classList.add('hidden'); if (addAddressBtn) { addAddressBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Добавить адрес'; addAddressBtn.className = BTN_ADD_DEFAULT; } }
+            if (editAddressFormContainer) editAddressFormContainer.classList.add('hidden');
+            if (changePasswordFormContainer.classList.contains('hidden')) {
+                changePasswordFormContainer.classList.remove('hidden');
+                changePasswordBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg> Отмена';
+                changePasswordBtn.className = BTN_PW_CANCEL;
+                ['current-password','new-password','confirm-password'].forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+                changePasswordBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                changePasswordFormContainer.classList.add('hidden');
+                changePasswordBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"/></svg> Сменить пароль';
+                changePasswordBtn.className = BTN_PW_DEFAULT;
+            }
+        });
+        var np = document.getElementById('new-password');
+        var cp = document.getElementById('confirm-password');
+        if (np && cp) {
+            function v() { cp.setCustomValidity(np.value !== cp.value && cp.value ? 'Пароли не совпадают' : ''); }
+            np.addEventListener('input', v);
+            cp.addEventListener('input', v);
+        }
+    }
+
+    if (addAddressBtn && addAddressFormContainer) {
+        addAddressBtn.addEventListener('click', function() {
+            if (editAddressFormContainer) editAddressFormContainer.classList.add('hidden');
+            if (changePasswordFormContainer) { changePasswordFormContainer.classList.add('hidden'); if (changePasswordBtn) { changePasswordBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"/></svg> Сменить пароль'; changePasswordBtn.className = BTN_PW_DEFAULT; } }
+            if (addAddressFormContainer.classList.contains('hidden')) {
+                addAddressFormContainer.classList.remove('hidden');
+                addAddressBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg> Отмена';
+                addAddressBtn.className = BTN_ADD_CANCEL;
+            } else {
+                addAddressFormContainer.classList.add('hidden');
+                addAddressBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Добавить адрес';
+                addAddressBtn.className = BTN_ADD_DEFAULT;
+            }
+        });
+        document.getElementById('cancel-add-address').addEventListener('click', function() {
+            addAddressFormContainer.classList.add('hidden');
+            addAddressBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Добавить адрес';
+            addAddressBtn.className = BTN_ADD_DEFAULT;
+        });
+    }
+
+    document.querySelectorAll('.edit-address-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var addressId = btn.getAttribute('data-address-id');
+            if (addAddressFormContainer) { addAddressFormContainer.classList.add('hidden'); if (addAddressBtn) { addAddressBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> Добавить адрес'; addAddressBtn.className = BTN_ADD_DEFAULT; } }
+            if (editAddressForm && editAddressFormContainer) {
+                editAddressForm.action = '/profile/address/edit/' + addressId + '/';
+                editAddressForm.reset();
+                editAddressFormContainer.classList.remove('hidden');
+                editAddressFormContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+    var cancelEdit = document.getElementById('cancel-edit-address');
+    if (cancelEdit && editAddressFormContainer) {
+        cancelEdit.addEventListener('click', function() { editAddressFormContainer.classList.add('hidden'); });
+    }
+    document.querySelectorAll('.delete-address-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var addressId = btn.getAttribute('data-address-id');
+            if (!confirm('Удалить этот адрес?')) return;
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/profile/address/delete/' + addressId + '/';
+            var csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrf) {
+                var i = document.createElement('input');
+                i.type = 'hidden';
+                i.name = 'csrfmiddlewaretoken';
+                i.value = csrf.value;
+                form.appendChild(i);
+            }
+            document.body.appendChild(form);
+            form.submit();
+        });
+    });
+});
+</script>
+{% endblock %}

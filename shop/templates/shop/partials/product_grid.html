@@ -1,0 +1,38 @@
+{% load static %}
+<div id="product-grid" class="shop-product-grid">
+    <p class="catalog-toolbar__hint" style="margin-bottom:var(--spacing-md);">
+        Найдено:
+        <strong style="color:var(--color-text-primary);">
+            {% if page_obj %}{{ page_obj.paginator.count }}{% else %}{{ products|length }}{% endif %}
+        </strong>
+        товаров
+    </p>
+    <div class="product-grid">
+        {% if products %}
+            {% for product in products %}
+                {% if catalog_mode %}
+                    {% include "shop/includes/product_card_catalog.html" %}
+                {% else %}
+                    {% include "shop/includes/product_card_bazaar.html" %}
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="product-grid__empty" style="grid-column:1/-1;text-align:center;padding:var(--spacing-2xl);border:1px dashed var(--color-border);border-radius:var(--radius-lg);background:var(--color-bg-light);">
+                <h3 class="section-title" style="margin-bottom:var(--spacing-sm);">Товары не найдены</h3>
+                <p class="section-desc" style="margin:0 auto;">Попробуйте изменить поиск или фильтры.</p>
+                <a href="{% url 'shop' %}" class="btn-primary" style="margin-top:var(--spacing-lg);">Сбросить фильтры</a>
+            </div>
+        {% endif %}
+    </div>
+    {% if page_obj and page_obj.paginator.num_pages > 1 %}
+    <nav class="pagination" aria-label="Страницы каталога">
+        {% if page_obj.has_previous %}
+        <a class="pagination__btn" href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">←</a>
+        {% endif %}
+        <span class="pagination__meta">Стр. {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a class="pagination__btn" href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page={{ page_obj.next_page_number }}">→</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+</div>

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Вход{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block content %}
+<div class="container page-block">
+    {% include "includes/breadcrumbs.html" %}
+
+    <div class="auth-page-heading">
+        <h1 class="page-title">Вход в магазин</h1>
+        <p class="page-lead auth-page-heading__lead">Войдите, чтобы оформлять заказы и отслеживать покупки.</p>
+    </div>
+
+    <section class="sign_in">
+        <div class="sign_in-form">
+            <div class="sign_in-form-container">
+                <div class="sign_in-form-info">
+                    <h2 class="sign_in-form-info-header page-title" style="margin-bottom:var(--spacing-xs);">Данные для входа</h2>
+                    <p class="sign_in-form-info-subheader page-lead">Электронная почта и пароль, указанные при регистрации.</p>
+                </div>
+
+                <form class="sign_in-form-group">
+                    {% csrf_token %}
+                    <div class="sign_in-form-error" style="display: none;" role="alert">
+                        <span class="sign_in-form-error-icon" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                        </span>
+                        <p class="sign_in-form-error-text"></p>
+                    </div>
+                    <div class="sign_in-form-group-container">
+                        <div class="form-field sign_in-form-group-input">
+                            <label for="email_address">Эл. почта</label>
+                            <input class="input-unnested" name="email_address" id="email_address" type="email" autocomplete="email" placeholder="you@example.kg" required>
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+                        <div class="form-field sign_in-form-group-input">
+                            <div class="sign_in-password-label-row">
+                                <label for="password">Пароль</label>
+                                <a href="#" class="anchor-link sign_in-form-group-input-helper">Забыли пароль?</a>
+                            </div>
+                            <div class="input-with-btn sign_in-form-group-input-container">
+                                <input class="input-nested" name="password" id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+                                <button type="button" data-toggle="password" aria-label="Показать пароль">
+                                    <i class="fa-solid fa-eye-slash"></i>
+                                </button>
+                            </div>
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+                    </div>
+                    <div class="sign_in-form-group-ctas">
+                        <div class="sign_in-form-group-ctas-container">
+                            <button class="sign_in-form-group-ctas-btn sign_in-form-group-ctas-btn--reset" type="reset" aria-label="Очистить форму" title="Очистить">
+                                <i class="fa-solid fa-arrow-rotate-left"></i>
+                            </button>
+                            <button class="sign_in-form-group-ctas-btn" type="submit" disabled>Войти <i class="fa-solid fa-arrow-right" style="font-size:0.85em;"></i></button>
+                        </div>
+                        <p class="sign_in-form-group-ctas-helper">
+                            Нет аккаунта?
+                            <a class="anchor-link" href="{% url 'sign-up' %}">Зарегистрироваться</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+.counter {
+    border-radius: 0.25rem;
+    display: flex;
+    border: 2px solid var(--bg-outline);
+    height: 3rem;
+}
+
+.counter-input {
+    appearance: textfield;
+    text-align: center;
+    width: 3rem;
+}
+
+.counter-btn {
+    border-radius: 0 !important;
+    height: 100%;
+    width: 3rem;
+}
+
+.counter-btn:first-child {
+    border-right: 2px solid var(--bg-outline);
+}
+
+.counter-btn:last-child {
+    border-left: 2px solid var(--bg-outline);
+}

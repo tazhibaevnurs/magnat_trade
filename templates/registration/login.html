@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Вход{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block content %}
+<div class="container page-block">
+    <nav class="breadcrumbs" aria-label="Навигационная цепочка">
+        <a href="{% url 'landing' %}">Главная</a>
+        <span class="breadcrumbs__sep" aria-hidden="true">/</span>
+        <span>Вход</span>
+    </nav>
+
+    <div class="auth-page-heading">
+        <h1 class="page-title">Вход</h1>
+        <p class="page-lead auth-page-heading__lead">Войдите под учётной записью, чтобы продолжить — например, к заказам.</p>
+    </div>
+
+    <div class="auth-card accounts-login-card">
+        <h2 class="feedback-form-card__title">Вход по паролю</h2>
+
+        <form method="post" action="{% url 'login' %}" class="accounts-login-form">
+            {% csrf_token %}
+            {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+
+            {% if form.non_field_errors %}
+            <div class="feedback-banners">
+                {% for err in form.non_field_errors %}
+                <div class="feedback-banner feedback-banner--error" role="alert">{{ err }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="form-field">
+                <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                <span class="accounts-login-field-error">{{ form.username.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-field">
+                <div class="sign_in-password-label-row">
+                    <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                </div>
+                <div class="input-with-btn sign_in-form-group-input-container">
+                    {{ form.password }}
+                    <button type="button" data-toggle="password" aria-label="Показать пароль">
+                        <i class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}
+                <span class="accounts-login-field-error">{{ form.password.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="feedback-form-actions accounts-login-actions">
+                <button type="submit" class="btn-primary">Войти</button>
+            </div>
+        </form>
+
+        <p class="sign_in-form-group-ctas-helper accounts-login-footer">
+            Нет аккаунта?
+            <a class="anchor-link" href="{% url 'sign-up' %}">Зарегистрироваться</a>
+            ·
+            <a class="anchor-link" href="{% url 'sign-in' %}">Вход (форма магазина)</a>
+        </p>
+    </div>
+</div>
+
+<script>
+(function () {
+  var btn = document.querySelector('.accounts-login-form [data-toggle="password"]');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var wrap = btn.closest('.input-with-btn');
+    var input = wrap && wrap.querySelector('input');
+    var icon = btn.querySelector('i');
+    if (!input) return;
+    input.type = input.type === 'password' ? 'text' : 'password';
+    if (icon) {
+      icon.classList.remove('fa-eye', 'fa-eye-slash');
+      icon.classList.add(input.type === 'password' ? 'fa-eye-slash' : 'fa-eye');
+    }
+  });
+})();
+</script>
+{% endblock %}

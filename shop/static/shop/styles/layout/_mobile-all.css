@@ -1,0 +1,191 @@
+/* Global mobile overrides for legacy pages/components */
+
+@media (max-width: 1024px) {
+    .sign_up,
+    .profile-wrapper,
+    .checkout-wrapper,
+    .orders-wrapper {
+        padding: 1.25rem !important;
+        gap: 1.5rem;
+    }
+
+    .checkout-container,
+    .checkout-success-container,
+    .order-card,
+    .detail-card,
+    .profile-section {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .order-item-detail {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 720px) {
+    .header {
+        height: 3.2rem;
+        padding: 0 0.75rem;
+    }
+
+    .logo-text {
+        font-size: 1.1rem;
+    }
+
+    .header-actions .button-secondary {
+        padding: 0 0.6rem;
+        font-size: 0.72rem;
+    }
+
+    .sign_up {
+        flex-direction: column;
+        align-items: stretch;
+        background-size: cover;
+    }
+
+    .sign_up-form {
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .sign_up-form-group-horizontal {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .sign_up-form-group-ctas-container {
+        flex-wrap: wrap;
+    }
+
+    .sign_up-form-group-ctas-btn[type="submit"] {
+        min-height: 2.75rem;
+    }
+
+    .profile-main-wrapper {
+        padding: 5rem 0.25rem 1rem 0.25rem !important;
+    }
+
+    .profile-title,
+    .orders-title,
+    .checkout-header,
+    .checkout-success-container h1 {
+        font-size: 1.5rem;
+    }
+
+    .section-actions,
+    .form-actions,
+    .modal-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline,
+    .btn-add,
+    .btn-danger {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .address-item,
+    .order-header,
+    .order-footer,
+    .order-detail-header,
+    .checkout-item,
+    .checkout-success-item,
+    .checkout-success-info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+
+    .order-item,
+    .order-item-detail {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+        gap: 0.75rem;
+    }
+
+    .order-item img,
+    .item-placeholder,
+    .item-image img,
+    .item-image .item-placeholder {
+        width: 100%;
+        height: auto;
+        max-height: 220px;
+        object-fit: cover;
+    }
+
+    .item-subtotal,
+    .checkout-item-price,
+    .checkout-success-item-price {
+        text-align: left;
+        align-self: flex-start;
+    }
+
+    .summary-row,
+    .checkout-total-row {
+        gap: 0.5rem;
+    }
+
+    .summary-row span,
+    .summary-row strong,
+    .checkout-total-row span {
+        word-break: break-word;
+    }
+
+    .pagination {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .page-link {
+        justify-content: center;
+    }
+
+    .simple-modal {
+        width: calc(100% - 1rem);
+        max-width: none;
+        padding: 1rem;
+    }
+
+    .footer-inner {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        padding: 0 0.9rem 1.25rem;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+        padding: 1rem 0.9rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .sign_up,
+    .profile-wrapper,
+    .checkout-wrapper,
+    .orders-wrapper {
+        padding: 0.75rem !important;
+    }
+
+    .sign_up-form,
+    .checkout-container,
+    .checkout-success-container,
+    .order-card,
+    .detail-card,
+    .profile-section {
+        padding: 0.85rem;
+    }
+
+    .logo-text {
+        font-size: 1rem;
+    }
+}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Обратная связь{% endblock %}
+
+{% block content %}
+<div class="container page-block feedback-page">
+    {% include "includes/breadcrumbs.html" %}
+
+    <div class="auth-page-heading">
+        <h1 class="page-title">Обратная связь</h1>
+        <p class="page-lead auth-page-heading__lead">Предложения, замечания или вопросы — ответим в рабочее время.</p>
+    </div>
+
+    {% if request.user.is_authenticated and user_feedbacks %}
+    <section class="feedback-history" aria-labelledby="feedback-history-heading">
+        <h2 id="feedback-history-heading" class="feedback-history__title">Ваши обращения</h2>
+        <ul class="feedback-history__list">
+            {% for feedback in user_feedbacks %}
+            <li class="feedback-history-item">
+                <div class="feedback-history-item__head">
+                    <div>
+                        <h3 class="feedback-history-item__subject">{{ feedback.subject }}</h3>
+                        <span class="feedback-category-badge feedback-category-{{ feedback.category }}">{{ feedback.get_category_display }}</span>
+                    </div>
+                    <span class="feedback-status-badge feedback-status-{{ feedback.status }}">
+                        {% if feedback.status == 'unread' %}Не прочитано{% elif feedback.status == 'read' %}Прочитано{% else %}В архиве{% endif %}
+                    </span>
+                </div>
+                <p class="feedback-history-item__text">{{ feedback.message|truncatewords:35 }}</p>
+                <div class="feedback-history-item__meta">
+                    <span>{{ feedback.created_at|date:"d.m.Y" }} · {{ feedback.created_at|time:"H:i" }}</span>
+                    {% if feedback.status == 'read' %}
+                    <span class="feedback-history-item__seen">Просмотрено</span>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <div class="auth-card feedback-form-card">
+        <h2 class="feedback-form-card__title">Написать нам</h2>
+
+        {% if messages %}
+        <div class="feedback-banners">
+            {% for message in messages %}
+            <div class="feedback-banner {% if message.tags == 'success' %}feedback-banner--success{% else %}feedback-banner--error{% endif %}" role="status">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'feedback' %}" class="feedback-form">
+            {% csrf_token %}
+
+            <div class="feedback-form-row">
+                <div class="form-field">
+                    <label for="name">Ваше имя *</label>
+                    <input type="text" id="name" name="name" placeholder="Имя Фамилия"
+                           value="{{ initial_data.name|default:'' }}"
+                           {% if request.user.is_authenticated %}readonly{% endif %} required>
+                </div>
+                <div class="form-field">
+                    <label for="email">Эл. почта *</label>
+                    <input type="email" id="email" name="email" placeholder="example@mail.kg"
+                           value="{{ initial_data.email|default:'' }}"
+                           {% if request.user.is_authenticated %}readonly{% endif %} required>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="category">Категория *</label>
+                <select id="category" name="category" required>
+                    {% for value, label in category_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="subject">Тема *</label>
+                <input type="text" id="subject" name="subject" placeholder="Кратко о чём обращение" required>
+            </div>
+
+            <div class="form-field">
+                <label for="message">Сообщение *</label>
+                <textarea id="message" name="message" rows="6" placeholder="Опишите вопрос или предложение..." required></textarea>
+            </div>
+
+            <div class="feedback-form-actions">
+                <button type="reset" class="btn-secondary">Очистить</button>
+                <button type="submit" class="btn-primary">Отправить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

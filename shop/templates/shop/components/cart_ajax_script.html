@@ -1,0 +1,258 @@
+{% load static %}
+
+<!-- Cart notification styles -->
+<style>
+    .cart-notification {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: var(--bg-secondary);
+        border: 2px solid var(--bg-outline);
+        border-radius: 0.5rem;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        z-index: 9999;
+        transform: translateX(450px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 380px;
+        min-width: 300px;
+    }
+    
+    .cart-notification.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    
+    .cart-notification-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--tg-primary);
+        font-weight: 500;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+    }
+    
+    .cart-notification-content i {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    
+    /* Success notification */
+    .cart-notification-success {
+        background: var(--bg-success);
+        border-color: var(--tg-success);
+    }
+    
+    .cart-notification-success .cart-notification-content i {
+        color: var(--tg-success);
+    }
+    
+    /* Error notification */
+    .cart-notification-error {
+        background: var(--bg-danger);
+        border-color: var(--tg-danger);
+    }
+    
+    .cart-notification-error .cart-notification-content i {
+        color: var(--tg-danger);
+    }
+    
+    /* Cart count animation */
+    @keyframes cartCountPulse {
+        0%, 100% { 
+            transform: scale(1);
+        }
+        50% { 
+            transform: scale(1.2);
+        }
+    }
+    
+    .cart-count-updated {
+        animation: cartCountPulse 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .cart-notification {
+            top: 80px;
+            right: 16px;
+            left: 16px;
+            max-width: none;
+            min-width: auto;
+        }
+    }
+    
+    /* Slide in animation for mobile */
+    @media (max-width: 768px) {
+        .cart-notification {
+            transform: translateY(-150px);
+        }
+        
+        .cart-notification.show {
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<!-- Hidden CSRF form -->
+<form style="display: none;" id="csrf-form">
+    {% csrf_token %}
+</form>
+
+<!-- Cart AJAX Script -->
+<script>
+    (function() {
+        // Prevent multiple initializations
+        if (window.cartAjaxInitialized) return;
+        window.cartAjaxInitialized = true;
+        
+        // Get CSRF token
+        function getCsrfToken() {
+            const csrfInput = document.querySelector('#csrf-form [name=csrfmiddlewaretoken]');
+            if (csrfInput) return csrfInput.value;
+            
+            const name = 'csrftoken';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'success') {
+            // Remove any existing notifications
+            const existingNotifications = document.querySelectorAll('.cart-notification');
+            existingNotifications.forEach(notif => notif.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = `cart-notification cart-notification-${type}`;
+            notification.innerHTML = `
+                <div class="cart-notification-content">
+                    <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    notification.classList.add('show');
+                });
+            });
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        // Update cart count
+        function updateCartCount(count) {
+            const cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = count;
+                cartCountElement.classList.add('cart-count-updated');
+                setTimeout(() => cartCountElement.classList.remove('cart-count-updated'), 400);
+            }
+            
+            document.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: { count: count }
+            }));
+        }
+        
+        // Add to cart function
+        async function addToCart(button, productId, productName) {
+            const originalContent = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Добавляем...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('product_id', productId);
+                formData.append('quantity', 1);
+                
+                const response = await fetch('/cart/add/', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCsrfToken(),
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showNotification(`«${productName}» добавлен в корзину!`, 'success');
+                    updateCartCount(data.cart_count);
+                    
+                    button.innerHTML = '<i class="fa-solid fa-check"></i> В корзине!';
+                    setTimeout(() => {
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Не удалось добавить в корзину');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message || 'Не удалось добавить в корзину', 'error');
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            }
+        }
+        
+        // Initialize all add to cart buttons
+        function initializeAddToCartButtons() {
+            const buttons = document.querySelectorAll('.product-card-add-to-cart, .add-to-cart-btn');
+            
+            buttons.forEach(button => {
+                // Skip if already initialized
+                if (button.dataset.initialized) return;
+                button.dataset.initialized = 'true';
+                
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const productId = this.dataset.productId;
+                    const productName = this.dataset.productName;
+                    addToCart(this, productId, productName);
+                });
+            });
+        }
+        
+        // Initialize on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAddToCartButtons);
+        } else {
+            initializeAddToCartButtons();
+        }
+        
+        // Re-initialize when new content is added (for dynamic content)
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length) {
+                    initializeAddToCartButtons();
+                }
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+    })();
+</script>

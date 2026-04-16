@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+{% load shop_extras %}
+
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+<div class="container cart-wrapper page-block">
+    {% include "includes/breadcrumbs.html" %}
+
+    <div class="cart-header" style="margin-bottom:var(--spacing-xl);">
+        <h1 class="page-title">Корзина</h1>
+        <p class="page-lead">Проверьте состав и оформите заказ</p>
+    </div>
+
+    <div class="cart-container">
+        <div class="cart-list">
+            <div class="cart-list-header">
+                <label class="cart-list-header-select_all filter-checkbox">
+                    <input type="checkbox" id="cart-select_all" name="select_all" value="select_all">
+                    <span>Выбрать все</span>
+                </label>
+                <button class="cart-list-header-remove icon-btn" id="remove-selected" type="button" title="Удалить выбранное">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+                </button>
+            </div>
+
+            <div id="cart-line-items" class="cart-list-container">
+                {% if items %}
+                    {% for item in items %}
+                    <div class="cart-list-item" data-item-id="{{ item.id }}">
+                        <div>
+                            <div class="cart-list-item-left_container">
+                                <label class="cart-list-item-select filter-checkbox">
+                                    <input type="checkbox" name="cart-select" value="{{ item.id }}">
+                                    <span class="sr-only">Выбрать</span>
+                                </label>
+                                <div class="cart-list-item-image">
+                                    {% if item.catalog_product %}
+                                        <img src="{{ item.catalog_product.image_url }}" alt="{{ item.catalog_product.name }}">
+                                    {% else %}
+                                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}">
+                                    {% endif %}
+                                </div>
+                                <div class="cart-list-item-info">
+                                    <h3 class="cart-list-item-info-name">
+                                        {% if item.catalog_product %}
+                                            <a href="{% url 'catalog_pdp' product_id=item.catalog_product_id %}">{{ item.catalog_product.name }}</a>
+                                        {% else %}
+                                            <a href="{{ item.product.get_absolute_url }}">{{ item.product.name }}</a>
+                                        {% endif %}
+                                    </h3>
+                                    <p class="cart-list-item-info-description">
+                                        {% if item.catalog_product %}
+                                            {% if item.catalog_product.sku %}{{ item.catalog_product.sku }} · {% endif %}{{ item.catalog_product.unit }}
+                                        {% else %}
+                                            {{ item.product.description|truncatewords:20 }}
+                                        {% endif %}
+                                    </p>
+                                    <div class="cart-list-item-info-price">
+                                        <span class="cart-list-item-price-label">Цена:</span>
+                                        <span class="cart-list-item-price-value">{{ item.price|floatformat:2 }} сом</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="cart-list-item-right_container">
+                                <div class="cart-list-item-actions">
+                                    <form method="post" action="{% url 'remove_cart_item' item.id %}" class="remove-item-form">
+                                        {% csrf_token %}
+                                        <button class="cart-list-item-actions-remove" type="submit" title="Удалить">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+                                        </button>
+                                    </form>
+                                    <a class="cart-list-item-actions-view" href="{% if item.catalog_product %}{% url 'catalog_pdp' product_id=item.catalog_product_id %}{% else %}{{ item.product.get_absolute_url }}{% endif %}" title="К товару">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5M18 3h3v3m0-3v6M6 15h6"/></svg>
+                                    </a>
+                                    <form method="post" action="{% url 'update_cart_item' item.id %}" class="update-item-form counter">
+                                        {% csrf_token %}
+                                        <div class="quantity-control">
+                                            <button class="counter-btn" data-action="decrement" type="button" aria-label="Уменьшить">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/></svg>
+                                            </button>
+                                            <input class="counter-input" name="quantity" type="number" min="0" max="999" value="{{ item.quantity }}">
+                                            <button class="counter-btn" data-action="increment" type="button" aria-label="Увеличить">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                            </button>
+                                        </div>
+                                        <button type="submit" class="sr-only" tabindex="-1" aria-hidden="true">Обновить</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="cart-empty">Корзина пуста.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="cart-summary">
+            <h2 class="cart-summary-header">Итого</h2>
+            <div class="cart-summary-list">
+                <div class="cart-summary-list-item">
+                    <label>Сумма</label>
+                    <h3 class="cart-summary-subtotal" data-currency="сом">{{ cart.total_price|soms }}</h3>
+                </div>
+                <div class="cart-summary-list-item">
+                    <label>Доставка</label>
+                    <h3 class="cart-summary-shipping" data-currency="сом">{% if shipping_fee %}{{ shipping_fee|soms }}{% else %}0.00 сом{% endif %}</h3>
+                </div>
+                <hr class="horizontal-divider">
+                <div class="cart-summary-list-item">
+                    <label style="font-weight:600;">Всего</label>
+                    <h3 class="cart-summary-total" data-currency="сом">
+                        {% if shipping_fee %}
+                            {{ cart.total_price|add:shipping_fee|soms }}
+                        {% else %}
+                            {{ cart.total_price|soms }}
+                        {% endif %}
+                    </h3>
+                </div>
+            </div>
+
+            <script>
+            (function() {
+                function ensureSoms(el) {
+                    if (!el || !el.textContent) return;
+                    var text = el.textContent.trim();
+                    text = text.replace(/\s*PHP\s*/gi, ' ').replace(/\s*сом\s*/gi, ' ');
+                    var num = parseFloat(text.replace(/[\s,]/g, '').replace(',', '.')) || 0;
+                    el.textContent = num.toFixed(2) + ' сом';
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        document.querySelectorAll('.cart-summary-subtotal, .cart-summary-total').forEach(ensureSoms);
+                    });
+                } else {
+                    document.querySelectorAll('.cart-summary-subtotal, .cart-summary-total').forEach(ensureSoms);
+                }
+            })();
+            </script>
+
+            <form method="POST" action="{% url 'checkout' %}" id="checkout-form">
+                {% csrf_token %}
+                <button type="submit" class="cart-summary-proceed_to_checkout" {% if not items %}disabled{% endif %}>
+                    Оформить заказ
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div
+        id="cart-confirm-modal"
+        class="cart-confirm-dialog hidden"
+        aria-hidden="true"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cart-confirm-title"
+    >
+        <div id="cart-confirm-backdrop" class="cart-confirm-dialog__backdrop"></div>
+        <div class="cart-confirm-dialog__panel">
+            <h2 id="cart-confirm-title" class="section-title" style="font-size:var(--text-base);">Подтверждение</h2>
+            <p id="cart-confirm-message" class="section-desc" style="margin-top:var(--spacing-md);"></p>
+            <div class="cart-confirm-dialog__actions">
+                <button type="button" id="cart-confirm-cancel" class="btn-secondary" style="padding:10px 18px;font-size:var(--text-sm);">Отмена</button>
+                <button type="button" id="cart-confirm-ok" class="btn-primary" style="padding:10px 18px;font-size:var(--text-sm);">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

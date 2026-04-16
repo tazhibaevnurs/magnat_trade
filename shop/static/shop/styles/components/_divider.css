@@ -1,0 +1,5 @@
+.horizontal-divider {
+    background-color: var(--bg-outline);
+    height: 1px;
+    width: 100%;
+}

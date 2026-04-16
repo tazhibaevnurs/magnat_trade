@@ -1,0 +1,398 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Главная{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container home-page">
+    {# —— Hero на всю ширину экрана (как на av.ru): слайды + градиент —— #}
+    <section class="home-hero-bleed"
+             x-data="{ slide: 0, total: 3, next() { this.slide = (this.slide + 1) % this.total }, prev() { this.slide = (this.slide - 1 + this.total) % this.total }, go(i) { this.slide = i } }"
+             aria-roledescription="carousel"
+             aria-label="Главные предложения">
+        <div class="home-hero-bleed__track" :style="`transform: translateX(-${slide * 100}%)`">
+            {# Слайд 1 #}
+            <div class="home-hero-bleed__slide">
+                <div class="home-hero-bleed__media home-hero-bleed__media--slide1" aria-hidden="true">
+                    <img src="{% static 'img/home/hero-slide-1.png' %}" alt="" width="1920" height="640" fetchpriority="high" decoding="async">
+                </div>
+                <div class="home-hero-bleed__overlay"></div>
+                <div class="home-hero-bleed__content">
+                    <span class="home-hero-bleed__badge">Доставка</span>
+                    <h1 class="home-hero-bleed__title">Канцелярия с доставкой</h1>
+                    <p class="home-hero-bleed__lead">Заказывайте любимые товары онлайн — соберём корзину и привезём в удобное время.</p>
+                    <div class="home-hero-bleed__actions">
+                        <a href="{% url 'shop' %}" class="home-hero-bleed__btn home-hero-bleed__btn--primary">Перейти в каталог</a>
+                        <a href="{% url 'contact-us' %}" class="home-hero-bleed__btn home-hero-bleed__btn--ghost">Условия доставки</a>
+                    </div>
+                </div>
+            </div>
+            {# Слайд 2 #}
+            <div class="home-hero-bleed__slide">
+                <div class="home-hero-bleed__media home-hero-bleed__media--slide2" aria-hidden="true">
+                    <img src="{% static 'img/home/hero-slide-2.png' %}" alt="" width="1920" height="640" loading="lazy" decoding="async">
+                </div>
+                <div class="home-hero-bleed__overlay"></div>
+                <div class="home-hero-bleed__content">
+                    <span class="home-hero-bleed__badge">Новинки</span>
+                    <h2 class="home-hero-bleed__title">Новые поступления каждую неделю</h2>
+                    <p class="home-hero-bleed__lead">Следите за обновлениями каталога — добавляем интересные товары и сезонные предложения.</p>
+                    <div class="home-hero-bleed__actions">
+                        <a href="{% url 'shop' %}?sort_by=recently-added" class="home-hero-bleed__btn home-hero-bleed__btn--primary">Смотреть новинки</a>
+                        <a href="{% url 'shop' %}" class="home-hero-bleed__btn home-hero-bleed__btn--ghost">Весь ассортимент</a>
+                    </div>
+                </div>
+            </div>
+            {# Слайд 3 #}
+            <div class="home-hero-bleed__slide">
+                <div class="home-hero-bleed__media home-hero-bleed__media--slide3" aria-hidden="true">
+                    <img src="{% static 'img/home/hero-slide-3.png' %}" alt="" width="1920" height="640" loading="lazy" decoding="async">
+                </div>
+                <div class="home-hero-bleed__overlay"></div>
+                <div class="home-hero-bleed__content">
+                    <span class="home-hero-bleed__badge">Для дома и офиса</span>
+                    <h2 class="home-hero-bleed__title">Всё для комфортной покупки</h2>
+                    <p class="home-hero-bleed__lead">Понятный каталог, корзина в один клик и поддержка при оформлении заказа.</p>
+                    <div class="home-hero-bleed__actions">
+                        <a href="{% url 'about-us' %}" class="home-hero-bleed__btn home-hero-bleed__btn--primary">О магазине</a>
+                        <a href="{% url 'feedback' %}" class="home-hero-bleed__btn home-hero-bleed__btn--ghost">Обратная связь</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="home-hero-bleed__arrows">
+            <button type="button" class="home-hero-bleed__arrow home-hero-bleed__arrow--prev" @click="prev()" aria-label="Предыдущий слайд">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button type="button" class="home-hero-bleed__arrow home-hero-bleed__arrow--next" @click="next()" aria-label="Следующий слайд">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+        </div>
+        <div class="home-hero-bleed__dots" role="tablist" aria-label="Выбор слайда">
+            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 0 }" @click="go(0)" aria-label="Слайд 1"></button>
+            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 1 }" @click="go(1)" aria-label="Слайд 2"></button>
+            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 2 }" @click="go(2)" aria-label="Слайд 3"></button>
+        </div>
+    </section>
+
+    {# Полоска преимуществ (как у сетевого гастронома) #}
+    <div class="home-service-strip">
+        <div class="home-service-strip__inner">
+            <div class="home-service-strip__item" href="#">
+                <span class="home-service-strip__icon" aria-hidden="true">🚚</span>
+                <div class="home-service-strip__text">
+                    <strong>Доставка</strong>
+                    <span>По городу в удобный интервал</span>
+                </div>
+            </div>
+            <div class="home-service-strip__item">
+                <span class="home-service-strip__icon" aria-hidden="true">🛒</span>
+                <div class="home-service-strip__text">
+                    <strong>Сборка заказа</strong>
+                    <span>Внимательно упакуем позиции</span>
+                </div>
+            </div>
+            <div class="home-service-strip__item">
+                <span class="home-service-strip__icon" aria-hidden="true">✓</span>
+                <div class="home-service-strip__text">
+                    <strong>Качество</strong>
+                    <span>Проверенные поставщики</span>
+                </div>
+            </div>
+            <div class="home-service-strip__item">
+                <span class="home-service-strip__icon" aria-hidden="true">💬</span>
+                <div class="home-service-strip__text">
+                    <strong>Поддержка</strong>
+                    <span>Помощь с заказом в рабочее время</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Промо-плитки #}
+    <div class="home-promo-grid">
+        <a href="{% url 'shop' %}?sort_by=recently-added" class="home-promo-tile">
+            <div class="home-promo-tile__img home-promo-tile__img--a" aria-hidden="true">
+                <img src="{% static 'img/home/promo-tile-newarrivals.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
+            </div>
+            <div class="home-promo-tile__shade"></div>
+            <div class="home-promo-tile__body">
+                <span class="home-promo-tile__tag">Новинки</span>
+                <p class="home-promo-tile__title">Свежие поступления</p>
+                <span class="home-promo-tile__more">Смотреть →</span>
+            </div>
+        </a>
+        <a href="{% url 'shop' %}" class="home-promo-tile">
+            <div class="home-promo-tile__img home-promo-tile__img--b" aria-hidden="true">
+                <img src="{% static 'img/home/promo-tile-catalog.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
+            </div>
+            <div class="home-promo-tile__shade"></div>
+            <div class="home-promo-tile__body">
+                <span class="home-promo-tile__tag">Каталог</span>
+                <p class="home-promo-tile__title">Выгодные предложения</p>
+                <span class="home-promo-tile__more">В магазин →</span>
+            </div>
+        </a>
+        <a href="{% url 'contact-us' %}" class="home-promo-tile">
+            <div class="home-promo-tile__img home-promo-tile__img--c" aria-hidden="true">
+                <img src="{% static 'img/home/promo-tile-service.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
+            </div>
+            <div class="home-promo-tile__shade"></div>
+            <div class="home-promo-tile__body">
+                <span class="home-promo-tile__tag">Сервис</span>
+                <p class="home-promo-tile__title">Доставка и самовывоз</p>
+                <span class="home-promo-tile__more">Подробнее →</span>
+            </div>
+        </a>
+    </div>
+
+    {% if root_categories %}
+    <section class="home-cat-rail" aria-labelledby="home-cat-heading">
+        <div class="home-cat-rail__head">
+            <h2 id="home-cat-heading" class="home-cat-rail__title">Категории</h2>
+            <a href="{% url 'shop' %}" class="section-link">Весь каталог →</a>
+        </div>
+        <div class="home-cat-rail__scroll">
+            {% for cat in root_categories %}
+            <a href="{% url 'shop' %}?categories={{ cat.slug|urlencode }}" class="home-cat-pill">
+                <div class="home-cat-pill__circle" data-home-cat-name="{{ cat.name|escape }}" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125h19.5M3.75 7.125v10.5a2.25 2.25 0 0 0 2.25 2.25h12a2.25 2.25 0 0 0 2.25-2.25v-10.5m-16.5 0V5.25A2.25 2.25 0 0 1 7.5 3h9a2.25 2.25 0 0 1 2.25 2.25v1.875m-16.5 0h16.5"/></svg>
+                </div>
+                <div class="home-cat-pill__name">{{ cat.name }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="home-products-section section" aria-labelledby="home-popular-heading">
+        <div class="section-header">
+            <div>
+                <p class="section-kicker">Популярное</p>
+                <h2 id="home-popular-heading" class="section-title">Хиты продаж</h2>
+                <p class="section-desc">Часто заказывают — проверенные позиции каталога.</p>
+            </div>
+            <a href="{% url 'shop' %}" class="section-link">Смотреть всё →</a>
+        </div>
+        {% if top_rated_products %}
+        <div class="product-grid">
+            {% for product in top_rated_products %}
+                {% include "shop/includes/product_card_bazaar.html" %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="section-desc" style="text-align:center;padding:var(--spacing-2xl);border:1px dashed var(--color-border);border-radius:var(--radius-lg);">Пока нет товаров в этой подборке.</p>
+        {% endif %}
+    </section>
+
+    <section class="home-special-collections" aria-labelledby="home-special-collections-heading">
+        <div class="home-special-collections__header">
+            <h2 id="home-special-collections-heading" class="home-special-collections__title">Специальные коллекции</h2>
+        </div>
+        <div class="home-special-collections__slider" role="region" aria-roledescription="карусель" aria-label="Специальные коллекции">
+            <div class="home-special-collections__track">
+                <div class="home-special-collections__slide">
+                    <a href="{% url 'shop' %}?search=тетрадь" class="home-special-collections__item">
+                        <div class="home-special-collections__card">
+                            <img src="{% static 'img/home/collection-tetrad.png' %}" alt="Тетради и блокноты" width="264" height="264" loading="lazy" decoding="async">
+                        </div>
+                        <span class="home-special-collections__label">Тетради и блокноты</span>
+                    </a>
+                </div>
+                <div class="home-special-collections__slide">
+                    <a href="{% url 'shop' %}?search=ручки" class="home-special-collections__item">
+                        <div class="home-special-collections__card">
+                            <img src="{% static 'img/home/collection-pisma.png' %}" alt="Ручки и карандаши" width="264" height="264" loading="lazy" decoding="async">
+                        </div>
+                        <span class="home-special-collections__label">Ручки и карандаши</span>
+                    </a>
+                </div>
+                <div class="home-special-collections__slide">
+                    <a href="{% url 'shop' %}?search=альбом" class="home-special-collections__item">
+                        <div class="home-special-collections__card">
+                            <img src="{% static 'img/home/collection-albomy.png' %}" alt="Альбомы и скетчбуки" width="264" height="264" loading="lazy" decoding="async">
+                        </div>
+                        <span class="home-special-collections__label">Альбомы и скетчбуки</span>
+                    </a>
+                </div>
+                <div class="home-special-collections__slide">
+                    <a href="{% url 'shop' %}?search=офис" class="home-special-collections__item">
+                        <div class="home-special-collections__card">
+                            <img src="{% static 'img/home/collection-ofis.png' %}" alt="Канцелярия для офиса" width="264" height="264" loading="lazy" decoding="async">
+                        </div>
+                        <span class="home-special-collections__label">Канцелярия для офиса</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-products-section section" aria-labelledby="home-new-heading">
+        <div class="section-header">
+            <div>
+                <p class="section-kicker">Новинки</p>
+                <h2 id="home-new-heading" class="section-title">Недавно в каталоге</h2>
+                <p class="section-desc">Свежие поступления и обновления ассортимента.</p>
+            </div>
+            <a href="{% url 'shop' %}?sort_by=recently-added" class="section-link">Все новинки →</a>
+        </div>
+        {% if new_arrivals %}
+        <div class="product-grid">
+            {% for product in new_arrivals %}
+                {% include "shop/includes/product_card_bazaar.html" %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="section-desc" style="text-align:center;padding:var(--spacing-2xl);border:1px dashed var(--color-border);border-radius:var(--radius-lg);">
+            Новинок пока нет — загляните в <a href="{% url 'shop' %}" class="anchor-link">каталог</a>.
+        </p>
+        {% endif %}
+    </section>
+
+    <section class="home-weekly-promos section" aria-labelledby="home-weekly-promos-heading">
+        <h2 id="home-weekly-promos-heading" class="home-weekly-promos__title">Акции недели</h2>
+        <div class="home-weekly-promos__grid">
+            <a href="{% url 'shop' %}?search=ручки" class="home-weekly-promos__card">
+                <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-1.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                <div class="home-weekly-promos__overlay" aria-hidden="true"></div>
+                <div class="home-weekly-promos__content">
+                    <p class="home-weekly-promos__kicker">Пишущие принадлежности</p>
+                    <p class="home-weekly-promos__line">Ваша ежедневная поддержка</p>
+                </div>
+                <span class="home-weekly-promos__badge">−25%</span>
+            </a>
+            <a href="{% url 'shop' %}?search=офис" class="home-weekly-promos__card home-weekly-promos__card--light">
+                <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-2.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                <div class="home-weekly-promos__overlay home-weekly-promos__overlay--light" aria-hidden="true"></div>
+                <div class="home-weekly-promos__content">
+                    <p class="home-weekly-promos__kicker">Техника для офиса</p>
+                    <p class="home-weekly-promos__line">Безупречный порядок документов</p>
+                </div>
+                <span class="home-weekly-promos__badge">−50%</span>
+            </a>
+            <a href="{% url 'shop' %}?search=мебель" class="home-weekly-promos__card home-weekly-promos__card--light">
+                <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-3.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                <div class="home-weekly-promos__overlay home-weekly-promos__overlay--soft" aria-hidden="true"></div>
+                <div class="home-weekly-promos__content">
+                    <p class="home-weekly-promos__kicker">Офис с характером</p>
+                    <p class="home-weekly-promos__line">Стильная мебель и системы хранения</p>
+                </div>
+                <span class="home-weekly-promos__badge">−30%</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="home-value-strip section" aria-labelledby="home-value-strip-heading">
+        <h2 id="home-value-strip-heading" class="home-value-strip__title">Канцтовары с доставкой на дом</h2>
+        <div class="home-value-strip__grid">
+            <div class="home-value-strip__col">
+                <div class="home-value-strip__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <h3 class="home-value-strip__headline">Проверенное качество</h3>
+                <p class="home-value-strip__text">Сотрудничаем с проверенными поставщиками и следим за состоянием партий. Бумага, ручки и расходные материалы хранятся и доставляются аккуратно — к вам приезжает то, что вы заказали.</p>
+            </div>
+            <div class="home-value-strip__col">
+                <div class="home-value-strip__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                </div>
+                <h3 class="home-value-strip__headline">Богатый выбор</h3>
+                <p class="home-value-strip__text">Тетради и блокноты, письменные принадлежности, товары для творчества, офисная техника и организация пространства — всё для школы, учёбы и работы в одном каталоге.</p>
+            </div>
+            <div class="home-value-strip__col">
+                <div class="home-value-strip__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 11h3l2-6h8l2 6h3"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/><path d="M5 18h11a1 1 0 0 0 .95-.74L19 13H5"/></svg>
+                </div>
+                <h3 class="home-value-strip__headline">Удобство заказа</h3>
+                <p class="home-value-strip__text">Оформите покупку онлайн, выберите доставку или самовывоз. Нужна помощь с подбором — напишите нам: подскажем по ассортименту и срокам.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-band" aria-labelledby="home-cta-heading" style="margin-top:var(--spacing-3xl);">
+        <h2 id="home-cta-heading" class="cta-band__title">Остались вопросы?</h2>
+        <p style="opacity:0.9;margin:0;max-width:32rem;">Напишите нам — подскажем по товарам, заказу и доставке.</p>
+        <div class="cta-band__actions">
+            <a href="{% url 'contact-us' %}" class="hero__cta" style="margin-top:0;">Контакты</a>
+            <a href="{% url 'shop' %}" class="hero__cta hero__cta--ghost" style="margin-top:0;">Открыть каталог</a>
+        </div>
+    </section>
+</div>
+<script>
+(function () {
+  var ICONS = {
+    accessories:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>',
+    paper:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>',
+    notebooks:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>',
+    games:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-1.036-.84-1.875-1.875-1.875h-17.25c-1.036 0-1.875.84-1.875 1.875v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg>',
+    books:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>',
+    writing:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>',
+    copybooks:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>',
+    sketch:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m0 0a15.994 15.994 0 0 1-3.394 1.62m3.42-3.42a15.998 15.998 0 0 0-3.388-1.62"/></svg>',
+    office:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A11.955 11.955 0 0 1 2.25 12c0-1.036.132-2.04.38-2.98m0 0C4.09 7.195 7.293 6.75 12 6.75c4.707 0 7.91.445 10.37 2.27.248.94.38 1.944.38 2.98m0 0a11.955 11.955 0 0 1-2.38 2.77"/></svg>',
+    party:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25a1.5 1.5 0 0 1 1.5-1.5h3.379a3 3 0 0 0 5.242 0h3.379a1.5 1.5 0 0 1 1.5 1.5Zm-9-3.75h.008v.008H12V7.5Z"/></svg>',
+    craft:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.582c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>',
+    school:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A59.769 59.769 0 0 0 12 21.75a59.768 59.768 0 0 0 7.007-.394m-15.004-3.345A59.77 59.77 0 0 1 12 21.75a59.77 59.77 0 0 1-7.007-.394m0 0A59.77 59.77 0 0 0 12 8.443m0 0V5.25A2.25 2.25 0 0 0 9.75 3h-1.5A2.25 2.25 0 0 0 6 5.25v3.118"/></svg>',
+    default:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125h19.5M3.75 7.125v10.5a2.25 2.25 0 0 0 2.25 2.25h12a2.25 2.25 0 0 0 2.25-2.25v-10.5m-16.5 0V5.25A2.25 2.25 0 0 1 7.5 3h9a2.25 2.25 0 0 1 2.25 2.25v1.875m-16.5 0h16.5"/></svg>',
+  };
+
+  function norm(s) {
+    return (s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/\.+$/g, "");
+  }
+  function iconKeyForName(name) {
+    var n = norm(name);
+    var rules = [
+      ["школа", "school"],
+      ["аксессуары", "accessories"],
+      ["бумага и бумажная продукция", "paper"],
+      ["ежедневники и записные книги", "notebooks"],
+      ["игры", "games"],
+      ["книги", "books"],
+      ["письменные товары", "writing"],
+      ["прописи и раскраски", "copybooks"],
+      ["скетчбуки", "sketch"],
+      ["товары для офиса", "office"],
+      ["товары для праздника", "party"],
+      ["товары для творчества", "craft"],
+    ];
+    for (var i = 0; i < rules.length; i++) {
+      if (n.indexOf(rules[i][0]) === 0 || n === rules[i][0]) return rules[i][1];
+    }
+    for (var j = 0; j < rules.length; j++) {
+      if (n.indexOf(rules[j][0]) !== -1) return rules[j][1];
+    }
+    return "default";
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".home-cat-pill__circle[data-home-cat-name]").forEach(function (el) {
+      var name = el.getAttribute("data-home-cat-name") || "";
+      var key = iconKeyForName(name);
+      var svg = ICONS[key] || ICONS.default;
+      if (svg) el.innerHTML = svg;
+    });
+  });
+})();
+</script>
+{% endblock %}
+

@@ -1,0 +1,155 @@
+<div class="mb-6 pb-6 border-b border-[var(--color-border-subtle)]">
+    <h3 class="contact-page__form-title text-base mb-1">Новый пользователь</h3>
+    <p class="contact-page__form-lead text-sm mb-4">Запись в базе сайта и тот же запрос в 1С, что при регистрации: <code class="text-xs">POST …/counterparties/create_counterparty</code> (настройки <code>ONEC_API_BASE_URL</code>, Basic-авторизация).</p>
+    <form method="post" action="{% url 'manager_dashboard' %}" class="contact-page__form feedback-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_user_manager">
+        <div class="feedback-form-row">
+            <div class="form-field">
+                <label for="manager-new-user-email">Email <span class="text-red-600">*</span></label>
+                <input id="manager-new-user-email" name="email" type="email" required autocomplete="email" placeholder="client@example.com" class="manager-inline-field w-full max-w-md">
+            </div>
+        </div>
+        <div class="feedback-form-row">
+            <div class="form-field">
+                <label for="manager-new-user-password">Пароль <span class="text-red-600">*</span></label>
+                <input id="manager-new-user-password" name="password" type="password" required autocomplete="new-password" minlength="1" class="manager-inline-field w-full max-w-md">
+            </div>
+            <div class="form-field">
+                <label for="manager-new-user-password2">Повтор пароля <span class="text-red-600">*</span></label>
+                <input id="manager-new-user-password2" name="password_confirm" type="password" required autocomplete="new-password" class="manager-inline-field w-full max-w-md">
+            </div>
+        </div>
+        <div class="feedback-form-row">
+            <div class="form-field">
+                <label for="manager-new-user-fn">Имя</label>
+                <input id="manager-new-user-fn" name="first_name" type="text" maxlength="150" autocomplete="given-name" class="manager-inline-field w-full">
+            </div>
+            <div class="form-field">
+                <label for="manager-new-user-ln">Фамилия</label>
+                <input id="manager-new-user-ln" name="last_name" type="text" maxlength="150" autocomplete="family-name" class="manager-inline-field w-full">
+            </div>
+        </div>
+        <div class="feedback-form-row">
+            <div class="form-field">
+                <label for="manager-new-user-phone">Телефон</label>
+                <input id="manager-new-user-phone" name="phone" type="tel" maxlength="32" placeholder="+996700123456" class="manager-inline-field w-full max-w-md">
+            </div>
+            <div class="form-field">
+                <label for="manager-new-user-entity">Тип контрагента</label>
+                <select id="manager-new-user-entity" name="entity_type" class="manager-inline-field w-full max-w-xs py-1.5">
+                    <option value="individual">Физлицо</option>
+                    <option value="legal_entity">Юрлицо</option>
+                </select>
+            </div>
+        </div>
+        <div class="feedback-form-row">
+            <div class="form-field">
+                <label for="manager-new-user-price">Тип цены</label>
+                <select id="manager-new-user-price" name="user_type" class="manager-inline-field w-full max-w-xs py-1.5">
+                    <option value="retail">Розница</option>
+                    <option value="wholesale">Опт</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-field">
+            <label for="manager-new-user-comment">Комментарий в 1С (необязательно)</label>
+            <textarea id="manager-new-user-comment" name="create_user_comment" rows="2" maxlength="2000" placeholder="ИНН, название организации…" class="manager-inline-field w-full max-w-xl"></textarea>
+        </div>
+        <div class="feedback-form-actions">
+            <button type="submit" class="btn-primary contact-page__btn-submit">Создать и отправить в 1С</button>
+        </div>
+    </form>
+</div>
+
+<form method="get" class="manager-products-search manager-products-search--bar mb-4" data-manager-users-search action="{% url 'manager_users_panel' %}">
+    <input type="search" name="user_q" value="{{ user_q }}" placeholder="Поиск по email…" class="manager-products-search__input" autocomplete="off">
+    <button type="submit" class="btn-primary contact-page__btn-submit">Найти</button>
+</form>
+
+<div class="manager-tabs mt-2" role="tablist" aria-label="Тип пользователей" data-manager-users-subtabs>
+    <button type="button" role="tab" class="manager-tab manager-tab--active" data-manager-users-subtab="retail" aria-selected="true">Розничные</button>
+    <button type="button" role="tab" class="manager-tab" data-manager-users-subtab="wholesale" aria-selected="false">Оптовые</button>
+</div>
+
+<div data-manager-users-pane="retail" class="manager-table-wrap manager-table-wrap--users">
+    <table class="manager-table">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Тип</th>
+                <th>Дата</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in retail_users %}
+            <tr>
+                <td>{{ u.email }}</td>
+                <td>
+                    <form method="post" class="flex flex-wrap items-center gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_user">
+                        <input type="hidden" name="user_id" value="{{ u.pk }}">
+                        <select name="user_type" class="manager-inline-field py-1.5">
+                            <option value="retail" {% if u.user_type == 'retail' %}selected{% endif %}>Розница</option>
+                            <option value="wholesale" {% if u.user_type == 'wholesale' %}selected{% endif %}>Опт</option>
+                        </select>
+                        <button type="submit" class="manager-link-action">Сохранить</button>
+                    </form>
+                </td>
+                <td class="manager-table__muted">{{ u.date_joined|date:"d.m.Y" }}</td>
+                <td>
+                    <form method="post" action="{% url 'manager_user_delete' u.pk %}" onsubmit="return confirm('Удалить пользователя {{ u.email|escapejs }}?');">
+                        {% csrf_token %}
+                        <button type="submit" class="manager-link-danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="manager-empty">Нет розничных пользователей.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div data-manager-users-pane="wholesale" class="manager-table-wrap manager-table-wrap--users hidden">
+    <table class="manager-table">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Тип</th>
+                <th>Дата</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in wholesale_users %}
+            <tr>
+                <td>{{ u.email }}</td>
+                <td>
+                    <form method="post" class="flex flex-wrap items-center gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_user">
+                        <input type="hidden" name="user_id" value="{{ u.pk }}">
+                        <select name="user_type" class="manager-inline-field py-1.5">
+                            <option value="retail" {% if u.user_type == 'retail' %}selected{% endif %}>Розница</option>
+                            <option value="wholesale" {% if u.user_type == 'wholesale' %}selected{% endif %}>Опт</option>
+                        </select>
+                        <button type="submit" class="manager-link-action">Сохранить</button>
+                    </form>
+                </td>
+                <td class="manager-table__muted">{{ u.date_joined|date:"d.m.Y" }}</td>
+                <td>
+                    <form method="post" action="{% url 'manager_user_delete' u.pk %}" onsubmit="return confirm('Удалить пользователя {{ u.email|escapejs }}?');">
+                        {% csrf_token %}
+                        <button type="submit" class="manager-link-danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="manager-empty">Нет оптовых пользователей.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
