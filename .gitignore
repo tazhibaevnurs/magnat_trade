@@ -1,20 +1,52 @@
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.pyo
 *.pyd
-*.db
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Django / БД
 *.sqlite3
+*.db
 
-# VS Code
+# VS Code / IDE
 .vscode/
+.idea/
+*.swp
+*.swo
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
+# Виртуальное окружение
 /venv/
 .pip_packages/
 
-# Misc
+# Секреты и окружение
 .env
+.env.local
+.env.*.local
+
+# Тесты и покрытие
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Celery / логи
+celerybeat-schedule
+celerybeat-schedule.*
+*.log
+
+# Cursor / локальная конфигурация MCP (ключи не в репозитории)
+.cursor/
