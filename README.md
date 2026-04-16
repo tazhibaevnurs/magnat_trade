@@ -153,7 +153,7 @@ pip install -r requirements-mysql.txt
 1. Создайте базу (например [Neon](https://neon.tech) — есть бесплатный тариф) и скопируйте строку подключения `postgresql://...` (часто с `?sslmode=require`).
 2. В панели Vercel: **Settings → Environment Variables** добавьте `DATABASE_URL` (Production и при необходимости Preview).
 3. Задайте также `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false`, `DJANGO_ALLOWED_HOSTS=ваш-домен.vercel.app` (и свой домен, если есть).
-4. При деплое выполняется `python manage.py migrate --noinput` (см. `vercel.json`). Чтобы **заполнить каталог**, один раз выполните локально (с тем же `DATABASE_URL` в `.env`): `python manage.py migrate` и при необходимости импорт/синхронизацию с 1С или `loaddata`.
+4. При деплое выполняется `collectstatic` и `migrate` (см. `vercel.json`). Статика отдаётся через **WhiteNoise**. Чтобы **заполнить каталог**, один раз выполните локально (с тем же `DATABASE_URL` в `.env`): `python manage.py migrate` и при необходимости импорт/синхронизацию с 1С или `loaddata`.
 
 Локально по-прежнему можно не задавать `DATABASE_URL` — будет SQLite.
 

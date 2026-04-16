@@ -14,6 +14,7 @@ build/
 # Django / БД
 *.sqlite3
 *.db
+/staticfiles/
 
 # VS Code / IDE
 .vscode/

@@ -59,6 +59,7 @@ AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -136,8 +137,15 @@ USE_L10N = False
 USE_TZ = True
 
 STATIC_URL = "/static/"
+# Собранная статика (collectstatic) — для продакшена и Vercel; отдаётся через WhiteNoise
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Кэш статики в браузере (год); в DEBUG WhiteNoise не мешает dev-серверу раздавать исходники приложений
+if not DEBUG:
+    WHITENOISE_MAX_AGE = 31536000
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
