@@ -28,7 +28,13 @@ if not DEBUG:
 else:
     SECRET_KEY = _secret_key or _default_insecure
 
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+# На Vercel выставляются VERCEL=1 и VERCEL_URL; поддомены *.vercel.app иначе дают DisallowedHost
+_allowed_hosts = [
+    h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()
+]
+if os.getenv("VERCEL") == "1" and ".vercel.app" not in _allowed_hosts:
+    _allowed_hosts.append(".vercel.app")
+ALLOWED_HOSTS = _allowed_hosts
 
 INSTALLED_APPS = [
     "django.contrib.admin",
