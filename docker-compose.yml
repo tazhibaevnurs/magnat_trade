@@ -36,8 +36,10 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+    # Внешний порт хоста → Gunicorn внутри контейнера всегда :8000.
+    # На VPS без nginx: WEB_PUBLISH_PORT=80 в .env → сайт по http://IP без :8000
     ports:
-      - "8000:8000"
+      - "${WEB_PUBLISH_PORT:-8000}:8000"
     volumes:
       - media_data:/app/media
     restart: unless-stopped
