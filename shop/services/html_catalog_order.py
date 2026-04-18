@@ -1,4 +1,8 @@
-"""Оформление заказа каталога 1С из HTML-корзины: orders.Order + выгрузка в 1С."""
+"""Оформление заказа каталога 1С из HTML-корзины: только orders.Order (не shop.Order).
+
+Демо-заказ по shop.Product обрабатывается в shop.views.checkout без этого модуля.
+См. docs/DATA_MODEL_DOMAINS.md
+"""
 
 from __future__ import annotations
 
@@ -49,6 +53,10 @@ def place_order_from_catalog_cart_items(
     order = Order.objects.create(
         user=user,
         total_amount=grand_total,
+        shipping_fee=shipping_fee,
+        delivery_full_name=full_name,
+        delivery_email=email,
+        delivery_address=address,
         status="pending",
         payment_status="pending",
         delivery_status="pending",

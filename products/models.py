@@ -1,3 +1,9 @@
+"""Номенклатура и категории синхронизации с 1С (область A).
+
+Демо-категории и демо-товары витрины — модели shop.Category и shop.Product.
+См. docs/DATA_MODEL_DOMAINS.md
+"""
+
 import os
 import uuid
 

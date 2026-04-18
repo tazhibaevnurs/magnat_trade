@@ -105,8 +105,10 @@
                 </td>
                 <td style="padding: 12px; text-align: center; border-bottom: 1px solid #eee;">{{ trans.stock_after }}</td>
                 <td style="padding: 12px; border-bottom: 1px solid #eee;">
-                    {% if trans.order %}
-                        <a href="{% url 'admin:shop_order_change' trans.order.id %}">Заказ №{{ trans.order.id }}</a>
+                    {% if trans.catalog_order %}
+                        <a href="{% url 'admin:orders_order_change' trans.catalog_order.id %}">Заказ {{ trans.catalog_order.id }}</a>
+                    {% elif trans.order %}
+                        <a href="{% url 'admin:shop_order_change' trans.order.id %}">Заказ №{{ trans.order.id }} (legacy)</a>
                     {% else %}
                         {{ trans.notes|truncatewords:10 }}
                     {% endif %}

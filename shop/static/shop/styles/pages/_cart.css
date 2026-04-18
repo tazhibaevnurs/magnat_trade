@@ -79,6 +79,15 @@
     color: var(--tg-primary);
 }
 
+.cart-list-item-stock {
+    margin: var(--spacing-xs, 0.25rem) 0 0;
+    font-size: var(--text-xs, 0.6875rem);
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #dc2626;
+}
+
 .cart-list-item-info-name a {
     color: var(--tg-primary) !important; 
     text-decoration: none; 

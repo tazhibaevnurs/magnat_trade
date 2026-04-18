@@ -1,3 +1,9 @@
+"""Единые заказы сайта: каталог 1С, API и демо-витрина (shop.Product).
+
+Устаревшая таблица shop_order не используется для новых заказов.
+См. docs/DATA_MODEL_DOMAINS.md
+"""
+
 import uuid
 
 from django.conf import settings
@@ -19,9 +25,21 @@ class Order(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="catalog_orders",
     )
     total_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    shipping_fee = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+        help_text="Доставка (для отображения; итог в total_amount).",
+    )
+    delivery_full_name = models.CharField(max_length=120, blank=True, default="")
+    delivery_email = models.EmailField(blank=True, default="")
+    delivery_address = models.TextField(blank=True, default="")
+
     status = models.CharField(max_length=64, default="draft", db_index=True)
     payment_status = models.CharField(max_length=64, default="pending", db_index=True)
     delivery_status = models.CharField(max_length=64, default="pending", db_index=True)
@@ -53,6 +71,13 @@ class Order(models.Model):
     def __str__(self) -> str:
         return f"Order {self.id} ({self.external_id or '—'})"
 
+    @property
+    def goods_subtotal(self):
+        from decimal import Decimal
+
+        fee = self.shipping_fee or Decimal("0")
+        return self.total_amount - fee
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
@@ -72,3 +97,7 @@ class OrderItem(models.Model):
 
     def __str__(self) -> str:
         return f"{self.product_id} × {self.quantity}"
+
+    @property
+    def line_total(self):
+        return self.price * self.quantity

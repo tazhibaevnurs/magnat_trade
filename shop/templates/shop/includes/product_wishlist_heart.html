@@ -1,0 +1,17 @@
+{% comment %}wishlist_mode: "catalog" | "shop"{% endcomment %}
+{% if user.is_authenticated %}
+<button type="button"
+        class="product-card__wish {% if wishlist_mode == 'catalog' %}{% if product.id in wishlist_catalog_ids %}product-card__wish--active{% endif %}{% else %}{% if product.id in wishlist_shop_ids %}product-card__wish--active{% endif %}{% endif %}"
+        title="Избранное"
+        data-catalog-product-id="{% if wishlist_mode == 'catalog' %}{{ product.id }}{% endif %}"
+        data-shop-product-id="{% if wishlist_mode == 'shop' %}{{ product.id }}{% endif %}"
+        onclick="window.magnatToggleWishlist(this, event)">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16" width="18" height="16" aria-hidden="true"><path stroke="var(--color-primary)" stroke-width="1.2" d="M9.092 15.32 9 15.385l-.092-.067a39.984 39.984 0 0 1-4.061-3.402c-1.111-1.07-2.208-2.277-3.024-3.506C1 7.173.5 5.967.5 4.889.5 2.47 2.486.5 4.95.5a4.8 4.8 0 0 1 2.722.843c.313.212.552.424.71.58a4 4 0 0 1 .215.232l.008.01h.001v.001L9 2.672l.394-.506v-.001l.009-.01.04-.047q.056-.066.175-.185c.158-.156.397-.368.71-.58A4.8 4.8 0 0 1 13.05.5c2.464 0 4.45 1.97 4.45 4.389 0 1.078-.501 2.284-1.323 3.522-.816 1.229-1.913 2.437-3.024 3.507a40 40 0 0 1-4.061 3.401Z"/></svg>
+</button>
+{% else %}
+<a href="{% url 'wishlist_login_redirect' %}?next={{ request.get_full_path|urlencode }}"
+   class="product-card__wish"
+   title="Избранное — войдите или зарегистрируйтесь">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16" width="18" height="16" aria-hidden="true"><path stroke="var(--color-primary)" stroke-width="1.2" d="M9.092 15.32 9 15.385l-.092-.067a39.984 39.984 0 0 1-4.061-3.402c-1.111-1.07-2.208-2.277-3.024-3.506C1 7.173.5 5.967.5 4.889.5 2.47 2.486.5 4.95.5a4.8 4.8 0 0 1 2.722.843c.313.212.552.424.71.58a4 4 0 0 1 .215.232l.008.01h.001v.001L9 2.672l.394-.506v-.001l.009-.01.04-.047q.056-.066.175-.185c.158-.156.397-.368.71-.58A4.8 4.8 0 0 1 13.05.5c2.464 0 4.45 1.97 4.45 4.389 0 1.078-.501 2.284-1.323 3.522-.816 1.229-1.913 2.437-3.024 3.507a40 40 0 0 1-4.061 3.401Z"/></svg>
+</a>
+{% endif %}

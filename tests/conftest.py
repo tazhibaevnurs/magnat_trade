@@ -101,6 +101,21 @@ def user_with_external(db, external_user_id):
 
 
 @pytest.fixture
+def user_wholesale_approved(db):
+    """Пользователь с одобренным оптом (как после manager_wholesale_approve)."""
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    return User.objects.create_user(
+        email="wholesale@test.local",
+        password="test-pass-123",
+        external_id="НФ-USR-WHL-TEST-0001",
+        user_type="wholesale",
+        entity_type="legal_entity",
+    )
+
+
+@pytest.fixture
 def order_with_items(db, user_with_external, product, product_id):
     from decimal import Decimal
 

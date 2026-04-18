@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+
+{% block search %}
+{% if admin_category_drill %}
+<p style="margin: 0 0 14px 0; font-size: 13px;">
+  <a href="{{ admin_category_drill.up_url }}">{{ admin_category_drill.up_label }}</a>
+  <span style="color:#64748b;">/</span>
+  <strong>{{ admin_category_drill.parent.name }}</strong>
+</p>
+{% endif %}
+{{ block.super }}
+{% endblock %}

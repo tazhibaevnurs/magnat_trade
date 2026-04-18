@@ -8,6 +8,8 @@ from django.core.cache import cache
 
 from integrations.parsers.category_product_tree import CATEGORY_TREE_ROOT_ORDER_CACHE_KEY
 
+from shop.category_nav import catalog_nav_restricted_tree_ids
+
 _CACHE_PREFIX = "shop:category_groups"
 _CACHE_TTL = 300
 
@@ -92,6 +94,10 @@ def build_category_groups(*, catalog_mode: bool) -> list[dict[str, Any]]:
         if tree_ids is not None:
             qs = qs.filter(id__in=tree_ids)
         cats = list(qs.order_by("name"))
+
+        restrict_tree = catalog_nav_restricted_tree_ids()
+        if restrict_tree is not None:
+            cats = [c for c in cats if c.id in restrict_tree]
 
         root_order = cache.get(CATEGORY_TREE_ROOT_ORDER_CACHE_KEY)
         if not isinstance(root_order, list) or not root_order:

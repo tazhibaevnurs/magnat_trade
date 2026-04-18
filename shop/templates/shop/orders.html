@@ -21,11 +21,11 @@
                     <div class="order-header">
                         <div class="order-info">
                             <h3>Заказ №{{ order.id }}</h3>
-                            <span class="order-date">{{ order.placed_at|date:"d.m.Y" }}</span>
+                            <span class="order-date">{{ order.created_at|date:"d.m.Y" }}</span>
                         </div>
                         <div class="order-status">
                             <span class="status-badge status-{{ order.status|lower }}">
-                                {{ order.get_status_display }}
+                                {% if order.status == 'pending' %}В обработке{% elif order.status == 'delivered' %}Доставлен{% elif order.status == 'draft' %}Черновик{% else %}{{ order.status }}{% endif %}
                             </span>
                         </div>
                     </div>
@@ -33,15 +33,8 @@
                     <div class="order-items">
                         {% for item in order.items.all %}
                         <div class="order-item">
-                            {% if item.product %}
-                            <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}">
-                            {% else %}
-                            <div class="item-placeholder">
-                                <i class="fa-solid fa-image"></i>
-                            </div>
-                            {% endif %}
                             <div class="item-details">
-                                <h4>{{ item.product.name }}</h4>
+                                <h4>{{ item.name_snapshot }}</h4>
                                 <p>Кол-во: {{ item.quantity }}</p>
                                 <p class="item-price">{{ item.price }} сом</p>
                             </div>
@@ -55,7 +48,7 @@
                             <strong>{{ order.total_amount }} сом</strong>
                         </div>
                         <div class="order-actions">
-                            <a href="/orders/{{ order.id }}" class="btn-view-details">
+                            <a href="{% url 'order_detail' order.id %}" class="btn-view-details">
                                 <i class="fa-solid fa-eye"></i>
                                 Подробнее
                             </a>

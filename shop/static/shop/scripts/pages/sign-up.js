@@ -321,39 +321,6 @@ const initializeSignUpPage = () => {
 
         };
 
-        const successModal = document.getElementById('sign-up-success-modal');
-        const successOkBtn = document.getElementById('sign-up-success-ok');
-        let successRedirectUrl = '/';
-
-        const closeSignUpSuccessModalAndRedirect = () => {
-            if (!successModal) return;
-            successModal.classList.add('hidden');
-            successModal.setAttribute('aria-hidden', 'true');
-            window.location.href = successRedirectUrl;
-        };
-
-        const openSignUpSuccessModal = (redirectUrl) => {
-            successRedirectUrl = redirectUrl || '/';
-            if (!successModal) {
-                window.location.href = successRedirectUrl;
-                return;
-            }
-            successModal.classList.remove('hidden');
-            successModal.setAttribute('aria-hidden', 'false');
-        };
-
-        if (successModal && successOkBtn) {
-            successOkBtn.addEventListener('click', closeSignUpSuccessModalAndRedirect);
-            successModal.addEventListener('click', (e) => {
-                if (e.target === successModal) closeSignUpSuccessModalAndRedirect();
-            });
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && successModal && !successModal.classList.contains('hidden')) {
-                    closeSignUpSuccessModalAndRedirect();
-                }
-            });
-        }
-
         const handleAccountCreation = async () => {
 
             if (!validateStepInputs(segregatedFormInputs, formInputsArray)) {
@@ -382,7 +349,7 @@ const initializeSignUpPage = () => {
                 if (!result.success)
                     throw new Error(result.err || 'Не удалось создать аккаунт.');
 
-                openSignUpSuccessModal(result.redirect || '/');
+                window.location.assign(result.redirect || '/');
 
             } catch (err) {
 

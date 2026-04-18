@@ -17,8 +17,8 @@
             <ul style="list-style:none;margin:var(--spacing-md) 0 0;padding:0;">
                 {% for item in order.items.all %}
                 <li class="product-spec-row" style="border-bottom:1px solid var(--color-border-light);">
-                    <span>{{ item.product.name }} × {{ item.quantity }}</span>
-                    <span>{{ item.total_price|floatformat:2 }} сом</span>
+                    <span>{{ item.name_snapshot }} × {{ item.quantity }}</span>
+                    <span>{{ item.line_total|floatformat:2 }} сом</span>
                 </li>
                 {% endfor %}
             </ul>
@@ -28,7 +28,7 @@
             </div>
             <div class="section-desc" style="margin-top:var(--spacing-lg);">
                 <p><strong>Способ оплаты:</strong> Наличными при получении</p>
-                <p><strong>Адрес:</strong> {{ order.address }}</p>
+                <p><strong>Адрес:</strong> {{ order.delivery_address }}</p>
             </div>
         </div>
 

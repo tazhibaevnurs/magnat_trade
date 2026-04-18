@@ -18,8 +18,8 @@ urlpatterns = [
     ),
     path("api/v1/", include("api.urls")),
     path('', include('shop.urls')),
-    path("__reload__/", include("django_browser_reload.urls"))
 ]
 
 if settings.DEBUG:
+    urlpatterns.append(path("__reload__/", include("django_browser_reload.urls")))
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

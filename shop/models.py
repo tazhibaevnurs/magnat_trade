@@ -1,6 +1,13 @@
+"""Модели витрины: демо-каталог, корзина (общая), профиль, заказы только для shop.Product.
+
+Заказы каталога 1С — orders.Order (таблица orders_order), создаются из корзины с products.Product.
+См. docs/DATA_MODEL_DOMAINS.md
+"""
+
 import os
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -433,6 +440,73 @@ class CartItem(models.Model):
         return self.catalog_product_id is not None
 
 
+class WishlistItem(models.Model):
+    """Избранное пользователя: одна строка — либо товар 1С, либо демо-товар витрины."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="wishlist_items",
+    )
+    catalog_product = models.ForeignKey(
+        "products.Product",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="wishlist_entries",
+        verbose_name="Товар каталога (1С)",
+    )
+    shop_product = models.ForeignKey(
+        "Product",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="wishlist_entries",
+        verbose_name="Демо-товар витрины",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Избранное"
+        verbose_name_plural = "Избранное"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(catalog_product__isnull=False, shop_product__isnull=True)
+                    | Q(catalog_product__isnull=True, shop_product__isnull=False)
+                ),
+                name="wishlistitem_catalog_xor_shop_product",
+            ),
+            models.UniqueConstraint(
+                fields=("user", "catalog_product"),
+                condition=Q(catalog_product__isnull=False),
+                name="uniq_wishlist_user_catalog_product",
+            ),
+            models.UniqueConstraint(
+                fields=("user", "shop_product"),
+                condition=Q(shop_product__isnull=False),
+                name="uniq_wishlist_user_shop_product",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        if self.catalog_product_id:
+            return f"{self.user} → {self.catalog_product_id}"
+        if self.shop_product_id:
+            return f"{self.user} → {self.shop_product}"
+        return f"{self.user} → ?"
+
+    def clean(self):
+        super().clean()
+        has_catalog = self.catalog_product_id is not None
+        has_shop = self.shop_product_id is not None
+        if has_catalog == has_shop:
+            raise ValidationError(
+                "Укажите ровно один товар: либо номенклатуру 1С, либо демо-товар витрины."
+            )
+
+
 class Order(models.Model):
     STATUS_CHOICES = [
         ("pending", "В обработке"),
@@ -548,12 +622,21 @@ class InventoryTransaction(models.Model):
     ]
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="inventory_transactions")
+    catalog_order = models.ForeignKey(
+        "orders.Order",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="demo_inventory_transactions",
+        help_text="Единый заказ (orders_order), если продажа с демо-витрины.",
+    )
     order = models.ForeignKey(
         Order,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="inventory_transactions",
+        help_text="Устаревший заказ shop_order (старые записи).",
     )
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     quantity_change = models.IntegerField(help_text="Positive for additions, negative for deductions")
@@ -576,3 +659,139 @@ class InventoryTransaction(models.Model):
 
     def __str__(self) -> str:
         return f"{self.transaction_type.upper()}: {self.product.name} ({self.quantity_change:+d}) - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class PromotionItem(models.Model):
+    """Явный список товаров для страницы «Акции»: номенклатура 1С или демо-товар витрины (ровно один)."""
+
+    catalog_product = models.ForeignKey(
+        "products.Product",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="promotion_entries",
+        verbose_name="Товар каталога (1С)",
+    )
+    shop_product = models.ForeignKey(
+        "Product",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="promotion_entries",
+        verbose_name="Демо-товар витрины",
+    )
+    sort_order = models.PositiveSmallIntegerField(
+        default=0,
+        db_index=True,
+        verbose_name="Порядок",
+        help_text="Меньше — выше в списке (если сортировка на сайте позволяет)",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="На сайте")
+
+    class Meta:
+        verbose_name = "Товар в акции"
+        verbose_name_plural = "Акции: товары"
+        ordering = ["sort_order", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(catalog_product__isnull=False, shop_product__isnull=True)
+                    | Q(catalog_product__isnull=True, shop_product__isnull=False)
+                ),
+                name="shop_promotionitem_catalog_xor_shop_product",
+            ),
+            models.UniqueConstraint(
+                fields=["catalog_product"],
+                condition=Q(catalog_product__isnull=False),
+                name="shop_promotionitem_uniq_catalog_product",
+            ),
+            models.UniqueConstraint(
+                fields=["shop_product"],
+                condition=Q(shop_product__isnull=False),
+                name="shop_promotionitem_uniq_shop_product",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        if self.catalog_product_id:
+            return f"Акция (1С): {self.catalog_product}"
+        if self.shop_product_id:
+            return f"Акция (витрина): {self.shop_product}"
+        return "Акция (не задан товар)"
+
+    def clean(self):
+        super().clean()
+        has_catalog = self.catalog_product_id is not None
+        has_shop = self.shop_product_id is not None
+        if has_catalog == has_shop:
+            raise ValidationError(
+                "Укажите ровно один товар: либо номенклатуру 1С, либо демо-товар витрины."
+            )
+
+
+class NewArrivalItem(models.Model):
+    """Явный список товаров для страницы «Новинки» (номенклатура 1С или демо-товар — ровно один)."""
+
+    catalog_product = models.ForeignKey(
+        "products.Product",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="new_arrival_entries",
+        verbose_name="Товар каталога (1С)",
+    )
+    shop_product = models.ForeignKey(
+        "Product",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="new_arrival_entries",
+        verbose_name="Демо-товар витрины",
+    )
+    sort_order = models.PositiveSmallIntegerField(
+        default=0,
+        db_index=True,
+        verbose_name="Порядок",
+        help_text="Меньше — выше в списке (если сортировка на сайте позволяет)",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="На сайте")
+
+    class Meta:
+        verbose_name = "Товар в новинках"
+        verbose_name_plural = "Новинки: товары"
+        ordering = ["sort_order", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(catalog_product__isnull=False, shop_product__isnull=True)
+                    | Q(catalog_product__isnull=True, shop_product__isnull=False)
+                ),
+                name="shop_newarrivalitem_catalog_xor_shop_product",
+            ),
+            models.UniqueConstraint(
+                fields=["catalog_product"],
+                condition=Q(catalog_product__isnull=False),
+                name="shop_newarrivalitem_uniq_catalog_product",
+            ),
+            models.UniqueConstraint(
+                fields=["shop_product"],
+                condition=Q(shop_product__isnull=False),
+                name="shop_newarrivalitem_uniq_shop_product",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        if self.catalog_product_id:
+            return f"Новинка (1С): {self.catalog_product}"
+        if self.shop_product_id:
+            return f"Новинка (витрина): {self.shop_product}"
+        return "Новинка (не задан товар)"
+
+    def clean(self):
+        super().clean()
+        has_catalog = self.catalog_product_id is not None
+        has_shop = self.shop_product_id is not None
+        if has_catalog == has_shop:
+            raise ValidationError(
+                "Укажите ровно один товар: либо номенклатуру 1С, либо демо-товар витрины."
+            )

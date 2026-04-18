@@ -1,10 +1,15 @@
 import json
+import logging
+import threading
 
 from django.contrib.auth import authenticate, get_user_model, login
+from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from ..models import UserProfile
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -94,9 +99,29 @@ def handle_account_registration(request):
         contact_number=contact_number,
     )
 
-    from integrations.services.onec_registration import register_site_user_in_onec
-
-    register_site_user_in_onec(user)
-
     login(request, user)
+
+    uid = user.pk
+
+    def _defer_onec_register():
+        from django.db import close_old_connections
+
+        close_old_connections()
+        try:
+            from integrations.services.onec_registration import register_site_user_in_onec
+
+            fresh = User.objects.get(pk=uid)
+            register_site_user_in_onec(fresh)
+        except User.DoesNotExist:
+            pass
+        except Exception:
+            logger.exception("Отложенная регистрация пользователя в 1С не удалась")
+        finally:
+            close_old_connections()
+
+    def _start_background():
+        threading.Thread(target=_defer_onec_register, daemon=True).start()
+
+    transaction.on_commit(_start_background)
+
     return JsonResponse({"success": True, "redirect": "/"})

@@ -326,6 +326,22 @@
   white-space: nowrap;
 }
 
+.sub-nav__link--with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sub-nav__link-icon {
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+
+.sub-nav__link--with-icon:hover .sub-nav__link-icon,
+.sub-nav__link--with-icon.is-active .sub-nav__link-icon {
+  opacity: 1;
+}
+
 .sub-nav__link:hover {
   color: var(--color-primary);
   background: var(--color-bg-light);
@@ -870,7 +886,28 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+a.product-card__wish {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-card__wish--pdp {
+  position: relative;
+  top: auto;
+  right: auto;
+}
+
+.product-card__wish--active svg path {
+  fill: var(--color-primary);
+  stroke: var(--color-primary);
 }
 
 .product-card__before-name {
@@ -1194,12 +1231,35 @@
 .sort-select {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 8px 12px;
+  padding: 8px 2.75rem 8px 14px;
   font-size: var(--text-sm);
   color: var(--color-text-primary);
-  background: var(--color-bg);
+  background-color: var(--color-bg);
   cursor: pointer;
   min-height: 44px;
+  max-width: 100%;
+  line-height: 1.35;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.75' d='M5 7.5l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 1.125rem;
+}
+
+.sort-select::-ms-expand {
+  display: none;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.15);
+}
+
+.sort-select:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.35);
 }
 
 .shop-grid-wrap {
@@ -1981,6 +2041,15 @@
 
 .cart-list-item-info-name a:hover {
   color: var(--color-primary);
+}
+
+.cart-list-item-stock {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #dc2626;
 }
 
 .quantity-control {
@@ -4870,5 +4939,49 @@ ul.manager-list {
 }
 
 .manager-link-danger:hover {
+  text-decoration: underline;
+}
+
+/* Страницы «Новинки» / «Акции» — слегка отличаются от магазина, без ярких градиентов */
+
+.catalog-section-page--novinki,
+.catalog-section-page--akcii {
+  padding-top: var(--spacing-lg);
+  padding-bottom: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
+  border-radius: var(--radius-md);
+}
+
+.catalog-section-page--novinki {
+  /* едва заметный холодный оттенок */
+  background: #f5f6fa;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.catalog-section-page--akcii {
+  /* едва заметный тёплый оттенок */
+  background: #f8f7f5;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.catalog-section-page--novinki .catalog-toolbar__hint,
+.catalog-section-page--akcii .catalog-toolbar__hint {
+  max-width: 42rem;
+}
+
+/* Страницы «Новинки» / «Акции» — ссылка назад */
+.catalog-section-page__back {
+  margin: 0 0 var(--spacing-lg);
+}
+
+.catalog-section-page__back a {
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.catalog-section-page__back a:hover {
   text-decoration: underline;
 }

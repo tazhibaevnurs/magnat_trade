@@ -97,9 +97,20 @@
                         {% include 'includes/category_dropdown.html' %}
                     </div>
                 </div>
-                <a href="{% url 'shop' %}" class="sub-nav__link {% nav_active request '/shop' '/catalog/product' %}">Каталог</a>
-                <a href="{% url 'shop' %}?sort_by=recently-added" class="sub-nav__link">Новинки</a>
-                <a href="{% url 'shop' %}" class="sub-nav__link">Акции</a>
+                <a href="{% url 'shop' %}" class="sub-nav__link {% nav_active request '/shop' '/catalog/product' %}">Магазин</a>
+                <a href="{% url 'shop_new_arrivals' %}" class="sub-nav__link sub-nav__link--with-icon {% nav_active request '/novinki' %}">
+                    <svg class="sub-nav__link-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09l2.846.813-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                    </svg>
+                    Новинки
+                </a>
+                <a href="{% url 'shop_promotions' %}" class="sub-nav__link sub-nav__link--with-icon {% nav_active request '/akcii' %}">
+                    <svg class="sub-nav__link-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.169.659 1.591l9.581 9.588a2.25 2.25 0 003.182 0l5.25-5.25a2.25 2.25 0 000-3.182l-9.582-9.591A2.25 2.25 0 009.569 3z" />
+                        <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M6 9.75h.008v.008H6v-.008z" />
+                    </svg>
+                    Акции
+                </a>
                 <a href="{% url 'contact-us' %}" class="sub-nav__link {% nav_active request '/contact-us' %}">Доставка</a>
                 <a href="{% url 'about-us' %}" class="sub-nav__link {% nav_active request '/about-us' %}">О нас</a>
                 <div class="sub-nav__more" x-data="{ open: false }">

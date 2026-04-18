@@ -42,7 +42,7 @@
                     <h2 class="home-hero-bleed__title">Новые поступления каждую неделю</h2>
                     <p class="home-hero-bleed__lead">Следите за обновлениями каталога — добавляем интересные товары и сезонные предложения.</p>
                     <div class="home-hero-bleed__actions">
-                        <a href="{% url 'shop' %}?sort_by=recently-added" class="home-hero-bleed__btn home-hero-bleed__btn--primary">Смотреть новинки</a>
+                        <a href="{% url 'shop_new_arrivals' %}" class="home-hero-bleed__btn home-hero-bleed__btn--primary">Смотреть новинки</a>
                         <a href="{% url 'shop' %}" class="home-hero-bleed__btn home-hero-bleed__btn--ghost">Весь ассортимент</a>
                     </div>
                 </div>
@@ -115,7 +115,7 @@
 
     {# Промо-плитки #}
     <div class="home-promo-grid">
-        <a href="{% url 'shop' %}?sort_by=recently-added" class="home-promo-tile">
+        <a href="{% url 'shop_new_arrivals' %}" class="home-promo-tile">
             <div class="home-promo-tile__img home-promo-tile__img--a" aria-hidden="true">
                 <img src="{% static 'img/home/promo-tile-newarrivals.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
             </div>
@@ -126,15 +126,15 @@
                 <span class="home-promo-tile__more">Смотреть →</span>
             </div>
         </a>
-        <a href="{% url 'shop' %}" class="home-promo-tile">
+        <a href="{% url 'shop_promotions' %}" class="home-promo-tile">
             <div class="home-promo-tile__img home-promo-tile__img--b" aria-hidden="true">
                 <img src="{% static 'img/home/promo-tile-catalog.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
             </div>
             <div class="home-promo-tile__shade"></div>
             <div class="home-promo-tile__body">
-                <span class="home-promo-tile__tag">Каталог</span>
+                <span class="home-promo-tile__tag">Акции</span>
                 <p class="home-promo-tile__title">Выгодные предложения</p>
-                <span class="home-promo-tile__more">В магазин →</span>
+                <span class="home-promo-tile__more">Смотреть →</span>
             </div>
         </a>
         <a href="{% url 'contact-us' %}" class="home-promo-tile">
@@ -238,7 +238,7 @@
                 <h2 id="home-new-heading" class="section-title">Недавно в каталоге</h2>
                 <p class="section-desc">Свежие поступления и обновления ассортимента.</p>
             </div>
-            <a href="{% url 'shop' %}?sort_by=recently-added" class="section-link">Все новинки →</a>
+            <a href="{% url 'shop_new_arrivals' %}" class="section-link">Все новинки →</a>
         </div>
         {% if new_arrivals %}
         <div class="product-grid">

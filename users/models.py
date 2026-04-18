@@ -64,6 +64,13 @@ class User(AbstractUser):
         verbose_name="Ошибка выгрузки в 1С",
         help_text="Текст последней ошибки create_counterparty (если была)",
     )
+    active_session_key = models.CharField(
+        max_length=40,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="Ключ сессии Django: одновременно только один активный вход (не staff).",
+    )
 
     objects = UserManager()
 

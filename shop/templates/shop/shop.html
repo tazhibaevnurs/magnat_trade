@@ -22,7 +22,7 @@
         <div class="catalog-layout">
             <div class="catalog-shop-main">
                 <div class="home-promo-grid shop-home-promo-grid">
-                    <a href="{% url 'shop' %}?sort_by=recently-added" class="home-promo-tile">
+                    <a href="{% url 'shop_new_arrivals' %}" class="home-promo-tile">
                         <div class="home-promo-tile__img home-promo-tile__img--a" aria-hidden="true">
                             <img src="{% static 'img/home/promo-tile-newarrivals.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
                         </div>
@@ -33,15 +33,15 @@
                             <span class="home-promo-tile__more">Смотреть →</span>
                         </div>
                     </a>
-                    <a href="{% url 'shop' %}" class="home-promo-tile">
+                    <a href="{% url 'shop_promotions' %}" class="home-promo-tile">
                         <div class="home-promo-tile__img home-promo-tile__img--b" aria-hidden="true">
                             <img src="{% static 'img/home/promo-tile-catalog.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
                         </div>
                         <div class="home-promo-tile__shade"></div>
                         <div class="home-promo-tile__body">
-                            <span class="home-promo-tile__tag">Каталог</span>
+                            <span class="home-promo-tile__tag">Акции</span>
                             <p class="home-promo-tile__title">Выгодные предложения</p>
-                            <span class="home-promo-tile__more">В магазин →</span>
+                            <span class="home-promo-tile__more">Смотреть →</span>
                         </div>
                     </a>
                     <a href="{% url 'contact-us' %}" class="home-promo-tile">

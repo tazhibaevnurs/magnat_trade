@@ -47,6 +47,8 @@ A full-stack Django-based e-commerce platform for premium stationery products, f
 - **Celery + Redis** — асинхронная выгрузка заказов в 1С (`…/orders/createOrder`). **Celery Beat** (сервис `celery-beat` в `docker-compose`) по умолчанию каждые **5 минут** обновляет цены и остатки из 1С (`integrations.tasks.sync_products_from_onec`, GET `productList`), а **полную** синхронизацию категорий и контрагентов (`integrations.tasks.sync_all_from_onec`) — каждые **60 минут** (`ONEC_BEAT_FULL_SYNC_MINUTES`, `0` отключает полный цикл в beat). Отключение beat: `ONEC_BEAT_SYNC_ENABLED`, интервал только товаров: `ONEC_BEAT_PRODUCT_SYNC_MINUTES` (или устаревшее `ONEC_BEAT_SYNC_MINUTES`). Локально: `celery -A magnat_trade_project worker -l info` и `celery -A magnat_trade_project beat -l info`.
 - **Структура приложений**: `users`, `products`, `orders`, `integrations`, `api` (тонкие views, service layer, repositories).
 - Подробные примеры запросов: [docs/API_EXAMPLES.md](docs/API_EXAMPLES.md).
+- Деплой (Docker Compose, переменные окружения, Gunicorn/Celery): [docs/DEPLOY.md](docs/DEPLOY.md).
+- **Две схемы данных в одной БД** (каталог 1С + заказы API vs демо-витрина и `shop_order`): [docs/DATA_MODEL_DOMAINS.md](docs/DATA_MODEL_DOMAINS.md).
 
 ## 📁 Project Structure
 
@@ -147,6 +149,8 @@ pip install -r requirements-mysql.txt
 На **Vercel** и при работе только с **SQLite** (переменная `DB_NAME` не задана) файл `requirements-mysql.txt` не нужен — так избегают ошибки сборки `mysqlclient` без `pkg-config` для MySQL. Если деплой идёт через **uv** и в репозитории есть `pyproject.toml` / `uv.lock` с зависимостью `mysqlclient`, уберите её оттуда или удалите эти файлы, чтобы сборка брала только `requirements.txt`.
 
 ### Деплой с базой данных (Vercel / облако)
+
+**Пошаговая инструкция:** [docs/DEPLOY_VERCEL_DATABASE.md](docs/DEPLOY_VERCEL_DATABASE.md) (**Supabase** + Vercel, `DATABASE_URL`, `sync_onec`, зеркало категорий, media).
 
 Чтобы на продакшене отображались товары и заказы, нужна **постоянная БД** (SQLite на serverless не подходит). В проекте поддерживается **PostgreSQL** через переменную **`DATABASE_URL`** (Neon, Supabase, Vercel Postgres и т.п.).
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 import pytest
 from django.urls import reverse
 
@@ -28,6 +30,38 @@ class TestCatalog:
         r = api_client.get(url)
         assert r.status_code == 200
         assert r.json()["sku"] == product.sku
+
+    def test_api_hides_wholesale_price_for_anonymous(self, api_client, product):
+        url = reverse("api-catalog-products")
+        r = api_client.get(url)
+        assert r.status_code == 200
+        row = next(x for x in r.json() if x["id"] == str(product.id))
+        assert "wholesale_price" not in row
+        assert row["retail_price"] == "100.00"
+
+    def test_api_hides_wholesale_price_for_retail_user(self, api_client, product, user_with_external):
+        api_client.force_login(user_with_external)
+        url = reverse("api-catalog-products")
+        r = api_client.get(url)
+        assert r.status_code == 200
+        row = next(x for x in r.json() if x["id"] == str(product.id))
+        assert "wholesale_price" not in row
+
+    def test_api_includes_wholesale_for_approved_wholesale_user(
+        self, api_client, product, user_wholesale_approved
+    ):
+        api_client.force_login(user_wholesale_approved)
+        url = reverse("api-catalog-products")
+        r = api_client.get(url)
+        assert r.status_code == 200
+        row = next(x for x in r.json() if x["id"] == str(product.id))
+        assert row["wholesale_price"] == "80.00"
+
+    def test_api_product_detail_hides_wholesale_for_guest(self, api_client, product):
+        url = reverse("api-catalog-product-detail", kwargs={"pk": product.id})
+        r = api_client.get(url)
+        assert r.status_code == 200
+        assert "wholesale_price" not in r.json()
 
 
 @pytest.mark.django_db
@@ -94,6 +128,43 @@ class TestCheckout:
         product.refresh_from_db()
         assert product.stock == 48
 
+    def test_checkout_rejects_wholesale_without_approval(self, api_client, product, user_with_external):
+        api_client.force_login(user_with_external)
+        url = reverse("api-checkout-order")
+        r = api_client.post(
+            url,
+            {
+                "items": [{"product_id": str(product.id), "quantity": 1}],
+                "price_type": "wholesale",
+                "currency": "KGS",
+            },
+            format="json",
+        )
+        assert r.status_code == 400
+        payload = str(r.json())
+        assert "одобр" in payload.lower() or "price_type" in payload
+
+    def test_checkout_allows_wholesale_after_approval(
+        self, api_client, product, user_wholesale_approved
+    ):
+        api_client.force_login(user_wholesale_approved)
+        url = reverse("api-checkout-order")
+        r = api_client.post(
+            url,
+            {
+                "items": [{"product_id": str(product.id), "quantity": 1}],
+                "price_type": "wholesale",
+                "currency": "KGS",
+            },
+            format="json",
+        )
+        assert r.status_code == 201
+        from orders.models import Order
+
+        order = Order.objects.get(id=r.json()["order_id"])
+        assert order.price_type == "wholesale"
+        assert order.total_amount == Decimal(str(product.wholesale_price))
+
 
 @pytest.mark.django_db
 class TestShopCategoryDescendants:
@@ -140,3 +211,27 @@ class TestShopCategoryDescendants:
         qs = filter_catalog_products(req)
         names = list(qs.values_list("name", flat=True))
         assert "Товар только в подкатегории" in names
+
+    def test_promotions_only_empty_list_returns_no_products(self):
+        from django.contrib.auth.models import AnonymousUser
+        from django.test import RequestFactory
+
+        from shop.catalog_display import filter_catalog_products
+
+        rf = RequestFactory()
+        req = rf.get("/akcii/")
+        req.user = AnonymousUser()
+        qs = filter_catalog_products(req, promotions_only=True)
+        assert qs.count() == 0
+
+    def test_new_arrivals_only_empty_list_returns_no_products(self):
+        from django.contrib.auth.models import AnonymousUser
+        from django.test import RequestFactory
+
+        from shop.catalog_display import filter_catalog_products
+
+        rf = RequestFactory()
+        req = rf.get("/novinki/")
+        req.user = AnonymousUser()
+        qs = filter_catalog_products(req, new_arrivals_only=True)
+        assert qs.count() == 0

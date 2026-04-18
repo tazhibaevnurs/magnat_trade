@@ -17,6 +17,7 @@
         <div>
             <p class="section-kicker" style="margin-bottom:var(--spacing-sm);">{{ product.category.name }}</p>
             <h1 class="product-info__title">{{ product.name }}</h1>
+            {% include "shop/includes/pdp_wishlist_button.html" with wishlist_mode="shop" shop_product_id=product.id %}
             <p class="section-desc" style="margin-bottom:var(--spacing-lg);">{{ product.description }}</p>
 
             <div class="product-info__price-block">

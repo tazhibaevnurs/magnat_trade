@@ -28,7 +28,7 @@
             <div id="cart-line-items" class="cart-list-container">
                 {% if items %}
                     {% for item in items %}
-                    <div class="cart-list-item" data-item-id="{{ item.id }}">
+                    <div class="cart-list-item" data-item-id="{{ item.id }}" data-max-stock="{% if item.catalog_product %}{{ item.catalog_product.stock }}{% else %}{{ item.product.stock }}{% endif %}">
                         <div>
                             <div class="cart-list-item-left_container">
                                 <label class="cart-list-item-select filter-checkbox">
@@ -61,6 +61,9 @@
                                         <span class="cart-list-item-price-label">Цена:</span>
                                         <span class="cart-list-item-price-value">{{ item.price|floatformat:2 }} сом</span>
                                     </div>
+                                    <p class="cart-list-item-stock">
+                                        {% if item.catalog_product %}В наличии: {{ item.catalog_product.stock }} шт.{% else %}В наличии: {{ item.product.stock }} шт.{% endif %}
+                                    </p>
                                 </div>
                             </div>
 
@@ -81,7 +84,7 @@
                                             <button class="counter-btn" data-action="decrement" type="button" aria-label="Уменьшить">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/></svg>
                                             </button>
-                                            <input class="counter-input" name="quantity" type="number" min="0" max="999" value="{{ item.quantity }}">
+                                            <input class="counter-input" name="quantity" type="number" min="0" max="{% if item.catalog_product %}{{ item.catalog_product.stock }}{% else %}{{ item.product.stock }}{% endif %}" value="{{ item.quantity }}">
                                             <button class="counter-btn" data-action="increment" type="button" aria-label="Увеличить">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                                             </button>

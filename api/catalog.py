@@ -31,6 +31,16 @@ class ProductOutSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request else None
+        from shop.pricing import user_sees_wholesale_prices
+
+        if not user_sees_wholesale_prices(user):
+            data.pop("wholesale_price", None)
+        return data
+
 
 class CategoryListView(ListAPIView):
     serializer_class = CategoryOutSerializer

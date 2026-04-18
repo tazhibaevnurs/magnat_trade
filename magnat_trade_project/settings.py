@@ -45,8 +45,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "rest_framework",
-    "django_watchfiles",
-    "django_browser_reload",
     "users",
     "products",
     "orders",
@@ -54,6 +52,8 @@ INSTALLED_APPS = [
     "api",
     "shop",
 ]
+if DEBUG:
+    INSTALLED_APPS.extend(["django_watchfiles", "django_browser_reload"])
 
 AUTH_USER_MODEL = "users.User"
 
@@ -66,9 +66,11 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "users.middleware.SingleSessionPerUserMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django_browser_reload.middleware.BrowserReloadMiddleware",
 ]
+if DEBUG:
+    MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
 
 ROOT_URLCONF = "magnat_trade_project.urls"
 
@@ -97,10 +99,23 @@ _db_name = (os.getenv("DB_NAME") or "").strip()
 if _database_url:
     import dj_database_url
 
+    # Supabase Transaction pooler (pooler.supabase.com:6543) — короткие соединения; иначе Django держит пул и получают ошибки.
+    # Переопределение: DATABASE_CONN_MAX_AGE=600
+    _conn_raw = os.getenv("DATABASE_CONN_MAX_AGE", "").strip()
+    if _conn_raw:
+        try:
+            _conn_max_age = int(_conn_raw)
+        except ValueError:
+            _conn_max_age = 600
+    elif "pooler.supabase.com" in _database_url:
+        _conn_max_age = 0
+    else:
+        _conn_max_age = 600
+
     DATABASES = {
         "default": dj_database_url.parse(
             _database_url,
-            conn_max_age=600,
+            conn_max_age=_conn_max_age,
             conn_health_checks=True,
         )
     }
@@ -139,6 +154,15 @@ USE_TZ = True
 STATIC_URL = "/static/"
 # Собранная статика (collectstatic) — для продакшена и Vercel; отдаётся через WhiteNoise
 STATIC_ROOT = BASE_DIR / "staticfiles"
+if not DEBUG:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -197,26 +221,30 @@ CELERY_TASK_EAGER_PROPAGATES = True
 
 # Периодическая синхронизация 1С → БД (Celery Beat)
 ONEC_BEAT_SYNC_ENABLED = os.getenv("ONEC_BEAT_SYNC_ENABLED", "true").lower() in ("1", "true", "yes")
-# Только товары (цены, остатки): GET productList — каждые N минут (по умолчанию 5)
+# Только товары (цены, остатки): GET productList — каждые N минут (по умолчанию 5). 0 = не ставить задачу в Beat.
 try:
     ONEC_BEAT_PRODUCT_SYNC_MINUTES = max(
-        1,
+        0,
         int(os.getenv("ONEC_BEAT_PRODUCT_SYNC_MINUTES", os.getenv("ONEC_BEAT_SYNC_MINUTES", "5"))),
     )
 except ValueError:
     ONEC_BEAT_PRODUCT_SYNC_MINUTES = 5
 # Полная синхронизация: категории, зеркало shop, товары, контрагенты — реже; 0 = не ставить в beat
 try:
-    ONEC_BEAT_FULL_SYNC_MINUTES = int(os.getenv("ONEC_BEAT_FULL_SYNC_MINUTES", "60"))
+    ONEC_BEAT_FULL_SYNC_MINUTES = max(0, int(os.getenv("ONEC_BEAT_FULL_SYNC_MINUTES", "60")))
 except ValueError:
     ONEC_BEAT_FULL_SYNC_MINUTES = 60
 
+# Расписание Beat подхватывает ``celery -A magnat_trade_project beat`` (см. docker-compose: celery-beat).
 CELERY_BEAT_SCHEDULE = {}
 if ONEC_BEAT_SYNC_ENABLED:
-    CELERY_BEAT_SCHEDULE["sync-onec-product-prices"] = {
-        "task": "integrations.tasks.sync_products_from_onec",
-        "schedule": timedelta(minutes=ONEC_BEAT_PRODUCT_SYNC_MINUTES),
-    }
+    # Частое обновление только номенклатуры (productList + при необходимости categoryProductList).
+    # 0 — не регистрировать задачу (остаётся только полная синхронизация раз в ONEC_BEAT_FULL_SYNC_MINUTES).
+    if ONEC_BEAT_PRODUCT_SYNC_MINUTES > 0:
+        CELERY_BEAT_SCHEDULE["sync-onec-product-prices"] = {
+            "task": "integrations.tasks.sync_products_from_onec",
+            "schedule": timedelta(minutes=ONEC_BEAT_PRODUCT_SYNC_MINUTES),
+        }
     if ONEC_BEAT_FULL_SYNC_MINUTES > 0:
         CELERY_BEAT_SCHEDULE["sync-onec-full-catalog"] = {
             "task": "integrations.tasks.sync_all_from_onec",
@@ -270,6 +298,17 @@ INTEGRATION_BASIC_PASSWORD = os.getenv("INTEGRATION_BASIC_PASSWORD", "")
 
 DEFAULT_WAREHOUSE_ID = os.getenv("DEFAULT_WAREHOUSE_ID", "MAIN")
 ORDER_EXPORT_TZ = os.getenv("ORDER_EXPORT_TZ", "Asia/Bishkek")
+
+# --- Витрина: только выбранные корневые разделы из дерева categoryProductList (products.Category id N-*) ---
+# Разделитель «|» сохраняет запятые внутри названия (например «Письменные товары, черчение»).
+# Пусто = показывать все корни, как приходит из 1С.
+_shop_nav_roots_raw = (os.getenv("SHOP_NAV_ROOT_CATEGORY_NAMES") or "").strip()
+if "|" in _shop_nav_roots_raw:
+    SHOP_NAV_ROOT_CATEGORY_NAMES = [x.strip() for x in _shop_nav_roots_raw.split("|") if x.strip()]
+elif _shop_nav_roots_raw:
+    SHOP_NAV_ROOT_CATEGORY_NAMES = [x.strip() for x in _shop_nav_roots_raw.split(",") if x.strip()]
+else:
+    SHOP_NAV_ROOT_CATEGORY_NAMES = []
 
 # --- Оплата ---
 PAYMENT_PROVIDER = os.getenv("PAYMENT_PROVIDER", "stub")

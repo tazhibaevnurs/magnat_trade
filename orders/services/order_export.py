@@ -18,8 +18,14 @@ logger = logging.getLogger(__name__)
 class OrderExportService:
     @staticmethod
     def build_payload(order: Order) -> dict[str, Any]:
+        from orders.constants import is_demo_line_product_id
+
+        for line in order.items.all():
+            if is_demo_line_product_id(line.product_id):
+                raise ValueError("Заказ с демо-позициями не выгружается в 1С.")
+
         user = order.user
-        if not user.external_id:
+        if not user or not user.external_id:
             raise ValueError("User has no external_id from 1С; sync customer first.")
 
         items: list[dict[str, Any]] = []

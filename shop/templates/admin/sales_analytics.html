@@ -81,14 +81,14 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     window.topProductsLabels = [
-        {% for product in top_products %}'{{ product.product__name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}
+        {% for product in top_products %}'{{ product.name_snapshot|default:""|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}
     ];
     window.topProductsData = [
         {% for product in top_products %}{{ product.total_sold }}{% if not forloop.last %},{% endif %}{% endfor %}
     ];
 
     window.bottomProductsLabels = [
-        {% for product in bottom_products %}'{{ product.product__name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}
+        {% for product in bottom_products %}'{{ product.name_snapshot|default:""|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}
     ];
     window.bottomProductsData = [
         {% for product in bottom_products %}{{ product.total_sold }}{% if not forloop.last %},{% endif %}{% endfor %}

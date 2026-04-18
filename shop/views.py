@@ -1,5 +1,7 @@
 import json
+import uuid
 from decimal import Decimal, InvalidOperation
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, update_session_auth_hash
@@ -7,9 +9,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Value, When
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST
 
 from .category_nav import (
@@ -24,9 +27,22 @@ from .catalog_display import (
     filter_catalog_products,
     in_stock_only_from_request,
 )
+from .services.new_arrival_items import shop_new_arrival_product_ids_ordered
+from .services.promotion_items import shop_promotion_product_ids_ordered
 from .pricing import can_access_manager_panel, catalog_unit_price
 from .exceptions import InsufficientStockError
-from .models import Address, Cart, CartItem, Category, Feedback, Order, OrderItem, Product, UserProfile
+from .models import (
+    Address,
+    Cart,
+    CartItem,
+    Category,
+    Feedback,
+    Product,
+    UserProfile,
+    WishlistItem,
+)
+from .order_display import attach_line_display_products
+from orders.models import Order as CatalogOrder
 from products.models import Product as CatalogProduct
 
 # Главная: две полные строки при 4 колонках сетки (4 + 4)
@@ -76,7 +92,7 @@ def _cart_summary_payload(cart):
     }
 
 
-def _filter_products(request):
+def _filter_products(request, *, promotions_only=False, new_arrivals_only=False):
     """Фильтрация каталога: поиск, категории (slug), диапазон цены, сортировка."""
     products = (
         Product.objects.filter(is_active=True)
@@ -120,6 +136,17 @@ def _filter_products(request):
     if in_stock_only_from_request(request):
         products = products.filter(stock__gt=0)
 
+    if promotions_only:
+        promoted_ids = shop_promotion_product_ids_ordered()
+        if promoted_ids:
+            products = products.filter(pk__in=promoted_ids)
+        else:
+            products = products.filter(discount_price__isnull=False).filter(discount_price__lt=F("price"))
+
+    if new_arrivals_only:
+        na_ids = shop_new_arrival_product_ids_ordered()
+        products = products.filter(pk__in=na_ids)
+
     sort_by = request.GET.get("sort_by", "name")
     if sort_by == "a-to-z":
         products = products.order_by("name")
@@ -151,16 +178,53 @@ def _filter_query_string(request) -> str:
     return q.urlencode()
 
 
-def _shop_context(request):
+def _filter_query_string_from_get(get_dict) -> str:
+    q = get_dict.copy()
+    q.pop("page", None)
+    return q.urlencode()
+
+
+def _shop_get_with_preset(request, preset: str | None):
+    """GET с подстановкой по умолчанию для страниц «Новинки» / «Акции»."""
+    defaults: dict[str, str] = {}
+    if preset == "new_arrivals":
+        defaults = {"sort_by": "recently-added"}
+    elif preset == "promotions":
+        # Не включаем «только в наличии» по умолчанию: акции — явный список из админки,
+        # иначе товар с stock=0 исчезает со страницы.
+        defaults = {"sort_by": "price-lowest-first"}
+    q = request.GET.copy()
+    for key, val in defaults.items():
+        if key not in q:
+            q[key] = val
+    return q
+
+
+class _ShopFilterRequestProxy:
+    __slots__ = ("GET", "user")
+
+    def __init__(self, get_qs, user):
+        self.GET = get_qs
+        self.user = user
+
+
+def _shop_context(request, preset: str | None = None):
     """Если в БД есть товары из 1С (products.Product), показываем их; иначе — демо shop.Product."""
+    g = _shop_get_with_preset(request, preset)
+    filter_req = _ShopFilterRequestProxy(g, request.user)
+
     if catalog_products_exist():
-        qs = filter_catalog_products(request)
+        qs = filter_catalog_products(
+            filter_req,
+            promotions_only=(preset == "promotions"),
+            new_arrivals_only=(preset == "new_arrivals"),
+        )
         paginator = Paginator(qs, 48)
-        page_number = request.GET.get("page") or 1
+        page_number = g.get("page") or 1
         page_obj = paginator.get_page(page_number)
         products = [CatalogProductDisplay(p, user=request.user) for p in page_obj.object_list]
-        price_min = request.GET.get("price_min", "").strip()
-        price_max = request.GET.get("price_max", "").strip()
+        price_min = g.get("price_min", "").strip()
+        price_max = g.get("price_max", "").strip()
         breadcrumb_items = [
             {"name": "Главная", "url": "/"},
             {"name": "Магазин", "url": None},
@@ -169,19 +233,23 @@ def _shop_context(request):
             "products": products,
             "page_obj": page_obj,
             "catalog_mode": True,
-            "filter_query_string": _filter_query_string(request),
-            "search_query": request.GET.get("search", "").strip(),
-            "selected_categories": [c for c in request.GET.getlist("categories") if c],
-            "sort_by": request.GET.get("sort_by", "name"),
+            "filter_query_string": _filter_query_string_from_get(g),
+            "search_query": g.get("search", "").strip(),
+            "selected_categories": [c for c in g.getlist("categories") if c],
+            "sort_by": g.get("sort_by", "name"),
             "price_min": price_min,
             "price_max": price_max,
-            "in_stock": in_stock_only_from_request(request),
+            "in_stock": g.get("in_stock") == "1",
             "breadcrumb_items": breadcrumb_items,
         }
 
-    products, search_query, selected_categories, sort_by = _filter_products(request)
-    price_min = request.GET.get("price_min", "").strip()
-    price_max = request.GET.get("price_max", "").strip()
+    products, search_query, selected_categories, sort_by = _filter_products(
+        filter_req,
+        promotions_only=(preset == "promotions"),
+        new_arrivals_only=(preset == "new_arrivals"),
+    )
+    price_min = g.get("price_min", "").strip()
+    price_max = g.get("price_max", "").strip()
     breadcrumb_items = [
         {"name": "Главная", "url": "/"},
         {"name": "Магазин", "url": None},
@@ -190,13 +258,13 @@ def _shop_context(request):
         "products": products,
         "page_obj": None,
         "catalog_mode": False,
-        "filter_query_string": _filter_query_string(request),
+        "filter_query_string": _filter_query_string_from_get(g),
         "search_query": search_query,
         "selected_categories": selected_categories,
         "sort_by": sort_by,
         "price_min": price_min,
         "price_max": price_max,
-        "in_stock": in_stock_only_from_request(request),
+        "in_stock": g.get("in_stock") == "1",
         "breadcrumb_items": breadcrumb_items,
     }
 
@@ -263,6 +331,56 @@ def shop(request):
     """Страница каталога."""
     context = _shop_context(request)
     return render(request, "shop/shop.html", context)
+
+
+def shop_new_arrivals(request):
+    """Новинки — отдельная страница (не дублирует вид полного магазина)."""
+    context = _shop_context(request, preset="new_arrivals")
+    context.update(
+        {
+            "page_heading": "Новинки",
+            "page_lead": "Подборка из админки: добавляйте позиции в разделе «Новинки: товары».",
+            "grid_url": reverse("shop_grid_new_arrivals"),
+            "breadcrumb_items": [
+                {"name": "Главная", "url": "/"},
+                {"name": "Магазин", "url": reverse("shop")},
+                {"name": "Новинки", "url": None},
+            ],
+            "page_title": "Новинки",
+            "page_theme": "novinki",
+        }
+    )
+    return render(request, "shop/catalog_section_page.html", context)
+
+
+def shop_new_arrivals_grid(request):
+    context = _shop_context(request, preset="new_arrivals")
+    return render(request, "shop/partials/product_grid.html", context)
+
+
+def shop_promotions(request):
+    """Акции — отдельная страница."""
+    context = _shop_context(request, preset="promotions")
+    context.update(
+        {
+            "page_heading": "Акции",
+            "page_lead": "Специальные цены и выгодные предложения — список задаётся в админке («Акции: товары»).",
+            "grid_url": reverse("shop_grid_promotions"),
+            "breadcrumb_items": [
+                {"name": "Главная", "url": "/"},
+                {"name": "Магазин", "url": reverse("shop")},
+                {"name": "Акции", "url": None},
+            ],
+            "page_title": "Акции",
+            "page_theme": "akcii",
+        }
+    )
+    return render(request, "shop/catalog_section_page.html", context)
+
+
+def shop_promotions_grid(request):
+    context = _shop_context(request, preset="promotions")
+    return render(request, "shop/partials/product_grid.html", context)
 
 
 def shop_grid(request):
@@ -406,12 +524,146 @@ def catalog_pdp(request, product_id):
     )
 
 
+def wishlist_login_redirect(request):
+    """Неавторизованный клик по «избранному» → сообщение и страница регистрации."""
+    messages.info(
+        request,
+        "Чтобы сохранять товары в избранном, зарегистрируйтесь или войдите в аккаунт.",
+    )
+    next_url = request.GET.get("next") or "/"
+    return redirect(f"{reverse('sign-up')}?{urlencode({'next': next_url})}")
+
+
+@require_POST
+def wishlist_toggle(request):
+    """Добавить/убрать товар из избранного (POST, для авторизованных)."""
+    if not request.user.is_authenticated:
+        next_url = request.POST.get("next") or request.META.get("HTTP_REFERER", "/")
+        url = f"{reverse('sign-up')}?{urlencode({'next': next_url})}"
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(
+                {"success": False, "login_required": True, "redirect_url": url},
+                status=401,
+            )
+        messages.info(
+            request,
+            "Чтобы сохранять товары в избранном, зарегистрируйтесь или войдите в аккаунт.",
+        )
+        return redirect(url)
+
+    catalog_product_id = (request.POST.get("catalog_product_id") or "").strip()
+    product_id_raw = (request.POST.get("product_id") or "").strip()
+
+    if catalog_product_id and product_id_raw:
+        err = "Укажите только один тип товара."
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "error": err}, status=400)
+        messages.error(request, err)
+        return redirect(request.META.get("HTTP_REFERER", reverse("shop")))
+
+    if not catalog_product_id and not product_id_raw:
+        err = "Не указан товар."
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "error": err}, status=400)
+        messages.error(request, err)
+        return redirect(request.META.get("HTTP_REFERER", reverse("shop")))
+
+    if catalog_product_id:
+        cp = get_object_or_404(CatalogProduct, pk=catalog_product_id, is_active=True)
+        existing = WishlistItem.objects.filter(user=request.user, catalog_product=cp).first()
+        if existing:
+            existing.delete()
+            in_wishlist = False
+        else:
+            WishlistItem.objects.create(user=request.user, catalog_product=cp)
+            in_wishlist = True
+    else:
+        try:
+            pid = int(product_id_raw)
+        except (TypeError, ValueError):
+            err = "Некорректный товар."
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": err}, status=400)
+            messages.error(request, err)
+            return redirect(request.META.get("HTTP_REFERER", reverse("shop")))
+        product = get_object_or_404(Product.objects.select_related("category"), pk=pid)
+        existing = WishlistItem.objects.filter(user=request.user, shop_product=product).first()
+        if existing:
+            existing.delete()
+            in_wishlist = False
+        else:
+            WishlistItem.objects.create(user=request.user, shop_product=product)
+            in_wishlist = True
+
+    wishlist_count = WishlistItem.objects.filter(user=request.user).count()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "success": True,
+                "in_wishlist": in_wishlist,
+                "wishlist_count": wishlist_count,
+            }
+        )
+
+    messages.success(
+        request,
+        "Удалено из избранного." if not in_wishlist else "Добавлено в избранное.",
+    )
+    return _safe_redirect_same_site(request)
+
+
+def wishlist(request):
+    """Страница избранного в личном кабинете."""
+    if not request.user.is_authenticated:
+        messages.info(
+            request,
+            "Чтобы видеть избранное, зарегистрируйтесь или войдите в аккаунт.",
+        )
+        return redirect(f"{reverse('sign-up')}?{urlencode({'next': request.get_full_path()})}")
+
+    qs = (
+        WishlistItem.objects.filter(user=request.user)
+        .select_related("shop_product", "shop_product__category", "catalog_product", "catalog_product__category")
+        .prefetch_related("catalog_product__images", "shop_product__images")
+        .order_by("-created_at")
+    )
+
+    wishlist_rows = []
+    for wi in qs:
+        if wi.catalog_product_id:
+            wishlist_rows.append(
+                {
+                    "catalog": True,
+                    "product": CatalogProductDisplay(wi.catalog_product, user=request.user),
+                }
+            )
+        else:
+            wishlist_rows.append({"catalog": False, "product": wi.shop_product})
+
+    breadcrumb_items = [
+        {"name": "Главная", "url": "/"},
+        {"name": "Личный кабинет", "url": reverse("profile")},
+        {"name": "Избранное", "url": None},
+    ]
+
+    return render(
+        request,
+        "shop/wishlist.html",
+        {
+            "wishlist_rows": wishlist_rows,
+            "breadcrumb_items": breadcrumb_items,
+            "page_title": "Избранное",
+        },
+    )
+
+
 def sign_in(request):
 
     # Redirect authenticated users to the home page
     if request.user.is_authenticated:
         return redirect('landing')
-    
+
     # Breadcrumb for sign-in page
     breadcrumb_items = [
         {'name': 'Главная', 'url': '/'},
@@ -520,6 +772,18 @@ def contact_us(request):
     }
 
     return render(request, 'shop/contact-us.html', context)
+
+
+def _safe_redirect_same_site(request, *, fallback_name="shop"):
+    """После POST «в корзину» без AJAX — вернуть на предыдущую страницу (каталог), не на /cart/."""
+    referer = request.META.get("HTTP_REFERER")
+    if referer and url_has_allowed_host_and_scheme(
+        referer,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(referer)
+    return redirect(fallback_name)
 
 
 def _get_or_create_cart(request):
@@ -654,7 +918,7 @@ def add_to_cart(request):
         )
 
     messages.success(request, f"«{product_name}» добавлен в корзину!")
-    return redirect("cart")
+    return _safe_redirect_same_site(request)
 
 # Replace the simple cart view above with this one so /cart/ shows items
 def cart(request):
@@ -744,7 +1008,6 @@ def remove_cart_item(request, item_id):
 
 
 def checkout(request):
-    from .models import InventoryTransaction
     from .services.html_catalog_order import place_order_from_catalog_cart_items
 
     cart = _get_or_create_cart(request)
@@ -919,65 +1182,36 @@ def checkout(request):
                 },
             )
 
+        from .services.demo_order import place_demo_order_from_cart_items
+
         try:
-            with transaction.atomic():
-                order = Order.objects.create(
-                    user=request.user if request.user.is_authenticated else None,
-                    full_name=full_name,
-                    email=email,
-                    address=address,
-                    payment_method=payment_method,
-                    total_amount=total_amount,
-                    shipping_fee=shipping_fee,
-                    status="pending",
-                )
-
-                for item in items:
-                    product = Product.objects.select_for_update().get(pk=item.product_id)
-                    stock_before = product.stock
-                    if stock_before < item.quantity:
-                        raise InsufficientStockError(product.name, stock_before)
-                    rows = Product.objects.filter(
-                        pk=product.pk,
-                        stock__gte=item.quantity,
-                    ).update(stock=F("stock") - item.quantity)
-                    if rows != 1:
-                        raise InsufficientStockError(product.name, stock_before)
-                    stock_after = stock_before - item.quantity
-
-                    order_item = OrderItem.objects.create(
-                        order=order,
-                        product=item.product,
-                        quantity=item.quantity,
-                        price=item.product.current_price,
-                    )
-                    order_item.total_price = order_item.quantity * order_item.price
-                    order_item.save()
-
-                    InventoryTransaction.objects.create(
-                        product=item.product,
-                        order=order,
-                        transaction_type="sale",
-                        quantity_change=-item.quantity,
-                        stock_before=stock_before,
-                        stock_after=stock_after,
-                        notes=f"Order #{order.id} - {full_name}",
-                        created_by=request.user if request.user.is_authenticated else None,
-                    )
-
-                for item in items:
-                    item.delete()
-
-                if "selected_items" in request.session:
-                    del request.session["selected_items"]
-
-        except InsufficientStockError as exc:
-            return _checkout_error_response(
-                f"Недостаточно товара «{exc.product_name}». В наличии: {exc.available}",
-                full_name,
-                email,
-                address,
+            order = place_demo_order_from_cart_items(
+                user=request.user if request.user.is_authenticated else None,
+                cart_items=list(items),
+                full_name=full_name,
+                email=email,
+                address=address,
+                payment_method=payment_method,
+                subtotal=subtotal,
+                shipping_fee=shipping_fee,
             )
+        except ValueError as exc:
+            code = str(exc)
+            if code.startswith("stock:"):
+                return _checkout_error_response(
+                    "Не удалось зарезервировать товар. Обновите корзину и попробуйте снова.",
+                    full_name,
+                    email,
+                    address,
+                )
+            return _checkout_error_response(code, full_name, email, address)
+
+        for item in items:
+            item.delete()
+        if "selected_items" in request.session:
+            del request.session["selected_items"]
+
+        attach_line_display_products(order)
 
         breadcrumb_items = [
             {"name": "Главная", "url": "/"},
@@ -987,7 +1221,6 @@ def checkout(request):
         ]
 
         messages.success(request, f"Заказ №{order.id} успешно оформлен!")
-        order = Order.objects.prefetch_related("items__product").get(pk=order.pk)
         return render(
             request,
             "shop/checkout_success.html",
@@ -1115,6 +1348,10 @@ def user_profile(request):  # Renamed from 'profile' to 'user_profile'
             status=WholesaleUpgradeRequest.Status.PENDING,
         ).first()
 
+    wishlist_count = 0
+    if request.user.is_authenticated:
+        wishlist_count = WishlistItem.objects.filter(user=request.user).count()
+
     context = {
         'breadcrumb_items': breadcrumb_items,
         'user': request.user,
@@ -1122,6 +1359,7 @@ def user_profile(request):  # Renamed from 'profile' to 'user_profile'
         'user_addresses': user_addresses,
         'wholesale_pending': wholesale_pending,
         'is_manager': can_access_manager_panel(request.user),
+        'wishlist_count': wishlist_count,
     }
 
     return render(request, 'shop/profile.html', context)
@@ -1379,7 +1617,9 @@ def feedback_success(request):
 def orders(request):
     """Display user's order history"""
     # Get all orders for the current user, ordered by newest first
-    user_orders = Order.objects.filter(user=request.user).prefetch_related('items__product').order_by('-placed_at')
+    user_orders = CatalogOrder.objects.filter(user=request.user).prefetch_related("items").order_by(
+        "-created_at"
+    )
     
     # Paginate orders (10 per page)
     paginator = Paginator(user_orders, 10)
@@ -1401,11 +1641,18 @@ def orders(request):
 @login_required
 def order_detail(request, order_id):
     """Display detailed information about a specific order"""
+    oid = order_id
+    if not isinstance(oid, uuid.UUID):
+        try:
+            oid = uuid.UUID(str(order_id))
+        except ValueError as err:
+            raise Http404 from err
     order = get_object_or_404(
-        Order.objects.prefetch_related("items__product"),
-        id=order_id,
+        CatalogOrder.objects.prefetch_related("items"),
+        id=oid,
         user=request.user,
     )
+    attach_line_display_products(order)
     
     breadcrumb_items = [
         {'name': 'Главная', 'url': '/'},

@@ -67,9 +67,33 @@ def expand_category_slugs_including_descendants(
     return list(out)
 
 
-def filter_catalog_products(request) -> Any:
-    """QuerySet товаров 1С с теми же GET-фильтрами, что и у витрины."""
+def filter_catalog_products(
+    request, *, promotions_only: bool = False, new_arrivals_only: bool = False
+) -> Any:
+    """QuerySet товаров 1С с теми же GET-фильтрами, что и у витрины.
+
+    При ``promotions_only=True`` — только товары из ``PromotionItem`` (1С).
+    При ``new_arrivals_only=True`` — только товары из ``NewArrivalItem`` (1С).
+    Если соответствующий список в БД пуст — пустой queryset.
+    """
+    from shop.services.new_arrival_items import catalog_new_arrival_product_ids_ordered
+    from shop.services.promotion_items import catalog_promotion_product_ids_ordered
+
     qs = CatalogProduct.objects.filter(is_active=True).select_related("category").prefetch_related("images")
+
+    if promotions_only and new_arrivals_only:
+        return CatalogProduct.objects.none()
+
+    if promotions_only:
+        id_list = catalog_promotion_product_ids_ordered()
+        if not id_list:
+            return CatalogProduct.objects.none()
+        qs = qs.filter(pk__in=id_list)
+    elif new_arrivals_only:
+        id_list = catalog_new_arrival_product_ids_ordered()
+        if not id_list:
+            return CatalogProduct.objects.none()
+        qs = qs.filter(pk__in=id_list)
 
     wholesale = user_sees_wholesale_prices(request.user)
     price_field = "wholesale_price" if wholesale else "retail_price"

@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from integrations.payment.service import PaymentService
 from orders.models import Order, OrderItem
 from products.models import Product
+from shop.pricing import user_sees_wholesale_prices
 
 
 def _onec_export_enabled() -> bool:
@@ -48,6 +49,15 @@ class CheckoutOrderView(APIView):
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
         user = request.user
+
+        if data["price_type"] == "wholesale" and not user_sees_wholesale_prices(user):
+            raise ValidationError(
+                {
+                    "price_type": (
+                        "Оптовые цены доступны только после одобрения заявки на оптовый доступ."
+                    )
+                }
+            )
 
         if _onec_export_enabled() and not getattr(user, "external_id", None):
             return Response(

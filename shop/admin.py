@@ -5,6 +5,7 @@ from django.db.models import Count, DecimalField, F, Q, Sum
 from django.shortcuts import render
 from django.urls import path
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from .models import (
     Address,
@@ -13,15 +14,70 @@ from .models import (
     Category,
     Feedback,
     InventoryTransaction,
-    Order,
-    OrderItem,
+    NewArrivalItem,
+    Order as ShopLegacyOrder,
+    OrderItem as ShopLegacyOrderItem,
     Product,
     ProductImage,
+    PromotionItem,
+    WishlistItem,
 )
 
 admin.site.site_header = "Magnat Trade — Админка"
 admin.site.site_title = "Magnat Trade"
 admin.site.index_title = "Управление сайтом"
+
+
+@admin.register(NewArrivalItem)
+class NewArrivalItemAdmin(admin.ModelAdmin):
+    list_display = ("id", "product_display", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    ordering = ("sort_order", "id")
+    raw_id_fields = ("catalog_product", "shop_product")
+    fieldsets = (
+        ("Товар", {"fields": ("catalog_product", "shop_product"), "description": "Заполните только одно поле."}),
+        ("На сайте", {"fields": ("sort_order", "is_active")}),
+    )
+
+    @admin.display(description="Товар")
+    def product_display(self, obj: NewArrivalItem) -> str:
+        if obj.catalog_product_id:
+            return format_html("<span>1С: {}</span>", obj.catalog_product.name[:80])
+        if obj.shop_product_id:
+            return format_html("<span>Витрина: {}</span>", obj.shop_product.name[:80])
+        return "—"
+
+
+@admin.register(WishlistItem)
+class WishlistItemAdmin(admin.ModelAdmin):
+    list_display = ("user", "catalog_product", "shop_product", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("user__email", "catalog_product_id", "shop_product__name")
+    raw_id_fields = ("user", "catalog_product", "shop_product")
+    readonly_fields = ("created_at",)
+    ordering = ("-created_at",)
+
+
+@admin.register(PromotionItem)
+class PromotionItemAdmin(admin.ModelAdmin):
+    list_display = ("id", "product_display", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    ordering = ("sort_order", "id")
+    raw_id_fields = ("catalog_product", "shop_product")
+    fieldsets = (
+        ("Товар", {"fields": ("catalog_product", "shop_product"), "description": "Заполните только одно поле."}),
+        ("На сайте", {"fields": ("sort_order", "is_active")}),
+    )
+
+    @admin.display(description="Товар")
+    def product_display(self, obj: PromotionItem) -> str:
+        if obj.catalog_product_id:
+            return format_html("<span>1С: {}</span>", obj.catalog_product.name[:80])
+        if obj.shop_product_id:
+            return format_html("<span>Витрина: {}</span>", obj.shop_product.name[:80])
+        return "—"
 
 
 @admin.register(Category)
@@ -78,7 +134,8 @@ class ProductAdmin(admin.ModelAdmin):
                 url,
             )
         return format_html(
-            '<div style="width:100px;height:100px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;">Нет фото</div>'
+            '<div style="width:100px;height:100px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#666;">{}</div>',
+            "Нет фото",
         )
 
     @admin.display(description="Наличие")
@@ -101,14 +158,18 @@ class ProductAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def sales_analytics_view(self, request):
-        total_orders = Order.objects.count()
-        total_revenue = Order.objects.aggregate(total=Sum("total_amount"))["total"] or 0
-        completed_orders = Order.objects.filter(status="delivered").count()
-        pending_orders = Order.objects.filter(status="pending").count()
+        from orders.models import Order as CatalogOrder
+        from orders.models import OrderItem as CatalogOrderItem
+
+        total_orders = CatalogOrder.objects.count()
+        total_revenue = CatalogOrder.objects.aggregate(total=Sum("total_amount"))["total"] or 0
+        completed_orders = CatalogOrder.objects.filter(status="delivered").count()
+        pending_orders = CatalogOrder.objects.filter(status="pending").count()
+        cancelled_orders = CatalogOrder.objects.filter(status="cancelled").count()
 
         top_products = (
-            OrderItem.objects.values("product__name")
-            .annotate(total_sold=Sum("quantity"), revenue=Sum("price"))
+            CatalogOrderItem.objects.values("name_snapshot")
+            .annotate(total_sold=Sum("quantity"))
             .order_by("-total_sold")[:10]
         )
 
@@ -118,6 +179,7 @@ class ProductAdmin(admin.ModelAdmin):
             total_revenue=total_revenue,
             completed_orders=completed_orders,
             pending_orders=pending_orders,
+            cancelled_orders=cancelled_orders,
             top_products=top_products,
             bottom_products=[],
             monthly_sales=[],
@@ -141,8 +203,8 @@ class CartItemAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
 
-@admin.register(OrderItem)
-class OrderItemAdmin(admin.ModelAdmin):
+@admin.register(ShopLegacyOrderItem)
+class ShopLegacyOrderItemAdmin(admin.ModelAdmin):
     list_display = ("order", "product", "quantity", "price", "total_price")
     list_filter = ("order__status", "product")
     search_fields = ("order__id", "product__name")
@@ -195,7 +257,7 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
         "created_by",
     )
     list_filter = ("transaction_type", "created_at", "product__category")
-    search_fields = ("product__name", "order__id", "notes", "created_by__email")
+    search_fields = ("product__name", "order__id", "catalog_order__id", "notes", "created_by__email")
     readonly_fields = ("created_at", "stock_before", "stock_after")
 
     @admin.display(description="Изменение")
@@ -209,11 +271,14 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
 
     @admin.display(description="Заказ")
     def order_link(self, obj):
-        if obj.order:
-            from django.urls import reverse
+        from django.urls import reverse
 
-            url = reverse("admin:shop_order_change", args=[obj.order.id])
-            return format_html('<a href="{}">Заказ №{}</a>', url, obj.order.id)
+        if obj.catalog_order_id:
+            url = reverse("admin:orders_order_change", args=[obj.catalog_order_id])
+            return format_html('<a href="{}">Заказ {}</a>', url, obj.catalog_order_id)
+        if obj.order_id:
+            url = reverse("admin:shop_order_change", args=[obj.order_id])
+            return format_html('<a href="{}">Заказ №{} (legacy)</a>', url, obj.order_id)
         return "-"
 
     def get_urls(self):
@@ -235,7 +300,7 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
         thirty_days_ago = datetime.now() - timedelta(days=30)
         recent_transactions = (
             InventoryTransaction.objects.filter(created_at__gte=thirty_days_ago)
-            .select_related("product", "order", "created_by")
+            .select_related("product", "order", "catalog_order", "created_by")
             .order_by("-created_at")[:50]
         )
         total_inventory_value = Product.objects.aggregate(
@@ -256,8 +321,8 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
         return render(request, "admin/inventory_dashboard.html", context)
 
 
-@admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+@admin.register(ShopLegacyOrder)
+class ShopLegacyOrderAdmin(admin.ModelAdmin):
     list_display = ("id", "full_name", "email", "total_amount", "shipping_fee", "status", "placed_at", "user")
     search_fields = ("full_name", "email", "address", "user__email")
     list_filter = ("status", "payment_method", "placed_at")
@@ -292,7 +357,7 @@ class OrderAdmin(admin.ModelAdmin):
             return "—"
         transactions = obj.inventory_transactions.all().select_related("product")
         if not transactions:
-            return format_html("<em>Операций по складу нет</em>")
+            return format_html("<em>{}</em>", "Операций по складу нет")
         html = '<table style="width:100%; border-collapse: collapse;">'
         html += '<tr style="background: #f0f0f0;"><th style="padding:8px; text-align:left;">Товар</th><th style="padding:8px; text-align:center;">Изменение</th><th style="padding:8px; text-align:center;">Было</th><th style="padding:8px; text-align:center;">Стало</th></tr>'
         for trans in transactions:
@@ -301,7 +366,7 @@ class OrderAdmin(admin.ModelAdmin):
             html += f"<td style=\"padding:8px; border-top:1px solid #ddd; text-align:center;\">{trans.stock_before}</td>"
             html += f"<td style=\"padding:8px; border-top:1px solid #ddd; text-align:center;\">{trans.stock_after}</td></tr>"
         html += "</table>"
-        return format_html(html)
+        return mark_safe(html)
 
     def get_urls(self):
         urls = super().get_urls()
@@ -313,14 +378,16 @@ class OrderAdmin(admin.ModelAdmin):
     def order_history_view(self, request):
         from django.db.models.functions import TruncMonth
 
-        all_orders = Order.objects.all().select_related("user").prefetch_related("items__product").order_by("-placed_at")
+        all_orders = ShopLegacyOrder.objects.all().select_related("user").prefetch_related(
+            "items__product"
+        ).order_by("-placed_at")
         total_orders = all_orders.count()
         total_revenue = all_orders.aggregate(Sum("total_amount"))["total_amount__sum"] or 0
         orders_by_status = list(
             all_orders.values("status").annotate(count=Count("id"), revenue=Sum("total_amount")).order_by("-count")
         )
         for s in orders_by_status:
-            s["status_display"] = dict(Order.STATUS_CHOICES).get(s["status"], s["status"])
+            s["status_display"] = dict(ShopLegacyOrder.STATUS_CHOICES).get(s["status"], s["status"])
         recent_orders = all_orders[:50]
         monthly_orders = (
             all_orders.annotate(month=TruncMonth("placed_at"))

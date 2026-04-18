@@ -51,6 +51,32 @@
                 </div>
                 <p class="profile-sidebar-card__name">{{ user.first_name|default:user.email }} {{ user.last_name }}</p>
                 <p class="profile-sidebar-card__email">{{ user.email }}</p>
+                <nav class="profile-sidebar-nav" aria-label="Разделы личного кабинета" style="margin-top:var(--spacing-md);padding-top:var(--spacing-md);border-top:1px solid var(--color-border-light, #e5e7eb);">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]" style="margin:0 0 var(--spacing-sm);">Разделы</p>
+                    <ul class="profile-sidebar-nav__list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--spacing-xs);">
+                        <li>
+                            <span class="profile-sidebar-nav__current" style="display:flex;align-items:center;gap:var(--spacing-sm);padding:0.5rem 0;color:var(--color-primary);font-weight:600;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
+                                Профиль
+                            </span>
+                        </li>
+                        <li>
+                            <a href="{% url 'orders' %}" class="profile-sidebar-nav__link" style="display:flex;align-items:center;gap:var(--spacing-sm);padding:0.5rem 0;color:var(--color-text-primary);text-decoration:none;font-weight:500;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h15.75m0 0a1.5 1.5 0 0 0-3 0m3 0a1.5 1.5 0 0 1-3 0m-12.75 0h11.25m-11.25 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0"/></svg>
+                                Заказы
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'wishlist' %}" class="profile-sidebar-nav__link" style="display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-sm);padding:0.5rem 0;color:var(--color-text-primary);text-decoration:none;font-weight:500;">
+                                <span style="display:flex;align-items:center;gap:var(--spacing-sm);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+                                    Избранные
+                                </span>
+                                {% if wishlist_count %}<span style="font-size:0.75rem;font-weight:600;background:var(--color-bg-light, #f1f5f9);color:var(--color-text-secondary);padding:0.125rem 0.5rem;border-radius:9999px;">{{ wishlist_count }}</span>{% endif %}
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
                 <div class="profile-sidebar-card__meta">
                     <p>На сайте с <time datetime="{{ user.date_joined|date:'c' }}">{{ user.date_joined|date:"d.m.Y" }}</time></p>
                     <p>Последний вход: {% if user.last_login %}<time datetime="{{ user.last_login|date:'c' }}">{{ user.last_login|date:"d.m.Y H:i" }}</time>{% else %}—{% endif %}</p>
@@ -60,6 +86,21 @@
         </aside>
 
         <div class="profile-main min-w-0 space-y-6 lg:col-span-8">
+            <section aria-labelledby="profile-favorites-heading">
+                <div class="auth-card contact-page__form-card border border-[var(--color-border-subtle)]">
+                    <div class="profile-favorites-card flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
+                        <div class="min-w-0 w-full md:flex-1 md:min-w-0">
+                            <h2 class="contact-page__form-title" id="profile-favorites-heading">Избранные</h2>
+                            <p class="contact-page__form-lead">Товары, которые вы сохранили. Добавляйте их в список по значку сердца в каталоге или на странице товара.</p>
+                            <p class="section-desc" style="margin:var(--spacing-sm) 0 0;">
+                                Сохранено товаров: <strong>{{ wishlist_count }}</strong>
+                            </p>
+                        </div>
+                        <a href="{% url 'wishlist' %}" class="btn-primary w-full shrink-0 text-center md:w-auto md:self-center md:whitespace-nowrap">Открыть избранное</a>
+                    </div>
+                </div>
+            </section>
+
             {% if user.user_type == 'retail' and not is_manager %}
             <section aria-labelledby="profile-wholesale-heading">
                 <div class="auth-card contact-page__form-card border-red-200/80 bg-gradient-to-br from-red-50/90 to-[var(--color-bg-card)]">

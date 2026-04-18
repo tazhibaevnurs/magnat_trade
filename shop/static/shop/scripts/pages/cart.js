@@ -221,22 +221,33 @@ const initializeCartPage = () => {
                 e.preventDefault();
                 const form = btn.closest('form.update-item-form');
                 if (!form) return;
+                const row = form.closest('.cart-list-item');
                 const input = form.querySelector('input[name="quantity"]');
                 if (!input || btn.disabled) return;
                 const action = btn.getAttribute('data-action');
                 let v = parseInt(input.value, 10) || 0;
+                const maxStockRaw = row?.getAttribute('data-max-stock');
+                const maxStock = parseInt(maxStockRaw, 10);
                 if (action === 'increment') {
+                    if (Number.isFinite(maxStock) && v >= maxStock) {
+                        showCartToast(`В наличии не более ${maxStock} шт.`, 'warning');
+                        input.value = maxStock;
+                        return;
+                    }
                     v += 1;
                 } else if (action === 'decrement') {
                     v = Math.max(0, v - 1);
                 } else {
                     return;
                 }
+                if (Number.isFinite(maxStock) && v > maxStock) {
+                    v = maxStock;
+                    showCartToast(`В наличии не более ${maxStock} шт.`, 'warning');
+                }
                 input.value = v;
                 btn.disabled = true;
                 btn.style.opacity = '0.6';
                 try {
-                    const row = form.closest('.cart-list-item');
                     if (v === 0) {
                         const data = await postCartFormFetch(form);
                         applyCartSummary(data);
@@ -259,9 +270,15 @@ const initializeCartPage = () => {
                 if (!e.target.matches('input[name="quantity"]')) return;
                 const form = e.target.closest('form.update-item-form');
                 if (!form) return;
-                const input = form.querySelector('input[name="quantity"]');
-                const v = parseInt(input?.value, 10) || 0;
                 const row = form.closest('.cart-list-item');
+                const input = form.querySelector('input[name="quantity"]');
+                let v = parseInt(input?.value, 10) || 0;
+                const maxBlur = parseInt(row?.getAttribute('data-max-stock'), 10);
+                if (Number.isFinite(maxBlur) && v > maxBlur) {
+                    v = maxBlur;
+                    if (input) input.value = maxBlur;
+                    showCartToast(`В наличии не более ${maxBlur} шт.`, 'warning');
+                }
                 try {
                     if (v <= 0) {
                         const data = await postCartFormFetch(form);
@@ -305,8 +322,14 @@ const initializeCartPage = () => {
                 if (!form.classList.contains('update-item-form')) return;
                 e.preventDefault();
                 const input = form.querySelector('input[name="quantity"]');
-                const v = parseInt(input?.value, 10) || 0;
                 const row = form.closest('.cart-list-item');
+                let v = parseInt(input?.value, 10) || 0;
+                const maxSubmit = parseInt(row?.getAttribute('data-max-stock'), 10);
+                if (Number.isFinite(maxSubmit) && v > maxSubmit) {
+                    v = maxSubmit;
+                    if (input) input.value = maxSubmit;
+                    showCartToast(`В наличии не более ${maxSubmit} шт.`, 'warning');
+                }
                 try {
                     if (v <= 0) {
                         const data = await postCartFormFetch(form);
