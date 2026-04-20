@@ -20,8 +20,11 @@ def place_demo_order_from_cart_items(
     cart_items: list,
     full_name: str,
     email: str,
+    phone: str,
     address: str,
     payment_method: str,
+    delivery_method: str,
+    order_comment: str,
     subtotal: Decimal,
     shipping_fee: Decimal,
 ) -> Order:
@@ -32,7 +35,10 @@ def place_demo_order_from_cart_items(
     """
     grand_total = subtotal + shipping_fee
     comment = (
-        f"Демо-витрина | {full_name} | {email} | {address} | оплата: {payment_method}"
+        "Демо-витрина | "
+        f"{full_name} | {email} | {phone} | {address} | "
+        f"доставка: {delivery_method} ({shipping_fee}) | оплата: {payment_method} | "
+        f"комментарий: {order_comment or '-'}"
     )
     warehouse = getattr(settings, "DEFAULT_WAREHOUSE_ID", "MAIN") or "MAIN"
 
@@ -40,8 +46,10 @@ def place_demo_order_from_cart_items(
         user=user,
         total_amount=grand_total,
         shipping_fee=shipping_fee,
+        delivery_method=delivery_method,
         delivery_full_name=full_name,
         delivery_email=email,
+        delivery_phone=phone,
         delivery_address=address,
         status="pending",
         payment_status="pending",
@@ -50,6 +58,7 @@ def place_demo_order_from_cart_items(
         price_type="retail",
         warehouse_id=warehouse,
         comment=comment,
+        customer_comment=order_comment or "",
     )
 
     for ci in cart_items:

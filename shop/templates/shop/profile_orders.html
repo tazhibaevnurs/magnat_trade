@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Мои заказы{% endblock %}
+{% block title %}Мои покупки и заказы{% endblock %}
 
 {% block content %}
-<div class="container page-block">
+<div class="container page-block profile-orders-page">
     {% include "includes/breadcrumbs.html" %}
 
-    <div style="margin-bottom:var(--spacing-xl);">
-        <h1 class="page-title" style="margin:0;">Мои заказы</h1>
-        <p class="page-lead" style="margin:var(--spacing-xs) 0 0;">История ваших покупок на сайте.</p>
+    <div style="margin-bottom:var(--spacing-md);">
+        <h1 class="page-title" style="margin:0;">Мои покупки и заказы</h1>
+        <p class="page-lead" style="margin:var(--spacing-xs) 0 0;">История всех оформленных заказов в вашем личном кабинете.</p>
     </div>
 
     <div class="profile-layout grid gap-8 lg:grid-cols-12 lg:items-start">
         {% include "shop/includes/profile_sidebar_nav.html" %}
         <div class="profile-main min-w-0 space-y-6 lg:col-span-8">
-    <div style="display:grid;gap:var(--spacing-lg);">
+    <div class="profile-orders-scroll" style="display:grid;gap:var(--spacing-lg);">
         {% if orders %}
             {% for order in orders %}
             <article class="auth-card contact-page__form-card" style="padding:var(--spacing-lg);">
@@ -56,7 +56,7 @@
 
                 <div style="display:flex;justify-content:flex-end;margin-top:var(--spacing-md);">
                     <a href="{% url 'order_detail' order.id %}" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12S5.25 6.75 12 6.75 21.75 12 21.75 12 18.75 17.25 12 17.25 2.25 12 2.25 12Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75V19.5A2.25 2.25 0 0 0 6.75 21.75h10.5A2.25 2.25 0 0 0 19.5 19.5V9.75M9 21.75V15a3 3 0 1 1 6 0v6.75"/></svg>
                         Подробнее
                     </a>
                 </div>
@@ -66,7 +66,7 @@
             {% if orders.has_other_pages %}
             <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:var(--spacing-sm);flex-wrap:wrap;">
                 {% if orders.has_previous %}
-                <a href="?page={{ orders.previous_page_number }}" class="btn-secondary" style="display:inline-flex;align-items:center;gap:8px;">
+                <a href="?page={{ orders.previous_page_number }}" class="btn-secondary profile-ajax-link" style="display:inline-flex;align-items:center;gap:8px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
                     Назад
                 </a>
@@ -77,7 +77,7 @@
                 </span>
 
                 {% if orders.has_next %}
-                <a href="?page={{ orders.next_page_number }}" class="btn-secondary" style="display:inline-flex;align-items:center;gap:8px;">
+                <a href="?page={{ orders.next_page_number }}" class="btn-secondary profile-ajax-link" style="display:inline-flex;align-items:center;gap:8px;">
                     Вперёд
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
                 </a>

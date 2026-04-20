@@ -1,5 +1,7 @@
 import json
 import uuid
+from io import BytesIO
+from pathlib import Path
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
 
@@ -9,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Value, When
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -42,11 +44,32 @@ from .models import (
     WishlistItem,
 )
 from .order_display import attach_line_display_products
+from integrations.services.telegram_notifications import (
+    notify_feedback_created,
+    notify_order_created,
+    notify_wholesale_request_created,
+)
 from orders.models import Order as CatalogOrder
 from products.models import Product as CatalogProduct
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.utils import simpleSplit
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 
 # Главная: две полные строки при 4 колонках сетки (4 + 4)
 LANDING_SECTION_LIMIT = 8
+COURIER_SHIPPING_FEE = Decimal("300.00")
+FREE_SHIPPING_THRESHOLD = Decimal("3000.00")
+
+
+def _shipping_fee_for_delivery_method(delivery_method: str, subtotal: Decimal) -> Decimal:
+    if delivery_method == "courier":
+        if subtotal > FREE_SHIPPING_THRESHOLD:
+            return Decimal("0.00")
+        return COURIER_SHIPPING_FEE
+    return Decimal("0.00")
 
 
 def _unique_products_from_querysets(querysets, limit):
@@ -64,7 +87,7 @@ def _unique_products_from_querysets(querysets, limit):
 
 
 def _cart_summary_payload(cart):
-    """Сумма корзины, доставка и итог (для JSON и шаблона). Доставка 0, если корзина пуста."""
+    """Сумма корзины и итог без доставки (доставка всегда 0)."""
     if not cart:
         return {
             "subtotal": "0.00",
@@ -75,12 +98,7 @@ def _cart_summary_payload(cart):
         }
     subtotal = cart.total_price()
     line_count = cart.items.count()
-    if subtotal <= 0 or line_count == 0:
-        ship = Decimal("0.00")
-    elif subtotal < Decimal("200.00"):
-        ship = Decimal("50.00")
-    else:
-        ship = Decimal("70.00")
+    ship = Decimal("0.00")
     grand = subtotal + ship
     q = lambda d: str(d.quantize(Decimal("0.01")))
     return {
@@ -446,6 +464,50 @@ def categories_search_api(request):
     return JsonResponse({"categories": filtered})
 
 
+@require_GET
+def search_suggest_api(request):
+    """Быстрые подсказки товаров для поиска в шапке (desktop/mobile)."""
+    query = (request.GET.get("q") or "").strip()
+    category_slug = (request.GET.get("category") or "").strip()
+    if len(query) < 2:
+        return JsonResponse({"items": []})
+
+    items = []
+    limit = 8
+
+    if catalog_products_exist():
+        qs = CatalogProduct.objects.filter(is_active=True).select_related("category").prefetch_related("images")
+        qs = qs.filter(Q(name__icontains=query) | Q(sku__icontains=query))
+        if category_slug:
+            qs = qs.filter(category__slug=category_slug)
+        for product in qs.order_by("name")[:limit]:
+            facade = CatalogProductDisplay(product, user=request.user)
+            items.append(
+                {
+                    "name": product.name,
+                    "price": str(facade.current_price),
+                    "url": facade.get_absolute_url(),
+                    "image_url": facade.image_url,
+                }
+            )
+        return JsonResponse({"items": items})
+
+    qs = Product.objects.filter(is_active=True).select_related("category").prefetch_related("images")
+    qs = qs.filter(Q(name__icontains=query) | Q(description__icontains=query))
+    if category_slug:
+        qs = qs.filter(category__slug=category_slug)
+    for product in qs.order_by("name")[:limit]:
+        items.append(
+            {
+                "name": product.name,
+                "price": str(product.current_price),
+                "url": product.get_absolute_url(),
+                "image_url": product.image_url,
+            }
+        )
+    return JsonResponse({"items": items})
+
+
 def pdp(request, slug):
     """Карточка товара."""
     product = get_object_or_404(
@@ -629,8 +691,12 @@ def wishlist(request):
         .order_by("-created_at")
     )
 
+    paginator = Paginator(qs, 12)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     wishlist_rows = []
-    for wi in qs:
+    for wi in page_obj:
         if wi.catalog_product_id:
             wishlist_rows.append(
                 {
@@ -646,14 +712,23 @@ def wishlist(request):
         {"name": "Личный кабинет", "url": reverse("profile")},
         {"name": "Избранное", "url": None},
     ]
+    user_profile = None
+    try:
+        user_profile = request.user.profile
+    except Exception:
+        user_profile = None
 
     return render(
         request,
         "shop/wishlist.html",
         {
             "wishlist_rows": wishlist_rows,
+            "wishlist_page": page_obj,
             "breadcrumb_items": breadcrumb_items,
             "page_title": "Избранное",
+            "user_profile": user_profile,
+            "wishlist_count": qs.count(),
+            "active_tab": "wishlist",
         },
     )
 
@@ -739,6 +814,13 @@ def contact_us(request):
 
             Feedback.objects.create(
                 user=request.user if request.user.is_authenticated else None,
+                name=name,
+                email=email,
+                category=category,
+                subject=subject,
+                message=message_text,
+            )
+            notify_feedback_created(
                 name=name,
                 email=email,
                 category=category,
@@ -1011,6 +1093,11 @@ def checkout(request):
     from .services.html_catalog_order import place_order_from_catalog_cart_items
 
     cart = _get_or_create_cart(request)
+    saved_addresses = []
+    if request.user.is_authenticated:
+        saved_addresses = list(
+            Address.objects.filter(user=request.user).order_by("-is_default", "-created_at")
+        )
 
     if request.method == "POST" and "selected_items" in request.POST:
         selected_item_ids = request.POST.getlist("selected_items")
@@ -1047,6 +1134,20 @@ def checkout(request):
         )
         return redirect("cart")
 
+    for item in items:
+        if item.catalog_product_id:
+            available = item.catalog_product.stock
+            product_name = item.catalog_product.name
+        else:
+            available = item.product.stock
+            product_name = item.product.name
+        if item.quantity > available:
+            messages.error(
+                request,
+                f"Недостаточно товара «{product_name}». В наличии: {available} шт. Обновите количество в корзине.",
+            )
+            return redirect("cart")
+
     subtotal = Decimal("0.00")
     for item in items:
         if item.catalog_product_id:
@@ -1054,12 +1155,16 @@ def checkout(request):
         else:
             subtotal += item.product.current_price * item.quantity
 
-    if subtotal <= 0:
-        shipping_fee = Decimal("0.00")
-    elif subtotal < Decimal("200.00"):
-        shipping_fee = Decimal("50.00")
-    else:
-        shipping_fee = Decimal("70.00")
+    delivery_method = "pickup"
+    if request.method == "POST" and "full_name" in request.POST:
+        delivery_method = (request.POST.get("delivery_method") or "pickup").strip().lower()
+    elif request.method == "GET":
+        delivery_method = (request.GET.get("delivery_method") or "pickup").strip().lower()
+
+    if delivery_method not in {"pickup", "courier"}:
+        delivery_method = "pickup"
+
+    shipping_fee = _shipping_fee_for_delivery_method(delivery_method, subtotal)
 
     grand_total = subtotal + shipping_fee
 
@@ -1067,7 +1172,17 @@ def checkout(request):
         messages.info(request, "Войдите в аккаунт, чтобы оформить заказ каталога 1С.")
         return redirect(f"{reverse('sign-in')}?next={reverse('checkout')}")
 
-    def _checkout_error_response(msg: str, full_name: str, email: str, address: str):
+    def _checkout_error_response(
+        msg: str,
+        full_name: str,
+        email: str,
+        phone: str,
+        address: str,
+        method: str,
+        order_comment: str,
+        address_source: str,
+        saved_address_id: str,
+    ):
         breadcrumb_items = [
             {"name": "Главная", "url": "/"},
             {"name": "Корзина", "url": "/cart"},
@@ -1083,22 +1198,109 @@ def checkout(request):
                 "subtotal": subtotal,
                 "shipping_fee": shipping_fee,
                 "grand_total": grand_total,
+                "saved_addresses": saved_addresses,
                 "breadcrumb_items": breadcrumb_items,
                 "checkout_form": {
                     "full_name": full_name,
                     "email": email,
+                    "phone": phone,
                     "address": address,
+                    "delivery_method": method,
+                    "order_comment": order_comment,
+                    "address_source": address_source,
+                    "saved_address_id": saved_address_id,
                 },
             },
         )
 
+    def _stock_error_message(code: str) -> str:
+        raw_id = code.split(":", 1)[1] if ":" in code else ""
+        for line in items:
+            if line.catalog_product_id and str(line.catalog_product_id) == raw_id:
+                return (
+                    f"Недостаточно товара «{line.catalog_product.name}». "
+                    f"В наличии: {line.catalog_product.stock} шт. Обновите количество в корзине."
+                )
+            if line.product_id and str(line.product_id) == raw_id:
+                return (
+                    f"Недостаточно товара «{line.product.name}». "
+                    f"В наличии: {line.product.stock} шт. Обновите количество в корзине."
+                )
+        return "Не удалось зарезервировать товар. Обновите корзину и попробуйте снова."
+
     if request.method == "POST" and "full_name" in request.POST:
         full_name = request.POST.get("full_name", "").strip()
         email = request.POST.get("email", "").strip()
+        phone = request.POST.get("phone", "").strip()
         address = request.POST.get("address", "").strip()
+        order_comment = request.POST.get("order_comment", "").strip()
+        address_source = (request.POST.get("address_source") or "new").strip().lower()
+        saved_address_id = (request.POST.get("saved_address_id") or "").strip()
         payment_method = request.POST.get("payment_method", "COD")
+        delivery_method = (request.POST.get("delivery_method") or "pickup").strip().lower()
+        if delivery_method not in {"pickup", "courier"}:
+            delivery_method = "pickup"
+        shipping_fee = _shipping_fee_for_delivery_method(delivery_method, subtotal)
+        grand_total = subtotal + shipping_fee
 
-        if not all([full_name, email, address, payment_method]):
+        if address_source not in {"saved", "new"}:
+            address_source = "new"
+        if address_source == "saved" and request.user.is_authenticated and saved_address_id:
+            selected_address = Address.objects.filter(
+                id=saved_address_id,
+                user=request.user,
+            ).first()
+            if selected_address:
+                address = selected_address.full_address
+            else:
+                return _checkout_error_response(
+                    "Выберите корректный сохранённый адрес или введите новый.",
+                    full_name,
+                    email,
+                    phone,
+                    address,
+                    delivery_method,
+                    order_comment,
+                    address_source,
+                    saved_address_id,
+                )
+
+        if delivery_method == "pickup":
+            if not address:
+                address = "Самовывоз"
+        elif not address:
+            messages.error(request, "Укажите адрес доставки для курьерской доставки.")
+            breadcrumb_items = [
+                {"name": "Главная", "url": "/"},
+                {"name": "Корзина", "url": "/cart"},
+                {"name": "Оформление заказа", "url": None},
+            ]
+            return render(
+                request,
+                "shop/checkout.html",
+                {
+                    "cart": cart,
+                    "items": items,
+                    "subtotal": subtotal,
+                    "shipping_fee": shipping_fee,
+                    "grand_total": grand_total,
+                    "saved_addresses": saved_addresses,
+                    "delivery_method": delivery_method,
+                    "breadcrumb_items": breadcrumb_items,
+                    "checkout_form": {
+                        "full_name": full_name,
+                        "email": email,
+                        "phone": phone,
+                        "address": address,
+                        "delivery_method": delivery_method,
+                        "order_comment": order_comment,
+                        "address_source": address_source,
+                        "saved_address_id": saved_address_id,
+                    },
+                },
+            )
+
+        if not all([full_name, email, phone, address, payment_method]):
             messages.error(request, "Заполните все обязательные поля.")
             breadcrumb_items = [
                 {"name": "Главная", "url": "/"},
@@ -1114,11 +1316,17 @@ def checkout(request):
                     "subtotal": subtotal,
                     "shipping_fee": shipping_fee,
                     "grand_total": grand_total,
+                    "saved_addresses": saved_addresses,
                     "breadcrumb_items": breadcrumb_items,
                     "checkout_form": {
                         "full_name": full_name,
                         "email": email,
+                        "phone": phone,
                         "address": address,
+                        "delivery_method": delivery_method,
+                        "order_comment": order_comment,
+                        "address_source": address_source,
+                        "saved_address_id": saved_address_id,
                     },
                 },
             )
@@ -1132,8 +1340,11 @@ def checkout(request):
                     cart_items=list(items),
                     full_name=full_name,
                     email=email,
+                    phone=phone,
                     address=address,
                     payment_method=payment_method,
+                    delivery_method=delivery_method,
+                    order_comment=order_comment,
                     subtotal=subtotal,
                     shipping_fee=shipping_fee,
                 )
@@ -1144,23 +1355,46 @@ def checkout(request):
                         "Контрагент 1С не привязан к профилю. Дождитесь синхронизации клиентов или обратитесь в поддержку.",
                         full_name,
                         email,
+                        phone,
                         address,
+                        delivery_method,
+                        order_comment,
+                        address_source,
+                        saved_address_id,
                     )
                 if code.startswith("stock:"):
                     return _checkout_error_response(
-                        "Не удалось зарезервировать товар. Обновите корзину и попробуйте снова.",
+                        _stock_error_message(code),
                         full_name,
                         email,
+                        phone,
                         address,
+                        delivery_method,
+                        order_comment,
+                        address_source,
+                        saved_address_id,
                     )
                 if code == "Требуется вход":
                     return redirect(f"{reverse('sign-in')}?next={reverse('checkout')}")
-                return _checkout_error_response(code, full_name, email, address)
+                return _checkout_error_response(
+                    code,
+                    full_name,
+                    email,
+                    phone,
+                    address,
+                    delivery_method,
+                    order_comment,
+                    address_source,
+                    saved_address_id,
+                )
 
             for item in items:
                 item.delete()
             if "selected_items" in request.session:
                 del request.session["selected_items"]
+            recent = request.session.get("recent_order_ids", [])
+            recent = [str(integration_order.id)] + [x for x in recent if x != str(integration_order.id)]
+            request.session["recent_order_ids"] = recent[:20]
 
             breadcrumb_items = [
                 {"name": "Главная", "url": "/"},
@@ -1172,12 +1406,14 @@ def checkout(request):
                 request,
                 f"Заказ принят. Номер на сайте: {integration_order.id}",
             )
+            notify_order_created(integration_order)
             return render(
                 request,
                 "shop/checkout_success_catalog.html",
                 {
                     "integration_order": integration_order,
                     "delivery_address": address,
+                    "delivery_method": delivery_method,
                     "breadcrumb_items": breadcrumb_items,
                 },
             )
@@ -1190,8 +1426,11 @@ def checkout(request):
                 cart_items=list(items),
                 full_name=full_name,
                 email=email,
+                    phone=phone,
                 address=address,
                 payment_method=payment_method,
+                delivery_method=delivery_method,
+                    order_comment=order_comment,
                 subtotal=subtotal,
                 shipping_fee=shipping_fee,
             )
@@ -1199,17 +1438,35 @@ def checkout(request):
             code = str(exc)
             if code.startswith("stock:"):
                 return _checkout_error_response(
-                    "Не удалось зарезервировать товар. Обновите корзину и попробуйте снова.",
+                    _stock_error_message(code),
                     full_name,
                     email,
+                    phone,
                     address,
+                    delivery_method,
+                    order_comment,
+                    address_source,
+                    saved_address_id,
                 )
-            return _checkout_error_response(code, full_name, email, address)
+            return _checkout_error_response(
+                code,
+                full_name,
+                email,
+                phone,
+                address,
+                delivery_method,
+                order_comment,
+                address_source,
+                saved_address_id,
+            )
 
         for item in items:
             item.delete()
         if "selected_items" in request.session:
             del request.session["selected_items"]
+        recent = request.session.get("recent_order_ids", [])
+        recent = [str(order.id)] + [x for x in recent if x != str(order.id)]
+        request.session["recent_order_ids"] = recent[:20]
 
         attach_line_display_products(order)
 
@@ -1221,6 +1478,7 @@ def checkout(request):
         ]
 
         messages.success(request, f"Заказ №{order.id} успешно оформлен!")
+        notify_order_created(order)
         return render(
             request,
             "shop/checkout_success.html",
@@ -1245,6 +1503,8 @@ def checkout(request):
             "subtotal": subtotal,
             "shipping_fee": shipping_fee,
             "grand_total": grand_total,
+            "saved_addresses": saved_addresses,
+            "delivery_method": delivery_method,
             "breadcrumb_items": breadcrumb_items,
         },
     )
@@ -1269,6 +1529,10 @@ def user_profile(request):  # Renamed from 'profile' to 'user_profile'
         else:
             WholesaleUpgradeRequest.objects.create(
                 user=request.user,
+                comment=(request.POST.get("wholesale_comment") or "").strip()[:2000],
+            )
+            notify_wholesale_request_created(
+                email=request.user.email,
                 comment=(request.POST.get("wholesale_comment") or "").strip()[:2000],
             )
             messages.success(request, "Заявка на оптовый доступ отправлена менеджеру.")
@@ -1568,6 +1832,13 @@ def feedback(request):
                 subject=subject,
                 message=message_text
             )
+            notify_feedback_created(
+                name=name,
+                email=email,
+                category=category,
+                subject=subject,
+                message=message_text,
+            )
             
             messages.success(request, 'Спасибо за обратную связь! Мы рассмотрим её в ближайшее время.')
             return redirect('feedback')
@@ -1617,8 +1888,11 @@ def feedback_success(request):
 def orders(request):
     """Display user's order history"""
     # Get all orders for the current user, ordered by newest first
-    user_orders = CatalogOrder.objects.filter(user=request.user).prefetch_related("items").order_by(
-        "-created_at"
+    user_orders = (
+        CatalogOrder.objects.filter(user=request.user, items__isnull=False)
+        .distinct()
+        .prefetch_related("items")
+        .order_by("-created_at")
     )
     
     # Paginate orders (10 per page)
@@ -1630,13 +1904,59 @@ def orders(request):
         {'name': 'Главная', 'url': '/'},
         {'name': 'Мои заказы', 'url': None}
     ]
+    user_profile = None
+    try:
+        user_profile = request.user.profile
+    except Exception:
+        user_profile = None
     
     context = {
         'orders': page_obj,
         'breadcrumb_items': breadcrumb_items,
+        "user_profile": user_profile,
+        "wishlist_count": WishlistItem.objects.filter(user=request.user).count(),
+        "active_tab": "orders",
     }
     
     return render(request, 'shop/orders.html', context)
+
+
+@login_required
+def profile_orders(request):
+    """Раздел личного кабинета: история всех заказов пользователя."""
+    user_orders = (
+        CatalogOrder.objects.filter(user=request.user, items__isnull=False)
+        .distinct()
+        .prefetch_related("items")
+        .order_by("-created_at")
+    )
+    paginator = Paginator(user_orders, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    breadcrumb_items = [
+        {"name": "Главная", "url": "/"},
+        {"name": "Личный кабинет", "url": reverse("profile")},
+        {"name": "Мои заказы", "url": None},
+    ]
+    user_profile = None
+    try:
+        user_profile = request.user.profile
+    except Exception:
+        user_profile = None
+
+    return render(
+        request,
+        "shop/profile_orders.html",
+        {
+            "orders": page_obj,
+            "breadcrumb_items": breadcrumb_items,
+            "page_title": "Мои покупки и заказы",
+            "user_profile": user_profile,
+            "wishlist_count": WishlistItem.objects.filter(user=request.user).count(),
+            "active_tab": "orders",
+        },
+    )
 
 @login_required
 def order_detail(request, order_id):
@@ -1659,10 +1979,265 @@ def order_detail(request, order_id):
         {'name': 'Мои заказы', 'url': '/orders'},
         {'name': f'Заказ №{order.id}', 'url': None}
     ]
+    user_profile = None
+    try:
+        user_profile = request.user.profile
+    except Exception:
+        user_profile = None
     
     context = {
         'order': order,
         'breadcrumb_items': breadcrumb_items,
+        "user_profile": user_profile,
+        "wishlist_count": WishlistItem.objects.filter(user=request.user).count(),
+        "active_tab": "orders",
     }
     
     return render(request, 'shop/order_detail.html', context)
+
+
+def _user_can_view_order_document(request, order: CatalogOrder) -> bool:
+    if request.user.is_authenticated and order.user_id == request.user.id:
+        return True
+    recent = request.session.get("recent_order_ids", [])
+    return str(order.id) in recent
+
+
+def _draw_order_pdf(order: CatalogOrder) -> bytes:
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    width, height = A4
+    margin = 34
+    y = height - margin
+    content_width = width - (margin * 2)
+    font_name = "Helvetica"
+    try:
+        font_candidates = [
+            Path("C:/Windows/Fonts/arial.ttf"),
+            Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+            Path("/usr/share/fonts/dejavu/DejaVuSans.ttf"),
+        ]
+        for f in font_candidates:
+            if f.exists():
+                pdfmetrics.registerFont(TTFont("OrderFont", str(f)))
+                font_name = "OrderFont"
+                break
+    except Exception:
+        pass
+
+    primary = colors.HexColor("#ef4444")
+    primary_dark = colors.HexColor("#dc2626")
+    text_main = colors.HexColor("#111827")
+    text_muted = colors.HexColor("#6b7280")
+    border = colors.HexColor("#e5e7eb")
+    soft_bg = colors.HexColor("#f8fafc")
+
+    def new_page():
+        nonlocal y
+        c.showPage()
+        y = height - margin
+
+    def ensure_space(space_needed: float):
+        nonlocal y
+        if y - space_needed < margin:
+            new_page()
+
+    def draw_wrapped_text(
+        text: str,
+        x: float,
+        y_top: float,
+        max_width: float,
+        size: int = 11,
+        color=colors.black,
+        leading: float = 14,
+    ) -> float:
+        c.setFont(font_name, size)
+        c.setFillColor(color)
+        lines = simpleSplit((text or "-").strip(), font_name, size, max_width)
+        cur_y = y_top
+        for line in lines:
+            c.drawString(x, cur_y, line)
+            cur_y -= leading
+        return cur_y
+
+    # Brand header
+    c.setFillColor(primary)
+    c.roundRect(margin, y - 40, content_width, 42, 10, fill=1, stroke=0)
+    c.setFillColor(colors.white)
+    c.setFont(font_name, 16)
+    c.drawString(margin + 14, y - 24, "Magnat Trade")
+    c.setFont(font_name, 11)
+    c.drawRightString(margin + content_width - 14, y - 22, "Подтверждение заказа")
+    y -= 58
+
+    c.setFillColor(text_main)
+    c.setFont(font_name, 24)
+    c.drawString(margin, y, "Спасибо за заказ!")
+    y -= 26
+    c.setFillColor(text_muted)
+    c.setFont(font_name, 11)
+    c.drawString(margin, y, "Мы получили вашу заявку и уже передали ее в обработку.")
+    y -= 24
+
+    # Order info card
+    ensure_space(78)
+    c.setFillColor(soft_bg)
+    c.setStrokeColor(border)
+    c.roundRect(margin, y - 64, content_width, 62, 10, fill=1, stroke=1)
+    c.setFillColor(text_main)
+    c.setFont(font_name, 11)
+    c.drawString(margin + 12, y - 20, f"Номер заказа: {order.id}")
+    c.drawString(margin + 12, y - 38, f"Дата оформления: {order.created_at.strftime('%d.%m.%Y %H:%M')}")
+    c.setFillColor(primary_dark)
+    c.setFont(font_name, 12)
+    c.drawRightString(margin + content_width - 12, y - 29, f"Итого: {order.total_amount} сом")
+    y -= 84
+
+    # Order items section
+    c.setFillColor(text_main)
+    c.setFont(font_name, 14)
+    c.drawString(margin, y, "Состав заказа")
+    y -= 14
+
+    for item in order.items.all():
+        item_name = (item.name_snapshot or str(item.product_id or "")).strip() or "Товар"
+        qty_text = f"x {item.quantity}"
+        price_text = f"{item.line_total} сом"
+
+        wrapped_name = simpleSplit(item_name, font_name, 11, content_width - 210)
+        row_height = max(30, 18 + (len(wrapped_name) - 1) * 13)
+        ensure_space(row_height + 8)
+
+        c.setFillColor(colors.white)
+        c.setStrokeColor(border)
+        c.roundRect(margin, y - row_height, content_width, row_height, 6, fill=1, stroke=1)
+        c.setFillColor(text_main)
+        c.setFont(font_name, 11)
+
+        name_y = y - 17
+        for line in wrapped_name:
+            c.drawString(margin + 10, name_y, line)
+            name_y -= 13
+
+        c.setFillColor(text_muted)
+        c.setFont(font_name, 10)
+        c.drawString(margin + content_width - 154, y - 17, qty_text)
+        c.setFillColor(primary_dark)
+        c.setFont(font_name, 11)
+        c.drawRightString(margin + content_width - 10, y - 17, price_text)
+        y -= row_height + 8
+
+    y -= 8
+
+    # Delivery block
+    ensure_space(150)
+    c.setFillColor(text_main)
+    c.setFont(font_name, 14)
+    c.drawString(margin, y, "Доставка и контакты")
+    y -= 12
+
+    c.setFillColor(soft_bg)
+    c.setStrokeColor(border)
+    c.roundRect(margin, y - 130, content_width, 126, 10, fill=1, stroke=1)
+
+    x_left = margin + 12
+    x_right = margin + (content_width / 2) + 8
+    base_y = y - 20
+    left_items = [
+        f"Способ доставки: {order.delivery_method_label}",
+        f"Стоимость доставки: {order.shipping_fee} сом",
+        f"Клиент: {order.delivery_full_name or '-'}",
+    ]
+    right_items = [
+        f"Телефон: {order.delivery_phone or '-'}",
+        f"Email: {order.delivery_email or '-'}",
+    ]
+
+    c.setFont(font_name, 10)
+    c.setFillColor(text_main)
+    cur_left = base_y
+    for text in left_items:
+        c.drawString(x_left, cur_left, text[:80])
+        cur_left -= 16
+
+    cur_right = base_y
+    for text in right_items:
+        c.drawString(x_right, cur_right, text[:80])
+        cur_right -= 16
+
+    address_bottom_y = draw_wrapped_text(
+        f"Адрес: {order.delivery_address or '-'}",
+        x_left,
+        y - 74,
+        content_width - 24,
+        size=10,
+        color=text_main,
+        leading=14,
+    )
+    if order.customer_comment:
+        draw_wrapped_text(
+            f"Комментарий: {order.customer_comment}",
+            x_left,
+            address_bottom_y - 4,
+            content_width - 24,
+            size=10,
+            color=text_muted,
+            leading=13,
+        )
+    y = y - 142
+
+    # Totals footer card
+    ensure_space(90)
+    c.setFillColor(colors.white)
+    c.setStrokeColor(border)
+    c.roundRect(margin, y - 72, content_width, 70, 10, fill=1, stroke=1)
+    c.setFillColor(text_main)
+    c.setFont(font_name, 11)
+    c.drawString(margin + 12, y - 22, f"Сумма товаров: {order.goods_subtotal} сом")
+    c.drawString(margin + 12, y - 42, f"Доставка: {order.shipping_fee} сом")
+    c.setFillColor(primary)
+    c.setFont(font_name, 14)
+    c.drawRightString(margin + content_width - 12, y - 33, f"Итого: {order.total_amount} сом")
+
+    c.setFillColor(text_muted)
+    c.setFont(font_name, 9)
+    c.drawString(margin, margin - 8, "Спасибо, что выбрали Magnat Trade")
+    c.showPage()
+    c.save()
+    return buf.getvalue()
+
+
+def order_pdf(request, order_id):
+    oid = order_id
+    if not isinstance(oid, uuid.UUID):
+        try:
+            oid = uuid.UUID(str(order_id))
+        except ValueError as err:
+            raise Http404 from err
+    order = get_object_or_404(
+        CatalogOrder.objects.prefetch_related("items"),
+        id=oid,
+    )
+    if not _user_can_view_order_document(request, order):
+        raise Http404
+
+    pdf_bytes = _draw_order_pdf(order)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="order-{order.id}.pdf"'
+    return response
+
+
+def order_print(request, order_id):
+    oid = order_id
+    if not isinstance(oid, uuid.UUID):
+        try:
+            oid = uuid.UUID(str(order_id))
+        except ValueError as err:
+            raise Http404 from err
+    order = get_object_or_404(
+        CatalogOrder.objects.prefetch_related("items"),
+        id=oid,
+    )
+    if not _user_can_view_order_document(request, order):
+        raise Http404
+    return render(request, "shop/order_print.html", {"order": order})

@@ -109,19 +109,11 @@
                     <label>Сумма</label>
                     <h3 class="cart-summary-subtotal" data-currency="сом">{{ cart.total_price|soms }}</h3>
                 </div>
-                <div class="cart-summary-list-item">
-                    <label>Доставка</label>
-                    <h3 class="cart-summary-shipping" data-currency="сом">{% if shipping_fee %}{{ shipping_fee|soms }}{% else %}0.00 сом{% endif %}</h3>
-                </div>
                 <hr class="horizontal-divider">
                 <div class="cart-summary-list-item">
                     <label style="font-weight:600;">Всего</label>
                     <h3 class="cart-summary-total" data-currency="сом">
-                        {% if shipping_fee %}
-                            {{ cart.total_price|add:shipping_fee|soms }}
-                        {% else %}
-                            {{ cart.total_price|soms }}
-                        {% endif %}
+                        {{ cart.total_price|soms }}
                     </h3>
                 </div>
             </div>

@@ -218,6 +218,7 @@ CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", _celery_redis)
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", _celery_redis)
 CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "false").lower() in ("1", "true")
 CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_IGNORE_RESULT = os.getenv("CELERY_TASK_IGNORE_RESULT", "true").lower() in ("1", "true", "yes")
 
 # Периодическая синхронизация 1С → БД (Celery Beat)
 ONEC_BEAT_SYNC_ENABLED = os.getenv("ONEC_BEAT_SYNC_ENABLED", "true").lower() in ("1", "true", "yes")
@@ -318,3 +319,17 @@ PAYMENT_RETURN_URL = os.getenv("PAYMENT_RETURN_URL", "http://127.0.0.1:8000/chec
 
 # --- Доставка ---
 DELIVERY_PROVIDER = os.getenv("DELIVERY_PROVIDER", "mock")
+
+# --- Telegram notifications ---
+TELEGRAM_NOTIFICATIONS_ENABLED = os.getenv("TELEGRAM_NOTIFICATIONS_ENABLED", "false").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_GROUP_CHAT_ID = os.getenv("TELEGRAM_GROUP_CHAT_ID", "").strip()
+TELEGRAM_ASYNC_SEND = os.getenv("TELEGRAM_ASYNC_SEND", "true").lower() in ("1", "true", "yes")
+try:
+    TELEGRAM_HTTP_TIMEOUT = float(os.getenv("TELEGRAM_HTTP_TIMEOUT", "3"))
+except ValueError:
+    TELEGRAM_HTTP_TIMEOUT = 3.0

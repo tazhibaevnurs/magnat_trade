@@ -26,6 +26,7 @@
 <body class="av-body"
       data-bazaar-layout
       x-data="{ mobileSearch: false, mobileSidebar: false }"
+      @close-mobile-search.window="mobileSearch = false"
       @keydown.escape.window="mobileSearch = false; mobileSidebar = false">
     {% include 'includes/header.html' %}
 
@@ -149,6 +150,40 @@
             }
         });
 
+        window.magnatCloseMobileSearch = function () {
+            window.dispatchEvent(new CustomEvent('close-mobile-search'));
+            const body = document.body;
+            if (body && body.__x && body.__x.$data && Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileSearch')) {
+                body.__x.$data.mobileSearch = false;
+            }
+            const rootData = body && body._x_dataStack && body._x_dataStack[0];
+            if (rootData && Object.prototype.hasOwnProperty.call(rootData, 'mobileSearch')) {
+                rootData.mobileSearch = false;
+            }
+            document.querySelectorAll('.mobile-search-panel').forEach((panel) => {
+                panel.style.display = 'none';
+            });
+        };
+
+        window.magnatMobileSearchGoBack = function (event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            window.magnatCloseMobileSearch();
+        };
+
+        window.magnatMobileSearchBack = function (btn) {
+            const panel = btn ? btn.closest('.mobile-search-panel') : null;
+            if (panel) {
+                const input = panel.querySelector('.mobile-search-form [data-search-suggest-input]');
+                if (input) {
+                    input.blur();
+                }
+            }
+            window.magnatCloseMobileSearch();
+        };
+
         window.magnatToggleWishlist = async function (btn, ev) {
             if (ev) {
                 ev.preventDefault();
@@ -181,6 +216,251 @@
             }
             if (data.error) alert(data.error);
         };
+
+        (function () {
+            const PROFILE_AJAX_PATHS = new Set(['/profile/', '/profile/orders/', '/wishlist/']);
+
+            function shouldHandleAjaxLink(anchor) {
+                if (!anchor || !anchor.classList.contains('profile-ajax-link')) return false;
+                if (anchor.target && anchor.target !== '_self') return false;
+                if (anchor.hasAttribute('download')) return false;
+                const url = new URL(anchor.href, window.location.origin);
+                return url.origin === window.location.origin && PROFILE_AJAX_PATHS.has(url.pathname);
+            }
+
+            function runAjaxScriptsFromDocument(doc) {
+                doc.querySelectorAll('script[data-ajax-run]').forEach((scriptNode) => {
+                    const executable = document.createElement('script');
+                    executable.textContent = scriptNode.textContent || '';
+                    document.body.appendChild(executable);
+                    document.body.removeChild(executable);
+                });
+            }
+
+            async function loadProfileSection(url, pushStateEntry) {
+                const currentMain = document.querySelector('.layout-shell__main .main-content');
+                if (!currentMain) {
+                    window.location.href = url;
+                    return;
+                }
+
+                try {
+                    currentMain.setAttribute('aria-busy', 'true');
+                    const response = await fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin',
+                    });
+                    if (!response.ok) {
+                        window.location.href = url;
+                        return;
+                    }
+
+                    const html = await response.text();
+                    const parsed = new DOMParser().parseFromString(html, 'text/html');
+                    const nextMain = parsed.querySelector('.layout-shell__main .main-content');
+                    if (!nextMain) {
+                        window.location.href = url;
+                        return;
+                    }
+
+                    currentMain.innerHTML = nextMain.innerHTML;
+                    if (parsed.title) document.title = parsed.title;
+                    if (pushStateEntry) {
+                        window.history.pushState({ profileAjax: true }, '', url);
+                    }
+
+                    runAjaxScriptsFromDocument(parsed);
+                    document.dispatchEvent(new CustomEvent('profile:content-loaded'));
+                    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+                } catch (error) {
+                    window.location.href = url;
+                } finally {
+                    currentMain.removeAttribute('aria-busy');
+                }
+            }
+
+            document.addEventListener('click', function (event) {
+                const anchor = event.target.closest('a.profile-ajax-link');
+                if (!anchor) return;
+                if (event.defaultPrevented || event.button !== 0) return;
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                if (!shouldHandleAjaxLink(anchor)) return;
+                event.preventDefault();
+                loadProfileSection(anchor.href, true);
+            });
+
+            window.addEventListener('popstate', function () {
+                if (PROFILE_AJAX_PATHS.has(window.location.pathname)) {
+                    loadProfileSection(window.location.href, false);
+                }
+            });
+        })();
+
+        (function () {
+            const suggestUrl = '{% url "search-suggest-api" %}';
+            const forms = document.querySelectorAll('[data-search-suggest-form]');
+            if (!forms.length) return;
+            const suggestInputs = Array.from(forms)
+                .map((form) => form.querySelector('[data-search-suggest-input]'))
+                .filter(Boolean);
+
+            forms.forEach((form) => {
+                if (form.dataset.suggestBound === '1') return;
+                form.dataset.suggestBound = '1';
+
+                const input = form.querySelector('[data-search-suggest-input]');
+                const category = form.querySelector('select[name="categories"]');
+                const mobilePanel = form.closest('.mobile-search-panel');
+                const showAllButton = form.querySelector('.mobile-search-panel__show-all')
+                    || mobilePanel?.querySelector('.mobile-search-panel__show-all')
+                    || null;
+                const clearButton = form.closest('.mobile-search-panel__head')?.querySelector(':scope > .mobile-search-panel__clear') || null;
+                if (!input) return;
+
+                let timer = null;
+                let activeController = null;
+
+                let panel = null;
+                if (mobilePanel) {
+                    panel = mobilePanel.querySelector('[data-mobile-search-suggest]');
+                }
+                if (!panel) {
+                    panel = document.createElement('div');
+                    panel.className = 'header-search-suggest';
+                    panel.hidden = true;
+                    if (showAllButton) {
+                        form.insertBefore(panel, showAllButton);
+                    } else {
+                        form.appendChild(panel);
+                    }
+                }
+
+                const hidePanel = () => {
+                    panel.hidden = true;
+                    panel.innerHTML = '';
+                    syncMobilePanelState();
+                };
+
+                const syncShowAllButton = () => {
+                    if (!showAllButton) return;
+                    showAllButton.hidden = (input.value || '').trim().length === 0;
+                };
+
+                const syncMobilePanelState = () => {
+                    if (!mobilePanel) return;
+                    const hasQuery = (input.value || '').trim().length > 0;
+                    mobilePanel.classList.toggle('mobile-search-panel--has-query', hasQuery);
+                };
+
+                const syncClearButton = () => {
+                    if (!clearButton) return;
+                    const hasValue = (input.value || '').trim().length > 0;
+                    clearButton.hidden = false;
+                    clearButton.style.visibility = hasValue ? 'visible' : 'hidden';
+                };
+
+                const showItems = (items) => {
+                    if (!items.length) {
+                        panel.innerHTML = '<div class="header-search-suggest__empty">Ничего не найдено</div>';
+                        panel.hidden = false;
+                        return;
+                    }
+                    panel.innerHTML = items.map((item) => {
+                        const safeName = (item.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        const safePrice = (item.price || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        const safeUrl = item.url || '#';
+                        const safeImage = item.image_url || '';
+                        return `
+                            <a class="header-search-suggest__item" href="${safeUrl}">
+                                <img class="header-search-suggest__thumb" src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async" />
+                                <span class="header-search-suggest__name">${safeName}</span>
+                                <span class="header-search-suggest__price">${safePrice} сом</span>
+                            </a>
+                        `;
+                    }).join('');
+                    panel.hidden = false;
+                    syncMobilePanelState();
+                    if (mobilePanel) {
+                        panel.querySelectorAll('a.header-search-suggest__item').forEach((anchor) => {
+                            anchor.addEventListener('click', () => {
+                                window.magnatCloseMobileSearch();
+                            });
+                        });
+                    }
+                };
+
+                const runSuggest = async () => {
+                    const q = (input.value || '').trim();
+                    const minChars = mobilePanel ? 1 : 2;
+                    if (q.length < minChars) {
+                        hidePanel();
+                        return;
+                    }
+                    if (activeController) activeController.abort();
+                    activeController = new AbortController();
+
+                    try {
+                        const url = new URL(suggestUrl, window.location.origin);
+                        url.searchParams.set('q', q);
+                        if (category && category.value) url.searchParams.set('category', category.value);
+                        const response = await fetch(url.toString(), {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin',
+                            signal: activeController.signal,
+                        });
+                        if (!response.ok) return;
+                        const payload = await response.json();
+                        showItems(payload.items || []);
+                    } catch (_) {
+                        // no-op
+                    }
+                };
+
+                input.addEventListener('input', () => {
+                    const isPeerSync = input.dataset.syncFromPeer === '1';
+                    if (isPeerSync) {
+                        delete input.dataset.syncFromPeer;
+                    } else {
+                        const nextValue = input.value || '';
+                        suggestInputs.forEach((otherInput) => {
+                            if (otherInput === input || otherInput.value === nextValue) return;
+                            otherInput.dataset.syncFromPeer = '1';
+                            otherInput.value = nextValue;
+                            otherInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        });
+                    }
+                    syncShowAllButton();
+                    syncClearButton();
+                    syncMobilePanelState();
+                    clearTimeout(timer);
+                    timer = setTimeout(runSuggest, 220);
+                });
+                input.addEventListener('focus', () => {
+                    syncShowAllButton();
+                    syncClearButton();
+                    syncMobilePanelState();
+                    const minChars = mobilePanel ? 1 : 2;
+                    if ((input.value || '').trim().length >= minChars) {
+                        runSuggest();
+                    }
+                });
+                document.addEventListener('click', (event) => {
+                    if (!form.contains(event.target)) hidePanel();
+                });
+                form.addEventListener('submit', () => {
+                    hidePanel();
+                    if (mobilePanel) {
+                        window.magnatCloseMobileSearch();
+                    }
+                });
+                input.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') hidePanel();
+                });
+                syncShowAllButton();
+                syncClearButton();
+                syncMobilePanelState();
+            });
+        })();
     </script>
     <script src="{% static 'js/main.js' %}" defer></script>
     <script type="module" src="{% static 'shop/scripts/main.js' %}"></script>

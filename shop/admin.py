@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 from django.contrib import admin
+from django.contrib import messages
 from django.db.models import Count, DecimalField, F, Q, Sum
 from django.shortcuts import render
 from django.urls import path
@@ -327,6 +328,17 @@ class ShopLegacyOrderAdmin(admin.ModelAdmin):
     search_fields = ("full_name", "email", "address", "user__email")
     list_filter = ("status", "payment_method", "placed_at")
     list_editable = ("status",)
+
+    def changelist_view(self, request, extra_context=None):
+        messages.warning(
+            request,
+            format_html(
+                'Это legacy-раздел (shop.Order). Актуальные заказы из сайта смотрите в разделе '
+                '<a href="{}">orders.Order</a>.',
+                "/admin/orders/order/",
+            ),
+        )
+        return super().changelist_view(request, extra_context=extra_context)
 
     def get_readonly_fields(self, request, obj=None):
         # id нет в форме создания; дата и склад — только у сохранённого заказа

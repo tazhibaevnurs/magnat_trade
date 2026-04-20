@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from integrations.payment.service import PaymentService
+from integrations.services.telegram_notifications import notify_order_created
 from orders.models import Order, OrderItem
 from products.models import Product
 from shop.pricing import user_sees_wholesale_prices
@@ -132,9 +133,10 @@ class CheckoutOrderView(APIView):
         order.save(update_fields=["payment_provider", "payment_external_id", "payment_url", "updated_at"])
 
         if _onec_export_enabled():
-            from integrations.tasks import export_order_to_onec
+            from integrations.tasks import queue_export_order_to_onec
 
-            export_order_to_onec.delay(str(order.id))
+            queue_export_order_to_onec(str(order.id))
+        notify_order_created(order)
 
         return Response(
             {

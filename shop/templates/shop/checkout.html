@@ -50,21 +50,144 @@
             <div class="cart-summary-list">
                 <div class="cart-summary-list-item">
                     <label>Товары</label>
-                    <span>{{ subtotal|floatformat:2 }} сом</span>
+                    <span id="summary-subtotal" data-subtotal="{{ subtotal|floatformat:2 }}">{{ subtotal|floatformat:2 }} сом</span>
                 </div>
                 <div class="cart-summary-list-item">
                     <label>Доставка</label>
-                    <span>{{ shipping_fee|floatformat:2 }} сом</span>
+                    <span id="summary-shipping" data-shipping="{{ shipping_fee|floatformat:2 }}" data-courier-fee="300.00" data-free-threshold="3000.00">{{ shipping_fee|floatformat:2 }} сом</span>
                 </div>
                 <hr class="horizontal-divider">
                 <div class="cart-summary-list-item">
                     <label style="font-weight:600;">Всего</label>
-                    <span class="cart-summary-total">{{ grand_total|floatformat:2 }} сом</span>
+                    <span id="summary-grand-total" class="cart-summary-total">{{ grand_total|floatformat:2 }} сом</span>
                 </div>
             </div>
 
             <form method="post" class="form-field" style="margin-top:var(--spacing-xl);">
                 {% csrf_token %}
+                <style>
+                .delivery-options {
+                    display: grid;
+                    gap: var(--spacing-sm);
+                }
+                .delivery-option-card {
+                    border: 1px solid var(--color-border-light);
+                    border-radius: 12px;
+                    padding: 12px 14px;
+                    display: flex;
+                    gap: 10px;
+                    cursor: pointer;
+                    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+                }
+                .delivery-option-card input[type="radio"] {
+                    position: absolute;
+                    opacity: 0;
+                    pointer-events: none;
+                    width: 0;
+                    height: 0;
+                }
+                .delivery-option-card:hover {
+                    border-color: var(--color-primary-40);
+                    box-shadow: 0 3px 16px rgba(0, 0, 0, 0.06);
+                }
+                .delivery-option-card:has(input:checked) {
+                    border-color: var(--color-primary);
+                    background: var(--color-tag-bg);
+                    box-shadow: 0 0 0 2px rgba(239, 68, 56, 0.08);
+                }
+                .delivery-option-content {
+                    display: grid;
+                    gap: 4px;
+                }
+                .delivery-option-title {
+                    font-weight: 700;
+                }
+                .delivery-option-title--pickup {
+                    color: #059669;
+                }
+                .delivery-option-title--courier {
+                    color: #2563eb;
+                }
+                .delivery-option-card:has(input:checked) .delivery-option-title--pickup {
+                    color: #047857;
+                }
+                .delivery-option-card:has(input:checked) .delivery-option-title--courier {
+                    color: #1d4ed8;
+                }
+                .delivery-option-note {
+                    color: var(--color-text-secondary);
+                    font-size: var(--text-sm);
+                    line-height: 1.35;
+                }
+                .address-source-options {
+                    display: grid;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                }
+                .address-source-card {
+                    border: 1px solid var(--color-border-light);
+                    border-radius: 12px;
+                    padding: 10px 12px;
+                    cursor: pointer;
+                    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+                }
+                .address-source-card input[type="radio"] {
+                    position: absolute;
+                    opacity: 0;
+                    pointer-events: none;
+                    width: 0;
+                    height: 0;
+                }
+                .address-source-card:hover {
+                    border-color: var(--color-primary-40);
+                    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+                }
+                .address-source-card:has(input:checked) {
+                    border-color: var(--color-primary);
+                    background: var(--color-tag-bg);
+                    box-shadow: 0 0 0 2px rgba(239, 68, 56, 0.08);
+                }
+                .address-source-title {
+                    font-weight: 600;
+                    color: var(--color-text-primary);
+                }
+                .saved-address-select-wrap {
+                    margin-top: 4px;
+                    margin-bottom: 4px;
+                }
+                </style>
+                <h2 class="section-title" style="font-size:var(--text-lg);margin-bottom:var(--spacing-md);">Способ доставки</h2>
+                <div class="form-field delivery-options">
+                    <label class="delivery-option-card">
+                        <input
+                            type="radio"
+                            id="delivery_pickup"
+                            name="delivery_method"
+                            value="pickup"
+                            {% if checkout_form.delivery_method == "pickup" or delivery_method == "pickup" or not checkout_form.delivery_method %}checked{% endif %}
+                            required
+                        >
+                        <span class="delivery-option-content">
+                            <span class="delivery-option-title delivery-option-title--pickup">Самовывоз</span>
+                            <span class="delivery-option-note">Забираете заказ самостоятельно из магазина.<br>Доставка: бесплатно (0.00 сом).</span>
+                        </span>
+                    </label>
+                    <label class="delivery-option-card">
+                        <input
+                            type="radio"
+                            id="delivery_courier"
+                            name="delivery_method"
+                            value="courier"
+                            {% if checkout_form.delivery_method == "courier" or delivery_method == "courier" %}checked{% endif %}
+                            required
+                        >
+                        <span class="delivery-option-content">
+                            <span class="delivery-option-title delivery-option-title--courier">Курьерская доставка</span>
+                            <span class="delivery-option-note">Доставка по вашему адресу курьером.<br>Стоимость: 300.00 сом.<br>При заказе свыше 3000.00 сом — бесплатно.</span>
+                        </span>
+                    </label>
+                </div>
+
                 <h2 class="section-title" style="font-size:var(--text-lg);margin-bottom:var(--spacing-md);">Данные для доставки</h2>
                 <div class="form-field">
                     <label for="full_name">ФИО *</label>
@@ -77,24 +200,120 @@
                            value="{% if checkout_form %}{{ checkout_form.email }}{% elif user.is_authenticated %}{{ user.email }}{% endif %}">
                 </div>
                 <div class="form-field">
-                    <label for="address">Адрес доставки *</label>
-                    <input type="text" id="address" name="address" required placeholder="Токтогула 68, г. Бишкек" class="input-unnested"
+                    <label for="phone">Номер телефона *</label>
+                    <input type="tel" id="phone" name="phone" required class="input-unnested" placeholder="+996 555 123 456"
+                           value="{% if checkout_form %}{{ checkout_form.phone }}{% endif %}">
+                </div>
+                {% if user.is_authenticated and saved_addresses %}
+                <div class="form-field">
+                    <label>Адрес доставки</label>
+                    <div class="address-source-options">
+                        <label class="address-source-card">
+                            <input type="radio" name="address_source" id="address_source_saved" value="saved"
+                                {% if checkout_form.address_source == "saved" or not checkout_form.address_source %}checked{% endif %}>
+                            <span class="address-source-title">Выбрать адрес из личного кабинета</span>
+                        </label>
+                        <div class="saved-address-select-wrap">
+                            <select id="saved_address_id" name="saved_address_id" class="input-unnested">
+                                {% for saved_address in saved_addresses %}
+                                <option value="{{ saved_address.id }}"
+                                    data-address="{{ saved_address.full_address }}"
+                                    {% if checkout_form.saved_address_id == saved_address.id|stringformat:"s" %}selected{% elif not checkout_form.saved_address_id and saved_address.is_default %}selected{% endif %}>
+                                    {{ saved_address.label }} — {{ saved_address.full_address }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <label class="address-source-card">
+                            <input type="radio" name="address_source" id="address_source_new" value="new"
+                                {% if checkout_form.address_source == "new" %}checked{% endif %}>
+                            <span class="address-source-title">Ввести новый адрес</span>
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="form-field">
+                    <label for="address" id="delivery_address_label">Адрес доставки</label>
+                    <input type="text" id="address" name="address" placeholder="Токтогула 68, г. Бишкек" class="input-unnested"
                            value="{% if checkout_form %}{{ checkout_form.address }}{% endif %}">
                 </div>
-
-                <div class="form-field" style="margin-top:var(--spacing-lg);">
-                    <h3 class="section-title" style="font-size:var(--text-base);">Способ оплаты</h3>
-                    <label class="filter-checkbox" style="margin-top:var(--spacing-sm);">
-                        <input type="radio" id="cod" name="payment_method" value="COD" checked required>
-                        <span>Наличными при получении</span>
-                    </label>
+                <div class="form-field">
+                    <label for="order_comment">Комментарий к заказу</label>
+                    <textarea id="order_comment" name="order_comment" rows="3" class="input-unnested" placeholder="Например: позвонить за 30 минут, подъезд 2, этаж 5.">{% if checkout_form %}{{ checkout_form.order_comment }}{% endif %}</textarea>
                 </div>
+
+                <input type="hidden" name="payment_method" value="COD">
 
                 <button type="submit" class="cart-summary-proceed_to_checkout" style="margin-top:var(--spacing-lg);">
                     Подтвердить заказ
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg>
                 </button>
             </form>
+            <script>
+            (function() {
+                var pickup = document.getElementById('delivery_pickup');
+                var courier = document.getElementById('delivery_courier');
+                var address = document.getElementById('address');
+                var label = document.getElementById('delivery_address_label');
+                var subtotalEl = document.getElementById('summary-subtotal');
+                var shippingEl = document.getElementById('summary-shipping');
+                var totalEl = document.getElementById('summary-grand-total');
+                var sourceSaved = document.getElementById('address_source_saved');
+                var sourceNew = document.getElementById('address_source_new');
+                var savedAddressSelect = document.getElementById('saved_address_id');
+                if (!pickup || !courier || !address || !label || !subtotalEl || !shippingEl || !totalEl) return;
+
+                function toNumber(value) {
+                    return Number(String(value || '').replace(',', '.')) || 0;
+                }
+                function formatSom(value) {
+                    return value.toFixed(2) + ' сом';
+                }
+                function syncAddressRequired() {
+                    var courierSelected = courier.checked;
+                    var subtotal = toNumber(subtotalEl.dataset.subtotal || subtotalEl.textContent);
+                    var courierFee = toNumber(shippingEl.dataset.courierFee || 300);
+                    var freeThreshold = toNumber(shippingEl.dataset.freeThreshold || 3000);
+                    var shipping = 0;
+                    if (courierSelected) {
+                        shipping = subtotal > freeThreshold ? 0 : courierFee;
+                    }
+                    address.required = courierSelected;
+                    label.textContent = courierSelected ? 'Адрес доставки *' : 'Адрес доставки';
+                    shippingEl.textContent = formatSom(shipping);
+                    totalEl.textContent = formatSom(subtotal + shipping);
+                }
+
+                pickup.addEventListener('change', syncAddressRequired);
+                courier.addEventListener('change', syncAddressRequired);
+                syncAddressRequired();
+
+                function syncAddressSource() {
+                    if (!sourceSaved || !sourceNew || !savedAddressSelect) return;
+                    var useSaved = sourceSaved.checked;
+                    savedAddressSelect.disabled = !useSaved;
+                    if (useSaved) {
+                        var selected = savedAddressSelect.options[savedAddressSelect.selectedIndex];
+                        if (selected && selected.dataset.address) {
+                            address.value = selected.dataset.address;
+                        }
+                        address.readOnly = true;
+                    } else {
+                        address.readOnly = false;
+                        if (address.value === 'Самовывоз') {
+                            address.value = '';
+                        }
+                    }
+                }
+
+                if (sourceSaved && sourceNew && savedAddressSelect) {
+                    sourceSaved.addEventListener('change', syncAddressSource);
+                    sourceNew.addEventListener('change', syncAddressSource);
+                    savedAddressSelect.addEventListener('change', syncAddressSource);
+                    syncAddressSource();
+                }
+            })();
+            </script>
         </div>
     </div>
 </div>

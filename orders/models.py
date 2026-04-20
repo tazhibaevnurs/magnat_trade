@@ -9,9 +9,14 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+from .constants import DEMO_PRODUCT_LINE_PREFIX
+
 
 class Order(models.Model):
     """Заказ сайта; external_id — номер/ид из 1С после выгрузки."""
+    class DeliveryMethod(models.TextChoices):
+        PICKUP = "pickup", "Самовывоз"
+        COURIER = "courier", "Курьерская доставка"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     external_id = models.CharField(
@@ -36,8 +41,16 @@ class Order(models.Model):
         default=0,
         help_text="Доставка (для отображения; итог в total_amount).",
     )
+    delivery_method = models.CharField(
+        max_length=20,
+        choices=DeliveryMethod.choices,
+        default=DeliveryMethod.PICKUP,
+        db_index=True,
+        help_text="Способ доставки клиента.",
+    )
     delivery_full_name = models.CharField(max_length=120, blank=True, default="")
     delivery_email = models.EmailField(blank=True, default="")
+    delivery_phone = models.CharField(max_length=32, blank=True, default="")
     delivery_address = models.TextField(blank=True, default="")
 
     status = models.CharField(max_length=64, default="draft", db_index=True)
@@ -52,6 +65,7 @@ class Order(models.Model):
     price_type = models.CharField(max_length=20, default="retail")
     warehouse_id = models.CharField(max_length=64, blank=True, default="")
     comment = models.TextField(blank=True, default="")
+    customer_comment = models.TextField(blank=True, default="")
 
     export_task_id = models.CharField(max_length=255, blank=True, default="")
     last_export_error = models.TextField(blank=True, default="")
@@ -77,6 +91,35 @@ class Order(models.Model):
 
         fee = self.shipping_fee or Decimal("0")
         return self.total_amount - fee
+
+    @property
+    def delivery_method_label(self) -> str:
+        return self.get_delivery_method_display()
+
+    @property
+    def requires_onec_export(self) -> bool:
+        return self.items.exclude(product_id__startswith=DEMO_PRODUCT_LINE_PREFIX).exists()
+
+    @property
+    def onec_sync_state_code(self) -> str:
+        if not self.requires_onec_export:
+            return "not_required"
+        if self.external_id:
+            return "exported"
+        if self.last_export_error:
+            return "error"
+        return "queued"
+
+    @property
+    def onec_sync_state_label(self) -> str:
+        code = self.onec_sync_state_code
+        if code == "exported":
+            return "В 1С отправлен"
+        if code == "error":
+            return "Ошибка выгрузки в 1С"
+        if code == "queued":
+            return "В очереди на выгрузку в 1С"
+        return "Выгрузка в 1С не требуется"
 
 
 class OrderItem(models.Model):

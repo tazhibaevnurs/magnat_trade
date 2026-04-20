@@ -11,9 +11,9 @@
             <p style="margin: 0; opacity: 0.9;">Остатки товаров и движение по складу</p>
         </a>
         
-        <a href="{% url 'admin:order-history' %}" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: block;">
-            <h3 style="margin: 0 0 10px 0;">📋 История заказов</h3>
-            <p style="margin: 0; opacity: 0.9;">Все заказы и аналитика</p>
+        <a href="{% url 'admin:orders_order_changelist' %}" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: block;">
+            <h3 style="margin: 0 0 10px 0;">📋 Заказы сайта (актуальные)</h3>
+            <p style="margin: 0; opacity: 0.9;">Новые заказы из checkout (orders.Order)</p>
         </a>
         
         <a href="{% url 'admin:sales-analytics' %}" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: block;">

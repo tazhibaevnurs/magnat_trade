@@ -3,7 +3,7 @@
 {% block title %}Избранное{% endblock %}
 
 {% block content %}
-<div class="container page-block" role="region" aria-labelledby="wishlist-heading">
+<div class="container page-block profile-scroll-page" role="region" aria-labelledby="wishlist-heading">
     {% include "includes/breadcrumbs.html" %}
 
     <header style="margin-bottom:var(--spacing-xl);">
@@ -11,9 +11,12 @@
         <p class="section-desc" style="margin:0;">Товары, которые вы сохранили. Добавляйте их в корзину в один клик.</p>
     </header>
 
-    <div id="product-grid" class="shop-product-grid">
+    <div class="profile-layout grid gap-8 lg:grid-cols-12 lg:items-start">
+        {% include "shop/includes/profile_sidebar_nav.html" %}
+        <div class="profile-main min-w-0 space-y-6 lg:col-span-8">
+    <div id="product-grid" class="shop-product-grid profile-content-scroll">
         <p class="catalog-toolbar__hint" style="margin-bottom:var(--spacing-md);">
-            Сохранено: <strong style="color:var(--color-text-primary);">{{ wishlist_rows|length }}</strong>
+            Сохранено: <strong style="color:var(--color-text-primary);">{{ wishlist_count }}</strong>
         </p>
         <div class="product-grid">
             {% if wishlist_rows %}
@@ -34,6 +37,30 @@
             </div>
             {% endif %}
         </div>
+
+        {% if wishlist_page and wishlist_page.has_other_pages %}
+        <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:var(--spacing-lg);flex-wrap:wrap;">
+            {% if wishlist_page.has_previous %}
+            <a href="?page={{ wishlist_page.previous_page_number }}" class="btn-secondary profile-ajax-link" style="display:inline-flex;align-items:center;gap:8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+                Назад
+            </a>
+            {% endif %}
+
+            <span class="section-desc" style="margin:0;">
+                Страница {{ wishlist_page.number }} из {{ wishlist_page.paginator.num_pages }}
+            </span>
+
+            {% if wishlist_page.has_next %}
+            <a href="?page={{ wishlist_page.next_page_number }}" class="btn-secondary profile-ajax-link" style="display:inline-flex;align-items:center;gap:8px;">
+                Вперёд
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
+</div>
+</div>
 </div>
 {% endblock %}

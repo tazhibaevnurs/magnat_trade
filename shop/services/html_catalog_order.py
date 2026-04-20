@@ -27,8 +27,11 @@ def place_order_from_catalog_cart_items(
     cart_items: list,
     full_name: str,
     email: str,
+    phone: str,
     address: str,
     payment_method: str,
+    delivery_method: str,
+    order_comment: str,
     subtotal: Decimal,
     shipping_fee: Decimal,
 ) -> Order:
@@ -45,7 +48,10 @@ def place_order_from_catalog_cart_items(
 
     grand_total = subtotal + shipping_fee
     comment = (
-        f"Заказ с сайта (HTML) | {full_name} | {email} | {address} | оплата: {payment_method}"
+        "Заказ с сайта (HTML) | "
+        f"{full_name} | {email} | {phone} | {address} | "
+        f"доставка: {delivery_method} ({shipping_fee}) | оплата: {payment_method} | "
+        f"комментарий: {order_comment or '-'}"
     )
     price_type = "wholesale" if getattr(user, "user_type", "retail") == "wholesale" else "retail"
     warehouse = getattr(settings, "DEFAULT_WAREHOUSE_ID", "MAIN") or "MAIN"
@@ -54,8 +60,10 @@ def place_order_from_catalog_cart_items(
         user=user,
         total_amount=grand_total,
         shipping_fee=shipping_fee,
+        delivery_method=delivery_method,
         delivery_full_name=full_name,
         delivery_email=email,
+        delivery_phone=phone,
         delivery_address=address,
         status="pending",
         payment_status="pending",
@@ -64,6 +72,7 @@ def place_order_from_catalog_cart_items(
         price_type=price_type,
         warehouse_id=warehouse,
         comment=comment,
+        customer_comment=order_comment or "",
     )
 
     for ci in cart_items:
@@ -85,9 +94,9 @@ def place_order_from_catalog_cart_items(
             raise ValueError(msg)
 
     if _onec_export_enabled():
-        from integrations.tasks import export_order_to_onec
+        from integrations.tasks import queue_export_order_to_onec
 
         oid = str(order.id)
-        transaction.on_commit(lambda: export_order_to_onec.delay(oid))
+        transaction.on_commit(lambda: queue_export_order_to_onec(oid))
 
     return order

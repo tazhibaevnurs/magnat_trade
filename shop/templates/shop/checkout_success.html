@@ -28,13 +28,25 @@
             </div>
             <div class="section-desc" style="margin-top:var(--spacing-lg);">
                 <p><strong>Способ оплаты:</strong> Наличными при получении</p>
+                <p><strong>Способ доставки:</strong> {{ order.delivery_method_label }}</p>
+                <p><strong>Стоимость доставки:</strong> {{ order.shipping_fee|floatformat:2 }} сом</p>
+                {% if order.delivery_phone %}<p><strong>Телефон:</strong> {{ order.delivery_phone }}</p>{% endif %}
                 <p><strong>Адрес:</strong> {{ order.delivery_address }}</p>
+                {% if order.customer_comment %}<p><strong>Комментарий:</strong> {{ order.customer_comment }}</p>{% endif %}
             </div>
         </div>
 
         <a href="{% url 'shop' %}" class="btn-primary" style="margin-top:var(--spacing-xl);width:100%;max-width:20rem;">
             Вернуться в магазин
         </a>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
+            <a href="{% url 'order_pdf' order.id %}" class="btn-secondary" style="padding:10px 16px;">
+                Скачать PDF
+            </a>
+            <a href="{% url 'order_print' order.id %}" target="_blank" class="btn-secondary" style="padding:10px 16px;">
+                Печать заказа
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}

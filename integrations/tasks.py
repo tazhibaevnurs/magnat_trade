@@ -1,4 +1,6 @@
 import logging
+import socket
+from urllib.parse import urlparse
 
 from celery import shared_task
 from django.conf import settings
@@ -6,7 +8,47 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, max_retries=5, default_retry_delay=60)
+def _celery_broker_reachable() -> bool:
+    broker_url = (getattr(settings, "CELERY_BROKER_URL", "") or "").strip()
+    if not broker_url:
+        return False
+
+    parsed = urlparse(broker_url)
+    if parsed.scheme != "redis":
+        return True
+
+    host = parsed.hostname or "127.0.0.1"
+    port = parsed.port or 6379
+    try:
+        with socket.create_connection((host, port), timeout=0.2):
+            return True
+    except OSError:
+        return False
+
+
+def queue_export_order_to_onec(order_id: str, request_id: str | None = None) -> str | None:
+    """
+    Безопасно поставить выгрузку заказа в очередь Celery.
+    Не выбрасывает исключения наружу, чтобы не ломать checkout при временной
+    недоступности брокера/результат-бэкенда.
+    """
+    if not _celery_broker_reachable():
+        logger.warning("Celery broker is unavailable. Skip queueing order export %s", order_id)
+        return None
+
+    try:
+        task = export_order_to_onec.apply_async(
+            args=(str(order_id),),
+            kwargs={"request_id": request_id},
+            ignore_result=True,
+        )
+        return getattr(task, "id", None)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to queue export_order_to_onec for order %s: %s", order_id, exc)
+        return None
+
+
+@shared_task(bind=True, max_retries=5, default_retry_delay=60, ignore_result=True)
 def export_order_to_onec(self, order_id: str, request_id: str | None = None) -> dict:
     from orders.services.order_export import OrderExportService
     from integrations.clients.onec import OneCAPIError

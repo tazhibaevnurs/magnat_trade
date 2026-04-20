@@ -52,7 +52,7 @@ class OrderExportService:
             "items": items,
             "total_amount": float(order.total_amount),
             "currency": order.currency,
-            "delivery_required": True,
+            "delivery_required": order.delivery_method == Order.DeliveryMethod.COURIER,
             "comment": order.comment or "Заказ с сайта",
             "source": "website",
         }
