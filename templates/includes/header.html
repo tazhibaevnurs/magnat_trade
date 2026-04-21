@@ -44,14 +44,14 @@
                 </button>
 
                 {% if user.is_authenticated %}
-                <a href="{% url 'profile' %}" class="icon-btn header-profile-link" title="Профиль">
+                <a href="{% url 'profile' %}" class="icon-btn header-profile-link" title="Профиль" aria-label="Профиль">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
                 </a>
                 {% else %}
                 <a href="{% url 'sign-in' %}" class="btn-secondary header-signin-link" style="padding:8px 16px;font-size:var(--text-sm);">Войти</a>
                 {% endif %}
 
-                <a href="{% url 'cart' %}" id="cart-link" class="cart-btn" title="Корзина">
+                <a href="{% url 'cart' %}" id="cart-link" class="cart-btn" title="Корзина" aria-label="Корзина">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 3.818M12 3c-1.268 0-2.39.63-3.068 1.593m-3.032 6.594A60.98 60.98 0 0 1 12 12c2.76 0 5.46.37 8.06 1.106"/></svg>
                     <span class="cart-btn__badge" id="cart-count">{{ cart_item_count|default:0 }}</span>
                 </a>
