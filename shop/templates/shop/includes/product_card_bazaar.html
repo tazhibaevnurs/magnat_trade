@@ -12,7 +12,7 @@
             <img src="{% if 'placeholder-product.svg' in image_url %}{% static 'shop/images/placeholder-product.svg' %}{% else %}{{ image_url }}{% endif %}"
                  alt="{{ product.name }}"
                  class="product-card__image"
-                 {% if forloop.first %}fetchpriority="high" loading="eager"{% else %}loading="lazy"{% endif %} width="400" height="400">
+                 loading="lazy" decoding="async" width="400" height="400">
             {% endwith %}
         </a>
         {% include "shop/includes/product_wishlist_heart.html" with wishlist_mode="shop" %}

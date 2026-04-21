@@ -18,7 +18,10 @@
             {# Слайд 1 #}
             <div class="home-hero-bleed__slide">
                 <div class="home-hero-bleed__media home-hero-bleed__media--slide1" aria-hidden="true">
-                    <img src="{% static 'img/home/hero-slide-1.png' %}" alt="" width="1920" height="640" fetchpriority="high" decoding="async">
+                    <picture>
+                        <source srcset="{% static 'img/home/hero-slide-1.webp' %}" type="image/webp">
+                        <img src="{% static 'img/home/hero-slide-1.png' %}" alt="" width="1920" height="640" fetchpriority="high" decoding="async">
+                    </picture>
                 </div>
                 <div class="home-hero-bleed__overlay"></div>
                 <div class="home-hero-bleed__content">
@@ -34,7 +37,10 @@
             {# Слайд 2 #}
             <div class="home-hero-bleed__slide">
                 <div class="home-hero-bleed__media home-hero-bleed__media--slide2" aria-hidden="true">
-                    <img src="{% static 'img/home/hero-slide-2.png' %}" alt="" width="1920" height="640" loading="lazy" decoding="async">
+                    <picture>
+                        <source srcset="{% static 'img/home/hero-slide-2.webp' %}" type="image/webp">
+                        <img src="{% static 'img/home/hero-slide-2.png' %}" alt="" width="1920" height="640" loading="lazy" decoding="async">
+                    </picture>
                 </div>
                 <div class="home-hero-bleed__overlay"></div>
                 <div class="home-hero-bleed__content">
@@ -50,7 +56,10 @@
             {# Слайд 3 #}
             <div class="home-hero-bleed__slide">
                 <div class="home-hero-bleed__media home-hero-bleed__media--slide3" aria-hidden="true">
-                    <img src="{% static 'img/home/hero-slide-3.png' %}" alt="" width="1920" height="640" loading="lazy" decoding="async">
+                    <picture>
+                        <source srcset="{% static 'img/home/hero-slide-3.webp' %}" type="image/webp">
+                        <img src="{% static 'img/home/hero-slide-3.png' %}" alt="" width="1920" height="640" loading="lazy" decoding="async">
+                    </picture>
                 </div>
                 <div class="home-hero-bleed__overlay"></div>
                 <div class="home-hero-bleed__content">
@@ -117,7 +126,10 @@
     <div class="home-promo-grid">
         <a href="{% url 'shop_new_arrivals' %}" class="home-promo-tile">
             <div class="home-promo-tile__img home-promo-tile__img--a" aria-hidden="true">
-                <img src="{% static 'img/home/promo-tile-newarrivals.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
+                <picture>
+                    <source srcset="{% static 'img/home/promo-tile-newarrivals.webp' %}" type="image/webp">
+                    <img src="{% static 'img/home/promo-tile-newarrivals.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
+                </picture>
             </div>
             <div class="home-promo-tile__shade"></div>
             <div class="home-promo-tile__body">
@@ -128,7 +140,10 @@
         </a>
         <a href="{% url 'shop_promotions' %}" class="home-promo-tile">
             <div class="home-promo-tile__img home-promo-tile__img--b" aria-hidden="true">
-                <img src="{% static 'img/home/promo-tile-catalog.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
+                <picture>
+                    <source srcset="{% static 'img/home/promo-tile-catalog.webp' %}" type="image/webp">
+                    <img src="{% static 'img/home/promo-tile-catalog.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
+                </picture>
             </div>
             <div class="home-promo-tile__shade"></div>
             <div class="home-promo-tile__body">
@@ -139,7 +154,10 @@
         </a>
         <a href="{% url 'contact-us' %}" class="home-promo-tile">
             <div class="home-promo-tile__img home-promo-tile__img--c" aria-hidden="true">
-                <img src="{% static 'img/home/promo-tile-service.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
+                <picture>
+                    <source srcset="{% static 'img/home/promo-tile-service.webp' %}" type="image/webp">
+                    <img src="{% static 'img/home/promo-tile-service.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
+                </picture>
             </div>
             <div class="home-promo-tile__shade"></div>
             <div class="home-promo-tile__body">
@@ -198,7 +216,10 @@
                 <div class="home-special-collections__slide">
                     <a href="{% url 'shop' %}?search=тетрадь" class="home-special-collections__item">
                         <div class="home-special-collections__card">
-                            <img src="{% static 'img/home/collection-tetrad.png' %}" alt="Тетради и блокноты" width="264" height="264" loading="lazy" decoding="async">
+                            <picture>
+                                <source srcset="{% static 'img/home/collection-tetrad.webp' %}" type="image/webp">
+                                <img src="{% static 'img/home/collection-tetrad.png' %}" alt="Тетради и блокноты" width="264" height="264" loading="lazy" decoding="async">
+                            </picture>
                         </div>
                         <span class="home-special-collections__label">Тетради и блокноты</span>
                     </a>
@@ -206,7 +227,10 @@
                 <div class="home-special-collections__slide">
                     <a href="{% url 'shop' %}?search=ручки" class="home-special-collections__item">
                         <div class="home-special-collections__card">
-                            <img src="{% static 'img/home/collection-pisma.png' %}" alt="Ручки и карандаши" width="264" height="264" loading="lazy" decoding="async">
+                            <picture>
+                                <source srcset="{% static 'img/home/collection-pisma.webp' %}" type="image/webp">
+                                <img src="{% static 'img/home/collection-pisma.png' %}" alt="Ручки и карандаши" width="264" height="264" loading="lazy" decoding="async">
+                            </picture>
                         </div>
                         <span class="home-special-collections__label">Ручки и карандаши</span>
                     </a>
@@ -214,7 +238,10 @@
                 <div class="home-special-collections__slide">
                     <a href="{% url 'shop' %}?search=альбом" class="home-special-collections__item">
                         <div class="home-special-collections__card">
-                            <img src="{% static 'img/home/collection-albomy.png' %}" alt="Альбомы и скетчбуки" width="264" height="264" loading="lazy" decoding="async">
+                            <picture>
+                                <source srcset="{% static 'img/home/collection-albomy.webp' %}" type="image/webp">
+                                <img src="{% static 'img/home/collection-albomy.png' %}" alt="Альбомы и скетчбуки" width="264" height="264" loading="lazy" decoding="async">
+                            </picture>
                         </div>
                         <span class="home-special-collections__label">Альбомы и скетчбуки</span>
                     </a>
@@ -222,7 +249,10 @@
                 <div class="home-special-collections__slide">
                     <a href="{% url 'shop' %}?search=офис" class="home-special-collections__item">
                         <div class="home-special-collections__card">
-                            <img src="{% static 'img/home/collection-ofis.png' %}" alt="Канцелярия для офиса" width="264" height="264" loading="lazy" decoding="async">
+                            <picture>
+                                <source srcset="{% static 'img/home/collection-ofis.webp' %}" type="image/webp">
+                                <img src="{% static 'img/home/collection-ofis.png' %}" alt="Канцелярия для офиса" width="264" height="264" loading="lazy" decoding="async">
+                            </picture>
                         </div>
                         <span class="home-special-collections__label">Канцелярия для офиса</span>
                     </a>
@@ -257,7 +287,10 @@
         <h2 id="home-weekly-promos-heading" class="home-weekly-promos__title">Акции недели</h2>
         <div class="home-weekly-promos__grid">
             <a href="{% url 'shop' %}?search=ручки" class="home-weekly-promos__card">
-                <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-1.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                <picture>
+                    <source srcset="{% static 'img/home/home-promo-weekly-1.webp' %}" type="image/webp">
+                    <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-1.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                </picture>
                 <div class="home-weekly-promos__overlay" aria-hidden="true"></div>
                 <div class="home-weekly-promos__content">
                     <p class="home-weekly-promos__kicker">Пишущие принадлежности</p>
@@ -266,7 +299,10 @@
                 <span class="home-weekly-promos__badge">−25%</span>
             </a>
             <a href="{% url 'shop' %}?search=офис" class="home-weekly-promos__card home-weekly-promos__card--light">
-                <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-2.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                <picture>
+                    <source srcset="{% static 'img/home/home-promo-weekly-2.webp' %}" type="image/webp">
+                    <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-2.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                </picture>
                 <div class="home-weekly-promos__overlay home-weekly-promos__overlay--light" aria-hidden="true"></div>
                 <div class="home-weekly-promos__content">
                     <p class="home-weekly-promos__kicker">Техника для офиса</p>
@@ -275,7 +311,10 @@
                 <span class="home-weekly-promos__badge">−50%</span>
             </a>
             <a href="{% url 'shop' %}?search=мебель" class="home-weekly-promos__card home-weekly-promos__card--light">
-                <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-3.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                <picture>
+                    <source srcset="{% static 'img/home/home-promo-weekly-3.webp' %}" type="image/webp">
+                    <img class="home-weekly-promos__img" src="{% static 'img/home/home-promo-weekly-3.png' %}" alt="" width="800" height="400" loading="lazy" decoding="async">
+                </picture>
                 <div class="home-weekly-promos__overlay home-weekly-promos__overlay--soft" aria-hidden="true"></div>
                 <div class="home-weekly-promos__content">
                     <p class="home-weekly-promos__kicker">Офис с характером</p>
