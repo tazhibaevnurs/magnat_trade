@@ -11,42 +11,42 @@
     </nav>
 
     <div class="header-actions">
-        <a class="header-cart-btn" href="/cart" id="cart-link">
-            <i class="fa-solid fa-cart-shopping"></i>
+        <a class="header-cart-btn" href="/cart" id="cart-link" aria-label="Корзина">
+            <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
             <span class="header-cart-count" id="cart-count">{{ cart_item_count|default:0 }}</span>
         </a>
 
         {% if user.is_authenticated %}
             <div class="user-dropdown">
-                <button class="button-secondary dropdown-trigger">
-                    <i class="fa-solid fa-user"></i>
+                <button class="button-secondary dropdown-trigger" aria-label="Меню пользователя">
+                    <i class="fa-solid fa-user" aria-hidden="true"></i>
                     {{ user.first_name|default:user.email }}
-                    <i class="fa-solid fa-chevron-down"></i>
+                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                 </button>
                 <div class="dropdown-menu" data-open="false">
                     <a href="/profile" class="dropdown-item">
-                        <i class="fa-solid fa-user-circle"></i>
+                        <i class="fa-solid fa-user-circle" aria-hidden="true"></i>
                         Профиль
                     </a>
                     <a href="{% url 'profile_orders' %}" class="dropdown-item">
-                        <i class="fa-solid fa-receipt"></i>
+                        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
                         Мои заказы
                     </a>
                     <button type="button" class="dropdown-item dropdown-button" id="logout-trigger">
-                        <i class="fa-solid fa-sign-out-alt"></i>
+                        <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i>
                         Выйти
                     </button>
                 </div>
             </div>
         {% else %}
             <a class="button-secondary" href="/sign-in">
-                <i class="fa-solid fa-right-to-bracket"></i>
+                <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
                 Войти
             </a>
         {% endif %}
 
-        <button class="button-icon_outlined theme-switcher-btn">
-            <i class="fa-solid fa-moon"></i>
+        <button class="button-icon_outlined theme-switcher-btn" aria-label="Переключить тему">
+            <i class="fa-solid fa-moon" aria-hidden="true"></i>
         </button>
     </div>
 </header>
@@ -57,8 +57,8 @@
     <div class="modal logout-modal">
         <div class="modal-header">
             <h3 class="modal-header-title">Подтверждение выхода</h3>
-            <button type="button" class="button-icon modal-header-exit" id="logout-modal-close">
-                <i class="fa-solid fa-xmark"></i>
+            <button type="button" class="button-icon modal-header-exit" id="logout-modal-close" aria-label="Закрыть окно">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             </button>
         </div>
         <p class="modal-description">
@@ -71,7 +71,7 @@
             <form action="{% url 'logout' %}" method="POST" style="display: inline;">
                 {% csrf_token %}
                 <button type="submit" class="button-primary modal-ctas-btn">
-                    <i class="fa-solid fa-sign-out-alt"></i>
+                    <i class="fa-solid fa-sign-out-alt" aria-hidden="true"></i>
                     Выйти
                 </button>
             </form>

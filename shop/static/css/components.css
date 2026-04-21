@@ -381,6 +381,21 @@
   justify-content: center;
 }
 
+@media (max-width: 768px) {
+  .icon-btn,
+  .cart-btn,
+  .mobile-tabbar__link,
+  .home-hero-bleed__arrow,
+  .home-hero-bleed__dot,
+  .product-card__wish,
+  .product-card__cart-btn,
+  .cat-dropdown__search-btn,
+  .shop-sidebar__cat-toggle {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
 /* ——— Sub navigation ——— */
 .sub-nav {
   border-bottom: 1px solid var(--color-border);
