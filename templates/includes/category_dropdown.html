@@ -44,7 +44,8 @@
         <template x-for="cat in categories" :key="cat.slug">
             <div class="cat-dropdown__group">
                 <div class="cat-dropdown__row">
-                    <a :href="shopUrl + '?categories=' + encodeURIComponent(cat.slug)"
+                    <a href="{% url 'shop' %}"
+                       x-bind:href="shopUrl + '?categories=' + encodeURIComponent(cat.slug)"
                        class="cat-dropdown__link cat-dropdown__with-icon"
                        {% if request.resolver_match and request.resolver_match.url_name == 'shop' %}
                        hx-get="{% url 'shop_grid' %}"
@@ -77,7 +78,8 @@
                      x-transition
                      style="display: none;">
                     <template x-for="sub in cat.subs" :key="sub.slug">
-                        <a :href="shopUrl + '?categories=' + encodeURIComponent(sub.slug)"
+                        <a href="{% url 'shop' %}"
+                           x-bind:href="shopUrl + '?categories=' + encodeURIComponent(sub.slug)"
                            class="cat-dropdown__sublink"
                            {% if request.resolver_match and request.resolver_match.url_name == 'shop' %}
                            hx-get="{% url 'shop_grid' %}"

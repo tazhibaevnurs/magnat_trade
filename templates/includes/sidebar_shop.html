@@ -60,7 +60,8 @@
             <template x-for="cat in categories" :key="cat.slug">
                 <div class="shop-sidebar__cat">
                     <div class="shop-sidebar__cat-row">
-                        <a :href="shopUrl + '?categories=' + encodeURIComponent(cat.slug)"
+                        <a href="{% url 'shop' %}"
+                           x-bind:href="shopUrl + '?categories=' + encodeURIComponent(cat.slug)"
                            class="shop-sidebar__link shop-sidebar__link--with-icon"
                            :class="{ 'is-active': isActive(cat.slug) }"
                            {% if request.resolver_match and request.resolver_match.url_name == 'shop' %}
@@ -94,7 +95,8 @@
                          x-transition
                          style="display: none;">
                         <template x-for="sub in cat.subs" :key="sub.slug">
-                            <a :href="shopUrl + '?categories=' + encodeURIComponent(sub.slug)"
+                            <a href="{% url 'shop' %}"
+                               x-bind:href="shopUrl + '?categories=' + encodeURIComponent(sub.slug)"
                                class="shop-sidebar__sublink"
                                :class="{ 'is-active': isActive(sub.slug) }"
                                {% if request.resolver_match and request.resolver_match.url_name == 'shop' %}

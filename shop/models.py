@@ -407,13 +407,11 @@ class CartItem(models.Model):
             ),
             models.UniqueConstraint(
                 fields=("cart", "product"),
-                condition=Q(product__isnull=False),
-                name="uniq_cartitem_shop_product",
+                name="uniq_cartitem_shop_product_pair",
             ),
             models.UniqueConstraint(
                 fields=("cart", "catalog_product"),
-                condition=Q(catalog_product__isnull=False),
-                name="uniq_cartitem_catalog_product",
+                name="uniq_cartitem_catalog_product_pair",
             ),
         ]
 
@@ -480,13 +478,11 @@ class WishlistItem(models.Model):
             ),
             models.UniqueConstraint(
                 fields=("user", "catalog_product"),
-                condition=Q(catalog_product__isnull=False),
-                name="uniq_wishlist_user_catalog_product",
+                name="uniq_wishlist_user_catalog_product_pair",
             ),
             models.UniqueConstraint(
                 fields=("user", "shop_product"),
-                condition=Q(shop_product__isnull=False),
-                name="uniq_wishlist_user_shop_product",
+                name="uniq_wishlist_user_shop_product_pair",
             ),
         ]
 
@@ -702,13 +698,11 @@ class PromotionItem(models.Model):
             ),
             models.UniqueConstraint(
                 fields=["catalog_product"],
-                condition=Q(catalog_product__isnull=False),
-                name="shop_promotionitem_uniq_catalog_product",
+                name="shop_promotionitem_uniq_catalog_product_key",
             ),
             models.UniqueConstraint(
                 fields=["shop_product"],
-                condition=Q(shop_product__isnull=False),
-                name="shop_promotionitem_uniq_shop_product",
+                name="shop_promotionitem_uniq_shop_product_key",
             ),
         ]
 
@@ -770,13 +764,11 @@ class NewArrivalItem(models.Model):
             ),
             models.UniqueConstraint(
                 fields=["catalog_product"],
-                condition=Q(catalog_product__isnull=False),
-                name="shop_newarrivalitem_uniq_catalog_product",
+                name="shop_newarrivalitem_uniq_catalog_product_key",
             ),
             models.UniqueConstraint(
                 fields=["shop_product"],
-                condition=Q(shop_product__isnull=False),
-                name="shop_newarrivalitem_uniq_shop_product",
+                name="shop_newarrivalitem_uniq_shop_product_key",
             ),
         ]
 
