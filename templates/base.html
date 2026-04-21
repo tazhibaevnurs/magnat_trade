@@ -463,8 +463,11 @@
                     panel.innerHTML = items.map((item) => {
                         const safeName = (item.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         const safePrice = (item.price || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        const safeUrl = item.url || '#';
-                        const safeImage = item.image_url || '';
+                        const safeUrl = (item.url || '#').trim();
+                        const rawImage = (item.image_url || '').trim();
+                        const safeImage = rawImage && !rawImage.includes('${')
+                            ? rawImage
+                            : '/static/shop/images/placeholder-product.svg';
                         return `
                             <a class="header-search-suggest__item" href="${safeUrl}">
                                 <img class="header-search-suggest__thumb" src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async" />
