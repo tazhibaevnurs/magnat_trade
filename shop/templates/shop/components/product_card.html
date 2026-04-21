@@ -2,7 +2,7 @@
 
 <div class="product_card">
     <div class="product_card-image-container">
-        <img class="product_card-image" src="{{ product.image_url }}" alt="{{ product.name }} product image" />
+        <img class="product_card-image" src="{{ product.image_url }}" alt="{{ product.name }}" />
     </div>
     
     <div class="product_card-wrapper">
@@ -11,7 +11,7 @@
                 <span class="{% if not product.is_active %}discontinued{% elif product.stock_quantity == 0 %}out_of_stock{% elif product.stock_quantity <= 5 %}low_stock{% else %}in_stock{% endif %}">
                     {{ product.stock_status }}
                 </span>
-                <i class="fa-solid fa-circle"></i>
+                <i class="fa-solid fa-circle" aria-hidden="true"></i>
                 {{ product.get_category_display }}
             </small>
             <h4 class="product_card-info-label">
@@ -33,17 +33,17 @@
                     class="button-secondary product_card-ctas-primary_btn product-card-add-to-cart"
                     data-product-id="{{ product.id }}"
                     data-product-name="{{ product.name }}">
-                    <i class="fa-solid fa-cart-shopping"></i>
+                    <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
                     В корзину
                 </button>
             {% else %}
                 <button class="button-secondary product_card-ctas-primary_btn" disabled>
-                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    <i class="fa-solid fa-exclamation-triangle" aria-hidden="true"></i>
                     {{ product.stock_status }}
                 </button>
             {% endif %}
-            <a href="{{ product.get_absolute_url }}" class="button-icon_outlined product_card-ctas-secondary_btn">
-                <i class="fa-solid fa-square-up-right"></i>
+            <a href="{{ product.get_absolute_url }}" class="button-icon_outlined product_card-ctas-secondary_btn" aria-label="Открыть карточку товара {{ product.name }}">
+                <i class="fa-solid fa-square-up-right" aria-hidden="true"></i>
             </a>
         </div>
     </div>

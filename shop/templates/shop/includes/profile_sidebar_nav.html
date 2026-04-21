@@ -4,7 +4,7 @@
             <div class="profile-sidebar-card__avatar-wrap">
                 <div class="profile-sidebar-card__avatar">
                     {% if user_profile and user_profile.profile_picture %}
-                        <img src="{{ user_profile.profile_picture.url }}" alt="Фото профиля: {{ user.first_name|default:user.email }} {{ user.last_name }}" width="112" height="112" decoding="async">
+                        <img src="{{ user_profile.profile_picture.url }}" alt="Профиль {{ user.first_name|default:user.email }} {{ user.last_name }}" width="112" height="112" decoding="async">
                     {% else %}
                         <span class="profile-sidebar-card__avatar-letter" aria-hidden="true">{{ user.first_name.0|default:user.email.0|upper }}</span>
                     {% endif %}

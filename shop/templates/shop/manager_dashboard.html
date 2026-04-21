@@ -11,11 +11,11 @@
         <p class="profile-hero__subtitle">Заявки на опт, цены каталога 1С, категории и пользователи</p>
     </header>
 
-    <div class="manager-tabs" role="tablist" aria-label="Разделы панели">
-        <button type="button" role="tab" class="manager-tab" :class="{ 'manager-tab--active': tab === 'requests' }" @click="tab = 'requests'; window.syncManagerTabUrl && window.syncManagerTabUrl('requests')" :aria-selected="tab === 'requests'">Заявки на опт</button>
-        <button type="button" role="tab" class="manager-tab" :class="{ 'manager-tab--active': tab === 'products' }" @click="tab = 'products'; window.syncManagerTabUrl && window.syncManagerTabUrl('products')" :aria-selected="tab === 'products'">Товары и цены</button>
-        <button type="button" role="tab" class="manager-tab" :class="{ 'manager-tab--active': tab === 'categories' }" @click="tab = 'categories'; window.syncManagerTabUrl && window.syncManagerTabUrl('categories')" :aria-selected="tab === 'categories'">Категории</button>
-        <button type="button" role="tab" class="manager-tab" :class="{ 'manager-tab--active': tab === 'users' }" @click="tab = 'users'; window.syncManagerTabUrl && window.syncManagerTabUrl('users')" :aria-selected="tab === 'users'">Пользователи</button>
+    <div class="manager-tabs" aria-label="Разделы панели">
+        <button type="button" class="manager-tab" :class="{ 'manager-tab--active': tab === 'requests' }" @click="tab = 'requests'; window.syncManagerTabUrl && window.syncManagerTabUrl('requests')" :aria-pressed="tab === 'requests' ? 'true' : 'false'">Заявки на опт</button>
+        <button type="button" class="manager-tab" :class="{ 'manager-tab--active': tab === 'products' }" @click="tab = 'products'; window.syncManagerTabUrl && window.syncManagerTabUrl('products')" :aria-pressed="tab === 'products' ? 'true' : 'false'">Товары и цены</button>
+        <button type="button" class="manager-tab" :class="{ 'manager-tab--active': tab === 'categories' }" @click="tab = 'categories'; window.syncManagerTabUrl && window.syncManagerTabUrl('categories')" :aria-pressed="tab === 'categories' ? 'true' : 'false'">Категории</button>
+        <button type="button" class="manager-tab" :class="{ 'manager-tab--active': tab === 'users' }" @click="tab = 'users'; window.syncManagerTabUrl && window.syncManagerTabUrl('users')" :aria-pressed="tab === 'users' ? 'true' : 'false'">Пользователи</button>
     </div>
 
     {# Заявки #}

@@ -82,9 +82,9 @@
             </button>
         </div>
         <div class="home-hero-bleed__dots" role="tablist" aria-label="Выбор слайда">
-            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 0 }" @click="go(0)" :aria-current="slide === 0 ? 'true' : 'false'" aria-label="Слайд 1"></button>
-            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 1 }" @click="go(1)" :aria-current="slide === 1 ? 'true' : 'false'" aria-label="Слайд 2"></button>
-            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 2 }" @click="go(2)" :aria-current="slide === 2 ? 'true' : 'false'" aria-label="Слайд 3"></button>
+            <button type="button" role="tab" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 0 }" @click="go(0)" :aria-selected="slide === 0 ? 'true' : 'false'" aria-label="Слайд 1"></button>
+            <button type="button" role="tab" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 1 }" @click="go(1)" :aria-selected="slide === 1 ? 'true' : 'false'" aria-label="Слайд 2"></button>
+            <button type="button" role="tab" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 2 }" @click="go(2)" :aria-selected="slide === 2 ? 'true' : 'false'" aria-label="Слайд 3"></button>
         </div>
     </section>
 
