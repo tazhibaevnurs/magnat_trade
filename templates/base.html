@@ -61,7 +61,7 @@
       x-data="{ mobileSearch: false, mobileSidebar: false, mobileCatalog: false }"
       @close-mobile-search.window="mobileSearch = false"
       @keydown.escape.window="mobileSearch = false; mobileSidebar = false; mobileCatalog = false">
-    <a href="#main-content" class="sr-only">Перейти к основному содержимому</a>
+    <a href="#main-content" class="skip-link">Перейти к содержимому</a>
     {% include 'includes/header.html' %}
 
     {% if messages %}
