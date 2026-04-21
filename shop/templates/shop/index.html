@@ -73,16 +73,16 @@
             </button>
         </div>
         <div class="home-hero-bleed__dots" role="tablist" aria-label="Выбор слайда">
-            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 0 }" @click="go(0)" aria-label="Слайд 1"></button>
-            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 1 }" @click="go(1)" aria-label="Слайд 2"></button>
-            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 2 }" @click="go(2)" aria-label="Слайд 3"></button>
+            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 0 }" @click="go(0)" :aria-current="slide === 0 ? 'true' : 'false'" aria-label="Слайд 1"></button>
+            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 1 }" @click="go(1)" :aria-current="slide === 1 ? 'true' : 'false'" aria-label="Слайд 2"></button>
+            <button type="button" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 2 }" @click="go(2)" :aria-current="slide === 2 ? 'true' : 'false'" aria-label="Слайд 3"></button>
         </div>
     </section>
 
     {# Полоска преимуществ (как у сетевого гастронома) #}
     <div class="home-service-strip">
         <div class="home-service-strip__inner">
-            <div class="home-service-strip__item" href="#">
+            <div class="home-service-strip__item">
                 <span class="home-service-strip__icon" aria-hidden="true">🚚</span>
                 <div class="home-service-strip__text">
                     <strong>Доставка</strong>
@@ -117,7 +117,7 @@
     <div class="home-promo-grid">
         <a href="{% url 'shop_new_arrivals' %}" class="home-promo-tile">
             <div class="home-promo-tile__img home-promo-tile__img--a" aria-hidden="true">
-                <img src="{% static 'img/home/promo-tile-newarrivals.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
+                <img src="{% static 'img/home/promo-tile-newarrivals.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
             </div>
             <div class="home-promo-tile__shade"></div>
             <div class="home-promo-tile__body">
@@ -128,7 +128,7 @@
         </a>
         <a href="{% url 'shop_promotions' %}" class="home-promo-tile">
             <div class="home-promo-tile__img home-promo-tile__img--b" aria-hidden="true">
-                <img src="{% static 'img/home/promo-tile-catalog.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
+                <img src="{% static 'img/home/promo-tile-catalog.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
             </div>
             <div class="home-promo-tile__shade"></div>
             <div class="home-promo-tile__body">
@@ -139,7 +139,7 @@
         </a>
         <a href="{% url 'contact-us' %}" class="home-promo-tile">
             <div class="home-promo-tile__img home-promo-tile__img--c" aria-hidden="true">
-                <img src="{% static 'img/home/promo-tile-service.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
+                <img src="{% static 'img/home/promo-tile-service.png' %}" alt="" width="640" height="400" loading="lazy" decoding="async">
             </div>
             <div class="home-promo-tile__shade"></div>
             <div class="home-promo-tile__body">

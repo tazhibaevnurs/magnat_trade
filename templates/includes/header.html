@@ -28,8 +28,9 @@
                         <option value="{{ cat.slug }}">{{ cat.name }}</option>
                         {% endfor %}
                     </select>
-                    <input type="search" name="search" placeholder="Поиск товаров…" autocomplete="off" value="{{ request.GET.search|default:'' }}" data-search-suggest-input>
-                    <button type="submit">Найти</button>
+                    <label class="sr-only" for="header-search-input">Поиск по товарам</label>
+                    <input id="header-search-input" type="search" name="search" placeholder="Поиск товаров…" autocomplete="off" value="{{ request.GET.search|default:'' }}" data-search-suggest-input>
+                    <button type="submit" aria-label="Найти товары">Найти</button>
                 </form>
             </div>
 
@@ -88,7 +89,8 @@
                       method="get"
                       class="header-search-form header-search-form--live mobile-search-form"
                       data-search-suggest-form>
-                    <input type="search" name="search" placeholder="Поиск товаров…" autocomplete="off" value="{{ request.GET.search|default:'' }}" data-search-suggest-input>
+                    <label class="sr-only" for="mobile-search-input">Поиск по товарам</label>
+                    <input id="mobile-search-input" type="search" name="search" placeholder="Поиск товаров…" autocomplete="off" value="{{ request.GET.search|default:'' }}" data-search-suggest-input>
                 </form>
                 <button type="button"
                         class="icon-btn mobile-search-panel__clear"

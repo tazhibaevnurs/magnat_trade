@@ -34,6 +34,15 @@
     </style>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     <script defer src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script>
+        (function () {
+            if (!("requestIdleCallback" in window)) {
+                window.requestIdleCallback = function (cb) {
+                    return setTimeout(function () { cb({ didTimeout: false, timeRemaining: function () { return 0; } }); }, 1);
+                };
+            }
+        })();
+    </script>
     {% block seo_jsonld %}
     <script type="application/ld+json">
     {
