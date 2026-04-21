@@ -79,6 +79,7 @@
 
                 <form method="post" action="{% url 'contact-us' %}" class="contact-page__form feedback-form">
                     {% csrf_token %}
+                    <input type="hidden" name="pow_token" value="{{ pow_token }}">
 
                     <div class="feedback-form-row">
                         <div class="form-field">
@@ -110,6 +111,10 @@
                     <div class="form-field">
                         <label for="contact-message">Сообщение *</label>
                         <textarea id="contact-message" name="message" rows="6" placeholder="Опишите вопрос или детали заказа" required></textarea>
+                    </div>
+                    <div class="form-field">
+                        <label for="contact-pow-answer">{{ pow_question }} *</label>
+                        <input type="text" id="contact-pow-answer" name="pow_answer" inputmode="numeric" required placeholder="Ваш ответ">
                     </div>
 
                     <div class="feedback-form-actions">

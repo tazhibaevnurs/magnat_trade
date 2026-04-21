@@ -21,45 +21,12 @@
 
         <div class="catalog-layout">
             <div class="catalog-shop-main">
-                <div class="home-promo-grid shop-home-promo-grid">
-                    <a href="{% url 'shop_new_arrivals' %}" class="home-promo-tile">
-                        <div class="home-promo-tile__img home-promo-tile__img--a" aria-hidden="true">
-                            <img src="{% static 'img/home/promo-tile-newarrivals.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
-                        </div>
-                        <div class="home-promo-tile__shade"></div>
-                        <div class="home-promo-tile__body">
-                            <span class="home-promo-tile__tag">Новинки</span>
-                            <p class="home-promo-tile__title">Свежие поступления</p>
-                            <span class="home-promo-tile__more">Смотреть →</span>
-                        </div>
-                    </a>
-                    <a href="{% url 'shop_promotions' %}" class="home-promo-tile">
-                        <div class="home-promo-tile__img home-promo-tile__img--b" aria-hidden="true">
-                            <img src="{% static 'img/home/promo-tile-catalog.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
-                        </div>
-                        <div class="home-promo-tile__shade"></div>
-                        <div class="home-promo-tile__body">
-                            <span class="home-promo-tile__tag">Акции</span>
-                            <p class="home-promo-tile__title">Выгодные предложения</p>
-                            <span class="home-promo-tile__more">Смотреть →</span>
-                        </div>
-                    </a>
-                    <a href="{% url 'contact-us' %}" class="home-promo-tile">
-                        <div class="home-promo-tile__img home-promo-tile__img--c" aria-hidden="true">
-                            <img src="{% static 'img/home/promo-tile-service.png' %}" alt="" width="640" height="400" loading="eager" decoding="async">
-                        </div>
-                        <div class="home-promo-tile__shade"></div>
-                        <div class="home-promo-tile__body">
-                            <span class="home-promo-tile__tag">Сервис</span>
-                            <p class="home-promo-tile__title">Доставка и самовывоз</p>
-                            <span class="home-promo-tile__more">Подробнее →</span>
-                        </div>
-                    </a>
-                </div>
-
                 <div class="catalog-toolbar">
                     <div>
-                        <h1 class="catalog-toolbar__title">Каталог</h1>
+                        <h1 class="catalog-toolbar__title">
+                            Все товары
+                            <span class="catalog-toolbar__count">({% if page_obj %}{{ page_obj.paginator.count }}{% else %}{{ products|length }}{% endif %})</span>
+                        </h1>
                         <p class="catalog-toolbar__hint">Поиск, цена и сортировка — ниже.</p>
                     </div>
                 </div>
@@ -67,7 +34,7 @@
                 <div class="shop-search-row">
                     <div class="shop-search-input-wrap" style="flex:2;min-width:min(100%,280px);">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="var(--color-text-muted)"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-                        <input type="search" name="search" placeholder="Поиск по каталогу…" value="{{ search_query|default:'' }}" autocomplete="off">
+                        <input type="search" name="search" placeholder="Поиск товаров..." value="{{ search_query|default:'' }}" autocomplete="off">
                     </div>
                     <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-sm);align-items:flex-end;">
                         <label class="sr-only" for="price_min">От</label>

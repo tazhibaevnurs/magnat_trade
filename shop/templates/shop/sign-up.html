@@ -39,6 +39,7 @@
 
                 <form class="sign_up-form-group feedback-form" novalidate>
                     {% csrf_token %}
+                    <input type="hidden" name="pow_token" value="{{ pow_token }}">
 
                     <div class="sign_up-form-group-container" data-step="1">
                         <div class="feedback-form-row">
@@ -102,6 +103,11 @@
                                     <i class="fa-solid fa-eye-slash" aria-hidden="true"></i>
                                 </button>
                             </div>
+                            <span class="form-input-error" style="display: none;"></span>
+                        </div>
+                        <div class="form-field sign_up-form-group-input">
+                            <label for="pow_answer">{{ pow_question }} <span class="sign_up-req" aria-hidden="true">*</span></label>
+                            <input class="input-unnested" name="pow_answer" id="pow_answer" type="text" required inputmode="numeric" placeholder="Ваш ответ">
                             <span class="form-input-error" style="display: none;"></span>
                         </div>
                     </div>

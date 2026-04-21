@@ -5,8 +5,7 @@ from django.contrib import messages
 from django.db.models import Count, DecimalField, F, Q, Sum
 from django.shortcuts import render
 from django.urls import path
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html, format_html_join
 
 from .models import (
     Address,
@@ -370,15 +369,34 @@ class ShopLegacyOrderAdmin(admin.ModelAdmin):
         transactions = obj.inventory_transactions.all().select_related("product")
         if not transactions:
             return format_html("<em>{}</em>", "Операций по складу нет")
-        html = '<table style="width:100%; border-collapse: collapse;">'
-        html += '<tr style="background: #f0f0f0;"><th style="padding:8px; text-align:left;">Товар</th><th style="padding:8px; text-align:center;">Изменение</th><th style="padding:8px; text-align:center;">Было</th><th style="padding:8px; text-align:center;">Стало</th></tr>'
-        for trans in transactions:
-            html += f"<tr><td style=\"padding:8px; border-top:1px solid #ddd;\">{trans.product.name}</td>"
-            html += f"<td style=\"padding:8px; border-top:1px solid #ddd; text-align:center; color:red; font-weight:bold;\">{trans.quantity_change:+d}</td>"
-            html += f"<td style=\"padding:8px; border-top:1px solid #ddd; text-align:center;\">{trans.stock_before}</td>"
-            html += f"<td style=\"padding:8px; border-top:1px solid #ddd; text-align:center;\">{trans.stock_after}</td></tr>"
-        html += "</table>"
-        return mark_safe(html)
+        rows = format_html_join(
+            "",
+            (
+                "<tr><td style=\"padding:8px; border-top:1px solid #ddd;\">{}</td>"
+                "<td style=\"padding:8px; border-top:1px solid #ddd; text-align:center; color:red; font-weight:bold;\">{}</td>"
+                "<td style=\"padding:8px; border-top:1px solid #ddd; text-align:center;\">{}</td>"
+                "<td style=\"padding:8px; border-top:1px solid #ddd; text-align:center;\">{}</td></tr>"
+            ),
+            (
+                (
+                    trans.product.name,
+                    f"{trans.quantity_change:+d}",
+                    trans.stock_before,
+                    trans.stock_after,
+                )
+                for trans in transactions
+            ),
+        )
+        return format_html(
+            "<table style=\"width:100%; border-collapse: collapse;\">"
+            "<tr style=\"background: #f0f0f0;\">"
+            "<th style=\"padding:8px; text-align:left;\">Товар</th>"
+            "<th style=\"padding:8px; text-align:center;\">Изменение</th>"
+            "<th style=\"padding:8px; text-align:center;\">Было</th>"
+            "<th style=\"padding:8px; text-align:center;\">Стало</th>"
+            "</tr>{}</table>",
+            rows,
+        )
 
     def get_urls(self):
         urls = super().get_urls()

@@ -71,6 +71,12 @@ class User(AbstractUser):
         db_index=True,
         help_text="Ключ сессии Django: одновременно только один активный вход (не staff).",
     )
+    email_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Когда пользователь подтвердил email.",
+    )
 
     objects = UserManager()
 

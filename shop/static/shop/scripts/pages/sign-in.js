@@ -166,7 +166,8 @@ const initializeSignInPage = () => {
             
                 const result = await loginUser({
                     email_address: formData.get('email_address'),
-                    password: formData.get('password')
+                    password: formData.get('password'),
+                    next: new URLSearchParams(window.location.search).get('next') || ''
                 });
 
                 if (!result.success)

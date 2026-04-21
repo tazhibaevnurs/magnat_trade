@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+import hashlib
 
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -209,7 +211,8 @@ class PaymentWebhookView(APIView):
     def post(self, request):
         raw = request.body
         sig = request.headers.get("X-Signature") or request.META.get("HTTP_X_SIGNATURE")
-        if not verify_webhook_signature(raw, sig):
+        stripe_sig = request.headers.get("Stripe-Signature") or request.META.get("HTTP_STRIPE_SIGNATURE")
+        if not verify_webhook_signature(raw, sig, stripe_signature=stripe_sig):
             return Response({"detail": "invalid signature"}, status=status.HTTP_401_UNAUTHORIZED)
 
         import json
@@ -222,6 +225,15 @@ class PaymentWebhookView(APIView):
         ser = PaymentWebhookSerializer(data=payload)
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
+        provider = "stripe" if stripe_sig else "generic"
+        event_id = (data.get("event") or "").strip()
+        payment_id = (data.get("payment_id") or "").strip()
+        dedupe_source = payment_id or event_id or hashlib.sha256(raw or b"").hexdigest()
+        dedupe_key = f"webhook:{provider}:{dedupe_source}"
+        if cache.get(dedupe_key):
+            logger.info("Replay webhook ignored: %s", dedupe_key)
+            return Response({"ok": True, "replayed": True}, status=status.HTTP_200_OK)
+        cache.set(dedupe_key, 1, timeout=60 * 60 * 24)
         order_id = data.get("order_id")
         st = (data.get("status") or data.get("event") or "").lower()
         if order_id and ("paid" in st or st == "payment.succeeded"):

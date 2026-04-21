@@ -248,7 +248,7 @@ const initializeSignUpPage = () => {
 
         /** Явные поля шагов: не полагаемся на HTMLInputElement.required (у select в части браузеров кнопка «Далее» не включалась). */
         const STEP1_FIELD_NAMES = ['first_name', 'last_name', 'entity_type', 'contact_number'];
-        const STEP2_FIELD_NAMES = ['email_address', 'password', 'confirm_password'];
+        const STEP2_FIELD_NAMES = ['email_address', 'password', 'confirm_password', 'pow_answer'];
 
         const isCurrentStepFilled = () => {
             const names = currentFormStep === '1' ? STEP1_FIELD_NAMES : STEP2_FIELD_NAMES;
@@ -343,7 +343,9 @@ const initializeSignUpPage = () => {
                     house_address: formData.get('house_address'),
                     contact_number: formData.get('contact_number'),
                     email_address: formData.get('email_address'),
-                    password: formData.get('password')
+                    password: formData.get('password'),
+                    pow_token: formData.get('pow_token'),
+                    pow_answer: formData.get('pow_answer')
                 });
 
                 if (!result.success)

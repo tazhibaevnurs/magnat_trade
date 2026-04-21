@@ -4,8 +4,7 @@ from django.contrib import admin
 from django.conf import settings
 from django.db.models import Case, IntegerField, When
 from django.urls import reverse
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html, format_html_join
 
 from shop.category_nav import (
     catalog_nav_restricted_tree_ids,
@@ -417,11 +416,8 @@ class ProductAdmin(admin.ModelAdmin):
                 '<span class="help">{}</span>',
                 "Фото не добавлены — на сайте будет заглушка.",
             )
-        parts = [
-            format_html(
-                '<img src="{}" style="max-height:100px;max-width:120px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;margin:4px" alt="" />',
-                im.image.url,
-            )
-            for im in imgs
-        ]
-        return mark_safe("".join(parts))
+        return format_html_join(
+            "",
+            '<img src="{}" style="max-height:100px;max-width:120px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;margin:4px" alt="" />',
+            ((im.image.url,) for im in imgs),
+        )

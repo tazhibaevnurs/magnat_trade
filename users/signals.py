@@ -1,4 +1,4 @@
-from django.contrib.auth.signals import user_logged_in
+from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
 
 from .models import User
@@ -15,3 +15,10 @@ def store_active_session_key_on_login(sender, request, user: User, **kwargs):
         sk = request.session.session_key or ""
     if sk:
         User.objects.filter(pk=user.pk).update(active_session_key=sk)
+
+
+@receiver(user_logged_out)
+def clear_active_session_key_on_logout(sender, request, user: User | None, **kwargs):
+    if not user:
+        return
+    User.objects.filter(pk=user.pk).update(active_session_key="")

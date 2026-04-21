@@ -34,6 +34,12 @@ _allowed_hosts = [
 ]
 if os.getenv("VERCEL") == "1" and ".vercel.app" not in _allowed_hosts:
     _allowed_hosts.append(".vercel.app")
+if DEBUG:
+    # Local dev should always accept loopback hosts,
+    # even if shell environment overrides DJANGO_ALLOWED_HOSTS.
+    for _local_host in ("localhost", "127.0.0.1", "[::1]"):
+        if _local_host not in _allowed_hosts:
+            _allowed_hosts.append(_local_host)
 ALLOWED_HOSTS = _allowed_hosts
 
 INSTALLED_APPS = [
@@ -60,6 +66,9 @@ AUTH_USER_MODEL = "users.User"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "api.security_middleware.SecurityHeadersMiddleware",
+    "api.security_middleware.SecurityAuditMiddleware",
+    "api.middleware.RequestBodySizeLimitMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -145,6 +154,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+]
+
 LANGUAGE_CODE = "ru"
 TIME_ZONE = os.getenv("DJANGO_TIME_ZONE", "UTC")
 USE_I18N = True
@@ -176,12 +191,41 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # --- Auth (вход для @login_required, например /orders/) ---
 LOGIN_URL = "/sign-in/"
 LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+PASSWORD_RESET_TIMEOUT = int(os.getenv("PASSWORD_RESET_TIMEOUT", "3600"))
+
+# Email verification / reset delivery
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@magnat-trade.local")
 
 # --- HTTPS / cookies (production) ---
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() in ("1", "true")
 CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "false").lower() in ("1", "true")
 SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "false").lower() in ("1", "true")
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000")) if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+SECURE_HSTS_PRELOAD = os.getenv("SECURE_HSTS_PRELOAD", "true").lower() in ("1", "true", "yes")
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+SESSION_EXPIRE_AT_BROWSER_CLOSE = os.getenv("SESSION_EXPIRE_AT_BROWSER_CLOSE", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+SESSION_COOKIE_AGE = int(os.getenv("SESSION_COOKIE_AGE", "43200"))
 
 # --- CORS ---
 CORS_ALLOWED_ORIGINS = [
@@ -193,6 +237,11 @@ CORS_ALLOWED_ORIGINS = [
     if o.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False
+if not DEBUG:
+    insecure_cors = [o for o in CORS_ALLOWED_ORIGINS if "localhost" in o or "127.0.0.1" in o]
+    if insecure_cors:
+        raise ImproperlyConfigured("Удалите localhost из CORS_ALLOWED_ORIGINS в production.")
 
 # --- Redis / cache ---
 REDIS_URL = os.getenv("REDIS_URL", "").strip()
@@ -266,9 +315,48 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": os.getenv("DRF_THROTTLE_ANON", "120/minute"),
-        "user": os.getenv("DRF_THROTTLE_USER", "600/minute"),
+        "user": os.getenv("DRF_THROTTLE_USER", "100/minute"),
         "integration": os.getenv("DRF_THROTTLE_INTEGRATION", "3000/minute"),
         "webhook": os.getenv("DRF_THROTTLE_WEBHOOK", "600/minute"),
+        "ai_generation_free": os.getenv("DRF_THROTTLE_AI_FREE", "5/day"),
+        "ai_generation_pro": os.getenv("DRF_THROTTLE_AI_PRO", "50/day"),
+    },
+}
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DATA_UPLOAD_MAX_MEMORY_SIZE", str(10 * 1024 * 1024)))
+FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("FILE_UPLOAD_MAX_MEMORY_SIZE", str(10 * 1024 * 1024)))
+
+X_FRAME_OPTIONS = "DENY"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+if not DEBUG:
+    if not SECURE_SSL_REDIRECT:
+        raise ImproperlyConfigured("SECURE_SSL_REDIRECT должен быть включён в production.")
+    if not SESSION_COOKIE_SECURE:
+        raise ImproperlyConfigured("SESSION_COOKIE_SECURE должен быть включён в production.")
+    if not CSRF_COOKIE_SECURE:
+        raise ImproperlyConfigured("CSRF_COOKIE_SECURE должен быть включён в production.")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "format": '{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","message":"%(message)s"}'
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        }
+    },
+    "loggers": {
+        "security": {"handlers": ["console"], "level": os.getenv("LOG_LEVEL_SECURITY", "INFO"), "propagate": False},
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": os.getenv("LOG_LEVEL", "INFO"),
     },
 }
 

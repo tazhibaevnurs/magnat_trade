@@ -5,6 +5,8 @@ from django.contrib.auth.views import LogoutView
 
 
 urlpatterns = [
+    path("robots.txt", views.robots_txt, name="robots_txt"),
+    path("sitemap.xml", views.sitemap_xml, name="sitemap_xml"),
     path('', views.landing, name='landing'),
     path('logout/', LogoutView.as_view(next_page='/'), name='logout'),
     path('catalog/product/<path:product_id>/', views.catalog_pdp, name='catalog_pdp'),
@@ -60,6 +62,9 @@ urlpatterns = [
     path('profile/delete-account/', views.delete_account, name='delete_account'),
     path('api/login/', auth.handle_account_authorization, name='api-login'),
     path('api/register/', auth.handle_account_registration, name='api-register'),
+    path('api/verify-email/', auth.verify_email, name='api-verify-email'),
+    path('api/password-reset/request/', auth.password_reset_request, name='api-password-reset-request'),
+    path('api/password-reset/confirm/', auth.password_reset_confirm, name='api-password-reset-confirm'),
     path('api/cart-count/', views.cart_count_api, name='cart-count-api'),
     path('cart/add/', views.add_to_cart, name='add_to_cart'),
     path('cart/item/<int:item_id>/update/', views.update_cart_item, name='update_cart_item'),

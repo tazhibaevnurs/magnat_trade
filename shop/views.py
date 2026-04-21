@@ -1,5 +1,7 @@
 import json
+import secrets
 import uuid
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from decimal import Decimal, InvalidOperation
@@ -8,7 +10,10 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth import authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.core.paginator import Paginator
+from django.core.validators import validate_email
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Value, When
 from django.http import Http404, HttpResponse, JsonResponse
@@ -57,11 +62,56 @@ from reportlab.lib.utils import simpleSplit
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
+from PIL import Image, UnidentifiedImageError
 
 # Главная: две полные строки при 4 колонках сетки (4 + 4)
 LANDING_SECTION_LIMIT = 8
 COURIER_SHIPPING_FEE = Decimal("300.00")
 FREE_SHIPPING_THRESHOLD = Decimal("3000.00")
+MAX_PAGINATION_PAGE = 1000
+MAX_CART_ITEM_QTY = 100
+MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024
+ALLOWED_PROFILE_PICTURE_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_PROFILE_PICTURE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+POW_TTL_SECONDS = 10 * 60
+
+
+def robots_txt(request):
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /admin/",
+        "Disallow: /profile/",
+        f"Sitemap: {request.build_absolute_uri('/sitemap.xml')}",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
+
+
+def sitemap_xml(request):
+    urls: list[str] = []
+    static_paths = ["/", "/shop/", "/novinki/", "/akcii/", "/about-us/", "/contact-us/"]
+    now_iso = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    for path in static_paths:
+        urls.append(
+            f"<url><loc>{request.build_absolute_uri(path)}</loc><lastmod>{now_iso}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>"
+        )
+
+    for p in Product.objects.filter(is_active=True).only("slug").iterator():
+        urls.append(
+            f"<url><loc>{request.build_absolute_uri(reverse('pdp', kwargs={'slug': p.slug}))}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>"
+        )
+    for p in CatalogProduct.objects.filter(is_active=True).only("id").iterator():
+        urls.append(
+            f"<url><loc>{request.build_absolute_uri(reverse('catalog_pdp', kwargs={'product_id': p.id}))}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>"
+        )
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        + "".join(urls)
+        + "</urlset>"
+    )
+    return HttpResponse(xml, content_type="application/xml; charset=utf-8")
 
 
 def _shipping_fee_for_delivery_method(delivery_method: str, subtotal: Decimal) -> Decimal:
@@ -70,6 +120,66 @@ def _shipping_fee_for_delivery_method(delivery_method: str, subtotal: Decimal) -
             return Decimal("0.00")
         return COURIER_SHIPPING_FEE
     return Decimal("0.00")
+
+
+def _sanitize_next_url(request, raw_next: str | None, fallback: str = "/") -> str:
+    candidate = (raw_next or "").strip()
+    if candidate and url_has_allowed_host_and_scheme(
+        candidate,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return candidate
+    return fallback
+
+
+def _parse_positive_int_bounded(raw, *, default: int, min_value: int = 1, max_value: int = 100) -> int:
+    try:
+        val = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return default
+    return max(min_value, min(max_value, val))
+
+
+def _validate_profile_picture_upload(uploaded_file):
+    ext = Path(uploaded_file.name or "").suffix.lower()
+    if ext not in ALLOWED_PROFILE_PICTURE_EXT:
+        raise SuspiciousOperation("Разрешены только изображения JPG, PNG, WEBP и GIF.")
+    if uploaded_file.size > MAX_PROFILE_PICTURE_BYTES:
+        raise SuspiciousOperation("Размер изображения не должен превышать 5MB.")
+    ctype = (getattr(uploaded_file, "content_type", "") or "").lower()
+    if ctype and ctype not in ALLOWED_PROFILE_PICTURE_MIME:
+        raise SuspiciousOperation("Некорректный MIME-тип файла.")
+    pos = uploaded_file.tell()
+    uploaded_file.seek(0)
+    try:
+        img = Image.open(uploaded_file)
+        img.verify()
+        fmt = (img.format or "").lower()
+        if fmt and f".{fmt}" not in ALLOWED_PROFILE_PICTURE_EXT:
+            raise SuspiciousOperation("Файл не является валидным изображением.")
+    except (UnidentifiedImageError, OSError):
+        raise SuspiciousOperation("Файл не является валидным изображением.")
+    finally:
+        uploaded_file.seek(pos)
+
+
+def _issue_pow_challenge(purpose: str) -> tuple[str, str]:
+    a = secrets.randbelow(8) + 2
+    b = secrets.randbelow(8) + 2
+    token = secrets.token_urlsafe(18)
+    cache.set(f"pow:{purpose}:{token}", str(a + b), timeout=POW_TTL_SECONDS)
+    return token, f"Сколько будет {a} + {b}?"
+
+
+def _verify_pow_challenge(purpose: str, token: str, answer: str) -> bool:
+    expected = cache.get(f"pow:{purpose}:{token}")
+    if not expected:
+        return False
+    if str(expected).strip() != str(answer).strip():
+        return False
+    cache.delete(f"pow:{purpose}:{token}")
+    return True
 
 
 def _unique_products_from_querysets(querysets, limit):
@@ -238,7 +348,12 @@ def _shop_context(request, preset: str | None = None):
             new_arrivals_only=(preset == "new_arrivals"),
         )
         paginator = Paginator(qs, 48)
-        page_number = g.get("page") or 1
+        page_number = _parse_positive_int_bounded(
+            g.get("page"),
+            default=1,
+            min_value=1,
+            max_value=MAX_PAGINATION_PAGE,
+        )
         page_obj = paginator.get_page(page_number)
         products = [CatalogProductDisplay(p, user=request.user) for p in page_obj.object_list]
         price_min = g.get("price_min", "").strip()
@@ -592,7 +707,7 @@ def wishlist_login_redirect(request):
         request,
         "Чтобы сохранять товары в избранном, зарегистрируйтесь или войдите в аккаунт.",
     )
-    next_url = request.GET.get("next") or "/"
+    next_url = _sanitize_next_url(request, request.GET.get("next"), "/")
     return redirect(f"{reverse('sign-up')}?{urlencode({'next': next_url})}")
 
 
@@ -601,6 +716,7 @@ def wishlist_toggle(request):
     """Добавить/убрать товар из избранного (POST, для авторизованных)."""
     if not request.user.is_authenticated:
         next_url = request.POST.get("next") or request.META.get("HTTP_REFERER", "/")
+        next_url = _sanitize_next_url(request, next_url, "/")
         url = f"{reverse('sign-up')}?{urlencode({'next': next_url})}"
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return JsonResponse(
@@ -692,7 +808,12 @@ def wishlist(request):
     )
 
     paginator = Paginator(qs, 12)
-    page_number = request.GET.get("page")
+    page_number = _parse_positive_int_bounded(
+        request.GET.get("page"),
+        default=1,
+        min_value=1,
+        max_value=MAX_PAGINATION_PAGE,
+    )
     page_obj = paginator.get_page(page_number)
 
     wishlist_rows = []
@@ -763,8 +884,11 @@ def sign_up(request):
         {'name': 'Регистрация', 'url': None}
     ]
     
+    pow_token, pow_question = _issue_pow_challenge("signup")
     context = {
         'breadcrumb_items': breadcrumb_items,
+        "pow_token": pow_token,
+        "pow_question": pow_question,
     }
     
     return render(request, 'shop/sign-up.html', context)
@@ -807,10 +931,24 @@ def contact_us(request):
             category = request.POST.get('category', 'general')
             subject = request.POST.get('subject', '').strip()
             message_text = request.POST.get('message', '').strip()
+            pow_token = (request.POST.get("pow_token") or "").strip()
+            pow_answer = (request.POST.get("pow_answer") or "").strip()
 
             if not all([name, email, subject, message_text]):
                 messages.error(request, 'Заполните все обязательные поля.')
                 return redirect('contact-us')
+            try:
+                validate_email(email)
+            except ValidationError:
+                messages.error(request, "Укажите корректный email.")
+                return redirect("contact-us")
+            allowed_categories = {c[0] for c in Feedback.CATEGORY_CHOICES}
+            if category not in allowed_categories:
+                messages.error(request, "Некорректная категория сообщения.")
+                return redirect("contact-us")
+            if not _verify_pow_challenge("contact", pow_token, pow_answer):
+                messages.error(request, "Проверка anti-bot не пройдена. Обновите страницу и попробуйте снова.")
+                return redirect("contact-us")
 
             Feedback.objects.create(
                 user=request.user if request.user.is_authenticated else None,
@@ -847,10 +985,13 @@ def contact_us(request):
         )
         initial_data['email'] = request.user.email
 
+    contact_pow_token, contact_pow_question = _issue_pow_challenge("contact")
     context = {
         'breadcrumb_items': breadcrumb_items,
         'category_choices': category_choices,
         'initial_data': initial_data,
+        "pow_token": contact_pow_token,
+        "pow_question": contact_pow_question,
     }
 
     return render(request, 'shop/contact-us.html', context)
@@ -915,7 +1056,12 @@ def add_to_cart(request):
     """Add product to cart or increment quantity (shop.Product или каталог 1С)."""
     catalog_product_id = (request.POST.get("catalog_product_id") or "").strip()
     product_id = request.POST.get("product_id")
-    qty = int(request.POST.get("quantity", 1))
+    qty = _parse_positive_int_bounded(
+        request.POST.get("quantity", 1),
+        default=1,
+        min_value=1,
+        max_value=MAX_CART_ITEM_QTY,
+    )
 
     if qty < 1:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -1026,7 +1172,12 @@ def cart(request):
 @require_POST
 def update_cart_item(request, item_id):
     """Update quantity for a given cart item (set or remove if 0)."""
-    qty = int(request.POST.get("quantity", 0))
+    qty = _parse_positive_int_bounded(
+        request.POST.get("quantity", 0),
+        default=0,
+        min_value=0,
+        max_value=MAX_CART_ITEM_QTY,
+    )
     cart = _get_or_create_cart(request)
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     item = get_object_or_404(
@@ -1549,6 +1700,11 @@ def user_profile(request):  # Renamed from 'profile' to 'user_profile'
         if request.method == 'POST' and user_profile:
             # Handle profile picture upload
             if 'profile_picture' in request.FILES:
+                try:
+                    _validate_profile_picture_upload(request.FILES["profile_picture"])
+                except SuspiciousOperation as exc:
+                    messages.error(request, str(exc))
+                    return redirect("profile")
                 # Delete old profile picture if it exists
                 if user_profile.profile_picture:
                     try:
@@ -1822,6 +1978,15 @@ def feedback(request):
             if not all([name, email, subject, message_text]):
                 messages.error(request, 'Заполните все обязательные поля.')
                 return redirect('feedback')
+            try:
+                validate_email(email)
+            except ValidationError:
+                messages.error(request, "Укажите корректный email.")
+                return redirect("feedback")
+            allowed_categories = {c[0] for c in Feedback.CATEGORY_CHOICES}
+            if category not in allowed_categories:
+                messages.error(request, "Некорректная категория сообщения.")
+                return redirect("feedback")
             
             # Create feedback
             feedback_obj = Feedback.objects.create(
@@ -1931,7 +2096,12 @@ def profile_orders(request):
         .order_by("-created_at")
     )
     paginator = Paginator(user_orders, 10)
-    page_number = request.GET.get("page")
+    page_number = _parse_positive_int_bounded(
+        request.GET.get("page"),
+        default=1,
+        min_value=1,
+        max_value=MAX_PAGINATION_PAGE,
+    )
     page_obj = paginator.get_page(page_number)
 
     breadcrumb_items = [
@@ -1994,13 +2164,6 @@ def order_detail(request, order_id):
     }
     
     return render(request, 'shop/order_detail.html', context)
-
-
-def _user_can_view_order_document(request, order: CatalogOrder) -> bool:
-    if request.user.is_authenticated and order.user_id == request.user.id:
-        return True
-    recent = request.session.get("recent_order_ids", [])
-    return str(order.id) in recent
 
 
 def _draw_order_pdf(order: CatalogOrder) -> bytes:
@@ -2207,6 +2370,7 @@ def _draw_order_pdf(order: CatalogOrder) -> bytes:
     return buf.getvalue()
 
 
+@login_required
 def order_pdf(request, order_id):
     oid = order_id
     if not isinstance(oid, uuid.UUID):
@@ -2217,9 +2381,8 @@ def order_pdf(request, order_id):
     order = get_object_or_404(
         CatalogOrder.objects.prefetch_related("items"),
         id=oid,
+        user=request.user,
     )
-    if not _user_can_view_order_document(request, order):
-        raise Http404
 
     pdf_bytes = _draw_order_pdf(order)
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
@@ -2227,6 +2390,7 @@ def order_pdf(request, order_id):
     return response
 
 
+@login_required
 def order_print(request, order_id):
     oid = order_id
     if not isinstance(oid, uuid.UUID):
@@ -2237,7 +2401,6 @@ def order_print(request, order_id):
     order = get_object_or_404(
         CatalogOrder.objects.prefetch_related("items"),
         id=oid,
+        user=request.user,
     )
-    if not _user_can_view_order_document(request, order):
-        raise Http404
     return render(request, "shop/order_print.html", {"order": order})

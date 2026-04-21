@@ -14,8 +14,22 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-def verify_webhook_signature(raw_body: bytes, signature_header: str | None) -> bool:
-    """Проверка подписи webhook. Ожидается hex digest HMAC-SHA256."""
+def verify_webhook_signature(raw_body: bytes, signature_header: str | None, *, stripe_signature: str | None = None) -> bool:
+    """Проверка подписи webhook: generic HMAC-SHA256 и Stripe-compatible header."""
+    if stripe_signature:
+        stripe_secret = getattr(settings, "STRIPE_WEBHOOK_SECRET", "") or ""
+        if not stripe_secret:
+            return False
+        try:
+            parts = dict(item.split("=", 1) for item in stripe_signature.split(",") if "=" in item)
+            ts = parts.get("t", "")
+            v1 = parts.get("v1", "")
+            signed_payload = f"{ts}.{raw_body.decode('utf-8')}".encode("utf-8")
+            expected = hmac.new(stripe_secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+            return bool(v1) and hmac.compare_digest(expected, v1)
+        except Exception:  # noqa: BLE001
+            return False
+
     secret = getattr(settings, "PAYMENT_WEBHOOK_SECRET", "") or ""
     if not secret or not signature_header:
         return False

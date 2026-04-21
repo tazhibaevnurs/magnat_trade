@@ -58,6 +58,8 @@ postgresql://postgres.xxxxx:[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.c
 | `DJANGO_ALLOWED_HOSTS` | Ваш домен, напр. `magnat-trade.vercel.app` и свой домен через запятую. |
 
 3. Сохраните для **Production** (и при необходимости **Preview**).
+   - Для Preview используйте **отдельный** `DATABASE_URL` (staging DB), а не production.
+   - Не добавляйте в Preview чувствительные ключи продакшена (payment/telegram/service keys).
 4. **Deployments** → последний деплой → **⋯** → **Redeploy** (чтобы подтянулись секреты и снова выполнились `collectstatic` + `migrate` из `vercel.json`).
 
 После деплоя таблицы Django создаются в Supabase (**migrate**), данные каталога нужно загрузить (раздел 5).
@@ -116,6 +118,20 @@ python manage.py mirror_shop_categories
 - [ ] В Vercel заданы `DATABASE_URL`, `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false`.
 - [ ] Выполнен Redeploy.
 - [ ] Локально с тем же `DATABASE_URL`: `migrate` → `sync_onec` → `mirror_shop_categories` (или loaddata).
+- [ ] `SECURE_SSL_REDIRECT=true`, `SESSION_COOKIE_SECURE=true`, `CSRF_COOKIE_SECURE=true`.
+- [ ] `SECURE_HSTS_SECONDS=31536000`, `SECURE_HSTS_INCLUDE_SUBDOMAINS=true`, `SECURE_HSTS_PRELOAD=true`.
+- [ ] `CORS_ALLOWED_ORIGINS` содержит только ваш frontend-домен (без `*`).
+- [ ] Preview deployment использует отдельную staging БД и отдельные секреты.
+- [ ] Для Supabase включены ежедневные backup'ы и доступ к БД ограничен (Network restrictions / pooler only).
+
+## 8. Supabase Security Ops (обязательно)
+
+- Храните секреты в Vercel Environment Variables или Supabase Vault, не в репозитории.
+- Ограничьте прямой доступ к PostgreSQL:
+  - используйте transaction pooler;
+  - включите network restrictions/IP allowlist в Supabase проекте;
+  - не открывайте direct DB порт в публичный интернет без ограничений.
+- Включите ежедневные automated backups в Supabase (`Project Settings -> Backups`).
 
 ---
 
