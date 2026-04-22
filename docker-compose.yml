@@ -33,6 +33,7 @@ services:
       DJANGO_DEBUG: "false"
       DB_HOST: db
       DB_PORT: "3306"
+      SQLITE_DB_PATH: /app/db/db.sqlite3
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -42,6 +43,7 @@ services:
       - "${WEB_PUBLISH_PORT:-8000}:8000"
     volumes:
       - media_data:/app/media
+      - sqlite_data:/app/db
     restart: unless-stopped
     depends_on:
       db:
@@ -58,11 +60,13 @@ services:
       DJANGO_DEBUG: "false"
       DB_HOST: db
       DB_PORT: "3306"
+      SQLITE_DB_PATH: /app/db/db.sqlite3
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     volumes:
       - media_data:/app/media
+      - sqlite_data:/app/db
     restart: unless-stopped
     depends_on:
       db:
@@ -79,10 +83,13 @@ services:
       DJANGO_DEBUG: "false"
       DB_HOST: db
       DB_PORT: "3306"
+      SQLITE_DB_PATH: /app/db/db.sqlite3
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     restart: unless-stopped
+    volumes:
+      - sqlite_data:/app/db
     depends_on:
       db:
         condition: service_healthy
@@ -92,3 +99,4 @@ services:
 volumes:
   mysql_data:
   media_data:
+  sqlite_data:

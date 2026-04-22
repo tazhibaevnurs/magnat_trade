@@ -145,10 +145,11 @@ elif _db_name:
         }
     }
 else:
+    _sqlite_db_path = os.getenv("SQLITE_DB_PATH", "").strip()
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": _sqlite_db_path or (BASE_DIR / "db.sqlite3"),
         }
     }
 
