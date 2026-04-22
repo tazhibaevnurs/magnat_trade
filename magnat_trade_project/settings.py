@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from dotenv import load_dotenv
+from importlib.util import find_spec
 import os
 
 load_dotenv()
@@ -59,7 +60,10 @@ INSTALLED_APPS = [
     "shop",
 ]
 if DEBUG:
-    INSTALLED_APPS.extend(["django_watchfiles", "django_browser_reload"])
+    if find_spec("django_watchfiles"):
+        INSTALLED_APPS.append("django_watchfiles")
+    if find_spec("django_browser_reload"):
+        INSTALLED_APPS.append("django_browser_reload")
 
 AUTH_USER_MODEL = "users.User"
 
@@ -79,7 +83,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 if DEBUG:
-    MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
+    if find_spec("django_browser_reload"):
+        MIDDLEWARE.append("django_browser_reload.middleware.BrowserReloadMiddleware")
 
 ROOT_URLCONF = "magnat_trade_project.urls"
 
