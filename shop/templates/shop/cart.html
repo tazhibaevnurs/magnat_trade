@@ -37,9 +37,15 @@
                                 </label>
                                 <div class="cart-list-item-image">
                                     {% if item.catalog_product %}
-                                        <img src="{{ item.catalog_product.image_url }}" alt="{{ item.catalog_product.name }}">
+                                        <img src="{{ item.catalog_product.image_url }}"
+                                             alt="{{ item.catalog_product.name }}"
+                                             loading="lazy"
+                                             decoding="async">
                                     {% else %}
-                                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}">
+                                        <img src="{{ item.product.image_url }}"
+                                             alt="{{ item.product.name }}"
+                                             loading="lazy"
+                                             decoding="async">
                                     {% endif %}
                                 </div>
                                 <div class="cart-list-item-info">

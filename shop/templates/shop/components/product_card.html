@@ -2,7 +2,11 @@
 
 <div class="product_card">
     <div class="product_card-image-container">
-        <img class="product_card-image" src="{{ product.image_url }}" alt="{{ product.name }}" />
+        <img class="product_card-image"
+             src="{{ product.image_url }}"
+             alt="{{ product.name }}"
+             loading="lazy"
+             decoding="async" />
     </div>
     
     <div class="product_card-wrapper">

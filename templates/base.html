@@ -21,7 +21,15 @@
     <meta name="twitter:description" content="{% block twitter_description %}Товары для офиса и школы: каталог, избранное, быстрая корзина и заказы.{% endblock %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preload"
+          as="style"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
+          onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+    </noscript>
     <link rel="stylesheet" href="{% static 'css/variables.css' %}">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
@@ -41,6 +49,15 @@
                     return setTimeout(function () { cb({ didTimeout: false, timeRemaining: function () { return 0; } }); }, 1);
                 };
             }
+            window.magnatOnIdle = function (fn, timeout) {
+                if (document.readyState === "complete") {
+                    window.requestIdleCallback(fn, { timeout: timeout || 1200 });
+                    return;
+                }
+                window.addEventListener("load", function () {
+                    window.requestIdleCallback(fn, { timeout: timeout || 1200 });
+                }, { once: true });
+            };
         })();
     </script>
     {% block seo_jsonld %}
@@ -466,7 +483,7 @@
             if (data.error) alert(data.error);
         };
 
-        (function () {
+        window.magnatOnIdle(function () {
             const PROFILE_AJAX_PATHS = new Set(['/profile/', '/profile/orders/', '/wishlist/']);
 
             function shouldHandleAjaxLink(anchor) {
@@ -543,10 +560,10 @@
                     loadProfileSection(window.location.href, false);
                 }
             });
-        })();
+        });
 
         // Fallback for top "Каталог" dropdown if Alpine fails.
-        (function () {
+        window.magnatOnIdle(function () {
             function bindTopCatalogDropdownFallback() {
                 var wraps = document.querySelectorAll('.sub-nav__dropdown-wrap');
                 wraps.forEach(function (wrap) {
@@ -572,9 +589,9 @@
             } else {
                 bindTopCatalogDropdownFallback();
             }
-        })();
+        });
 
-        (function () {
+        window.magnatOnIdle(function () {
             const suggestUrl = '{% url "search-suggest-api" %}';
             const forms = document.querySelectorAll('[data-search-suggest-form]');
             if (!forms.length) return;
@@ -741,7 +758,7 @@
                 syncClearButton();
                 syncMobilePanelState();
             });
-        })();
+        });
     </script>
     <script src="{% static 'js/main.js' %}" defer></script>
     <script src="{% static 'js/catalog-navigation.js' %}" defer></script>
