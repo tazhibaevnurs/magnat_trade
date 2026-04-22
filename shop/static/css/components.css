@@ -3870,11 +3870,13 @@ a.product-card__wish {
 /* ——— Sign-in / sign-up (legacy class names for JS) ——— */
 .sign_in {
   padding: 0 0 var(--spacing-2xl);
+  background: transparent;
 }
 
 .sign_in-form {
   max-width: 440px;
   margin: 0 auto;
+  background: transparent;
 }
 
 .sign_in-form-container,
@@ -3884,6 +3886,34 @@ a.product-card__wish {
   background: var(--color-bg-card);
   padding: var(--spacing-xl);
   box-shadow: var(--shadow-md);
+}
+
+/* Neutralize old dark visual wrappers from legacy auth layout. */
+.sign_in::before,
+.sign_in::after,
+.sign_in-wrapper::before,
+.sign_in-wrapper::after,
+.sign_in-img {
+  background: transparent !important;
+  display: none !important;
+}
+
+/* Mobile auth pages should keep a clean light background. */
+@media (max-width: 768px) {
+  .sign_in,
+  .sign_up,
+  .sign_in-page,
+  .sign_up-page,
+  .sign_in-wrapper,
+  .sign_up-wrapper {
+    background: var(--color-bg) !important;
+    background-image: none !important;
+  }
+
+  .sign_in-img,
+  .sign_up-img {
+    display: none !important;
+  }
 }
 
 .sign_up {
@@ -4581,6 +4611,104 @@ a.product-card__wish {
   flex-wrap: wrap;
   gap: var(--spacing-md);
   margin-top: var(--spacing-lg);
+}
+
+/* ——— Checkout success ——— */
+.order-success {
+  max-width: 44rem;
+  margin: 0 auto;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  box-shadow: var(--shadow-md);
+}
+
+.order-success__icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-md);
+  border-radius: 50%;
+  background: var(--color-tag-bg);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.order-success__lead {
+  margin: var(--spacing-sm) auto 0;
+  max-width: 36rem;
+}
+
+.order-success__card {
+  margin-top: var(--spacing-xl);
+  text-align: left;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  background: var(--color-bg);
+}
+
+.order-success__subtitle {
+  font-size: var(--text-base);
+  margin-bottom: var(--spacing-sm);
+}
+
+.order-success__id {
+  word-break: break-word;
+}
+
+.order-success__lines {
+  list-style: none;
+  margin: var(--spacing-md) 0 0;
+  padding: 0;
+}
+
+.order-success__line {
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--text-sm);
+}
+
+.order-success__total {
+  border: none;
+  font-weight: 700;
+  margin-top: var(--spacing-sm);
+}
+
+.order-success__total-value {
+  color: var(--color-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+}
+
+.order-success__meta {
+  margin-top: var(--spacing-lg);
+}
+
+.order-success__meta p {
+  margin: 0 0 6px;
+}
+
+.order-success__back-btn {
+  margin-top: var(--spacing-xl);
+  width: 100%;
+  max-width: 20rem;
+}
+
+.order-success__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.order-success__action-btn {
+  padding: 10px 16px;
 }
 
 .accounts-login-card {

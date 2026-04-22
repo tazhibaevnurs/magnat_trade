@@ -28,6 +28,26 @@
       '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125h19.5M3.75 7.125v10.5a2.25 2.25 0 0 0 2.25 2.25h12a2.25 2.25 0 0 0 2.25-2.25v-10.5m-16.5 0V5.25A2.25 2.25 0 0 1 7.5 3h9a2.25 2.25 0 0 1 2.25 2.25v1.875m-16.5 0h16.5"/></svg>',
   };
 
+  var FALLBACK_CATALOG_CATEGORIES = [
+    { slug: "accessories", name: "Аксессуары", subs: [] },
+    { slug: "paper", name: "Бумага и бумажная продукция.", subs: [] },
+    { slug: "notebooks", name: "Ежедневники и записные книги.", subs: [] },
+    { slug: "games", name: "Игры", subs: [] },
+    { slug: "books", name: "Книги", subs: [] },
+    { slug: "writing", name: "Письменные товары, черчение", subs: [] },
+    { slug: "copybooks", name: "Прописи и Раскраски.", subs: [] },
+    { slug: "sketch", name: "Скетбуки", subs: [] },
+    { slug: "office", name: "Товары для Офиса.", subs: [] },
+    { slug: "party", name: "Товары для праздника.", subs: [] },
+    { slug: "craft", name: "Товары для творчества.", subs: [] },
+    { slug: "school", name: "Школа", subs: [] },
+  ];
+
+  function withFallbackCategories(categories) {
+    if (Array.isArray(categories) && categories.length > 0) return categories;
+    return FALLBACK_CATALOG_CATEGORIES.slice();
+  }
+
   function norm(s) {
     return (s || "")
       .trim()
@@ -108,16 +128,17 @@
     };
   }
 
-  document.addEventListener("alpine:init", function () {
+  function registerCatalogAlpineData() {
+    if (!window.Alpine || typeof window.Alpine.data !== "function") return;
     Alpine.data("catalogDropdown", function (cfg) {
       var state = makeBaseState(cfg);
       state.init = function () {
         var el = document.getElementById("catalog-nav-initial");
         if (!el) return;
         try {
-          this.categories = JSON.parse(el.textContent) || [];
+          this.categories = withFallbackCategories(JSON.parse(el.textContent) || []);
         } catch (e) {
-          this.categories = [];
+          this.categories = withFallbackCategories([]);
         }
       };
       return state;
@@ -134,10 +155,12 @@
         var el = document.getElementById("catalog-nav-sidebar-initial");
         if (el) {
           try {
-            this.categories = JSON.parse(el.textContent) || [];
+            this.categories = withFallbackCategories(JSON.parse(el.textContent) || []);
           } catch (e) {
-            this.categories = [];
+            this.categories = withFallbackCategories([]);
           }
+        } else {
+          this.categories = withFallbackCategories([]);
         }
 
         var sel = document.getElementById("catalog-sidebar-selected");
@@ -181,5 +204,12 @@
       };
       return state;
     });
-  });
+
+  }
+
+  document.addEventListener("alpine:init", registerCatalogAlpineData);
+  // Fallback: if Alpine already initialized before this file loaded.
+  if (window.Alpine && typeof window.Alpine.data === "function") {
+    registerCatalogAlpineData();
+  }
 })();

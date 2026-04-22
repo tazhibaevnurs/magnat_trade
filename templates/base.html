@@ -92,7 +92,7 @@
                 <span>Главная</span>
             </a>
             <a href="{% url 'shop' %}"
-               onclick="window.magnatOpenMobileCatalog && window.magnatOpenMobileCatalog(event)"
+               onclick="if (window.magnatToggleMobileCatalogDom) { return window.magnatToggleMobileCatalogDom(event); } return window.magnatOpenMobileCatalog ? window.magnatOpenMobileCatalog(event) : true"
                class="mobile-tabbar__link {% nav_active request '/shop' '/product' '/catalog/product' %}">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H20m0 0h3.64m-16.5 0V9.75a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75v11.25m-16.5 0V6.75A2.25 2.25 0 0 1 6 4.5h12A2.25 2.25 0 0 1 20.25 6.75v14.25"/></svg>
                 <span>Каталог</span>
@@ -110,12 +110,15 @@
     </nav>
 
     <div x-show="mobileCatalog"
+         id="mobile-catalog-backdrop"
          x-transition.opacity
          @click="mobileCatalog = false"
+         onclick="return window.magnatToggleMobileCatalogDom ? window.magnatToggleMobileCatalogDom(event, false) : false"
          class="shop-sidebar__backdrop shop-sidebar__backdrop--catalog hide-desktop"
          style="display:none;"></div>
 
     <aside x-show="mobileCatalog"
+           id="mobile-catalog-drawer"
            x-transition
            @click.stop
            :class="{ 'is-open': mobileCatalog }"
@@ -123,7 +126,7 @@
            style="display:none;">
         <div class="shop-sidebar__head">
             <span class="shop-sidebar__head-title">Каталог</span>
-            <button type="button" class="icon-btn hide-desktop" @click="mobileCatalog = false" aria-label="Закрыть каталог">
+            <button type="button" class="icon-btn hide-desktop" @click="mobileCatalog = false" onclick="return window.magnatToggleMobileCatalogDom ? window.magnatToggleMobileCatalogDom(event, false) : false" aria-label="Закрыть каталог">
                 <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
@@ -224,6 +227,37 @@
             });
         };
 
+        window.magnatToggleMobileSearchDom = function (event, forceOpen) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const panel = document.getElementById('mobile-search-panel');
+            const toggleBtn = document.getElementById('mobile-search-toggle');
+            if (!panel) return false;
+            const currentlyOpen = panel.style.display !== 'none';
+            const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !currentlyOpen;
+            panel.style.display = nextOpen ? '' : 'none';
+            if (toggleBtn) {
+                toggleBtn.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+            }
+            const body = document.body;
+            if (body && body.__x && body.__x.$data && Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileSearch')) {
+                body.__x.$data.mobileSearch = nextOpen;
+            }
+            const rootData = body && body._x_dataStack && body._x_dataStack[0];
+            if (rootData && Object.prototype.hasOwnProperty.call(rootData, 'mobileSearch')) {
+                rootData.mobileSearch = nextOpen;
+            }
+            if (nextOpen) {
+                setTimeout(function () {
+                    const input = panel.querySelector('.mobile-search-form [data-search-suggest-input]');
+                    if (input) input.focus();
+                }, 0);
+            }
+            return false;
+        };
+
         window.magnatMobileSearchGoBack = function (event) {
             if (event) {
                 event.preventDefault();
@@ -243,6 +277,88 @@
             window.magnatCloseMobileSearch();
         };
 
+        window.magnatToggleMobileSidebar = function (event, forceOpen) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const body = document.body;
+            let isOpen = false;
+            const currentState = body && body.__x && body.__x.$data;
+            if (currentState && Object.prototype.hasOwnProperty.call(currentState, 'mobileSidebar')) {
+                isOpen = !!currentState.mobileSidebar;
+            } else {
+                const rootState = body && body._x_dataStack && body._x_dataStack[0];
+                if (rootState && Object.prototype.hasOwnProperty.call(rootState, 'mobileSidebar')) {
+                    isOpen = !!rootState.mobileSidebar;
+                }
+            }
+            const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
+            if (body && body.__x && body.__x.$data) {
+                if (Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileSidebar')) {
+                    body.__x.$data.mobileSidebar = nextOpen;
+                }
+                if (Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileCatalog')) {
+                    body.__x.$data.mobileCatalog = false;
+                }
+            }
+            const rootData = body && body._x_dataStack && body._x_dataStack[0];
+            if (rootData) {
+                if (Object.prototype.hasOwnProperty.call(rootData, 'mobileSidebar')) {
+                    rootData.mobileSidebar = nextOpen;
+                }
+                if (Object.prototype.hasOwnProperty.call(rootData, 'mobileCatalog')) {
+                    rootData.mobileCatalog = false;
+                }
+            }
+            return false;
+        };
+
+        window.magnatToggleMobileSidebarDom = function (event, forceOpen) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const drawer = document.getElementById('mobile-sidebar-drawer');
+            const backdrop = document.getElementById('mobile-sidebar-backdrop');
+            const toggleBtn = document.getElementById('mobile-sidebar-toggle');
+            if (!drawer || !backdrop) return false;
+
+            const currentlyOpen = drawer.classList.contains('is-open') && drawer.style.display !== 'none';
+            const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !currentlyOpen;
+
+            drawer.style.display = nextOpen ? '' : 'none';
+            backdrop.style.display = nextOpen ? '' : 'none';
+            drawer.classList.toggle('is-open', nextOpen);
+            if (toggleBtn) {
+                toggleBtn.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+                var openIcon = toggleBtn.querySelector('[data-burger-open-icon]');
+                var closeIcon = toggleBtn.querySelector('[data-burger-close-icon]');
+                if (openIcon) openIcon.style.display = nextOpen ? 'none' : '';
+                if (closeIcon) closeIcon.style.display = nextOpen ? '' : 'none';
+            }
+
+            const body = document.body;
+            if (body && body.__x && body.__x.$data) {
+                if (Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileSidebar')) {
+                    body.__x.$data.mobileSidebar = nextOpen;
+                }
+                if (Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileCatalog')) {
+                    body.__x.$data.mobileCatalog = false;
+                }
+            }
+            const rootData = body && body._x_dataStack && body._x_dataStack[0];
+            if (rootData) {
+                if (Object.prototype.hasOwnProperty.call(rootData, 'mobileSidebar')) {
+                    rootData.mobileSidebar = nextOpen;
+                }
+                if (Object.prototype.hasOwnProperty.call(rootData, 'mobileCatalog')) {
+                    rootData.mobileCatalog = false;
+                }
+            }
+            return false;
+        };
+
         window.magnatOpenMobileCatalog = function (event) {
             if (event) {
                 event.preventDefault();
@@ -260,6 +376,43 @@
                 }
             }
             const nextOpen = !isOpen;
+            if (body && body.__x && body.__x.$data) {
+                if (Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileCatalog')) {
+                    body.__x.$data.mobileCatalog = nextOpen;
+                }
+                if (Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileSidebar')) {
+                    body.__x.$data.mobileSidebar = false;
+                }
+            }
+            const rootData = body && body._x_dataStack && body._x_dataStack[0];
+            if (rootData) {
+                if (Object.prototype.hasOwnProperty.call(rootData, 'mobileCatalog')) {
+                    rootData.mobileCatalog = nextOpen;
+                }
+                if (Object.prototype.hasOwnProperty.call(rootData, 'mobileSidebar')) {
+                    rootData.mobileSidebar = false;
+                }
+            }
+            return false;
+        };
+
+        window.magnatToggleMobileCatalogDom = function (event, forceOpen) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const drawer = document.getElementById('mobile-catalog-drawer');
+            const backdrop = document.getElementById('mobile-catalog-backdrop');
+            if (!drawer || !backdrop) return false;
+
+            const currentlyOpen = drawer.classList.contains('is-open') && drawer.style.display !== 'none';
+            const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !currentlyOpen;
+
+            drawer.style.display = nextOpen ? '' : 'none';
+            backdrop.style.display = nextOpen ? '' : 'none';
+            drawer.classList.toggle('is-open', nextOpen);
+
+            const body = document.body;
             if (body && body.__x && body.__x.$data) {
                 if (Object.prototype.hasOwnProperty.call(body.__x.$data, 'mobileCatalog')) {
                     body.__x.$data.mobileCatalog = nextOpen;
@@ -390,6 +543,35 @@
                     loadProfileSection(window.location.href, false);
                 }
             });
+        })();
+
+        // Fallback for top "Каталог" dropdown if Alpine fails.
+        (function () {
+            function bindTopCatalogDropdownFallback() {
+                var wraps = document.querySelectorAll('.sub-nav__dropdown-wrap');
+                wraps.forEach(function (wrap) {
+                    if (!wrap || wrap.dataset.fallbackBound === '1') return;
+                    var btn = wrap.querySelector('.sub-nav__dropdown-btn');
+                    var panel = wrap.querySelector('.sub-nav__dropdown--catalog');
+                    if (!btn || !panel) return;
+                    wrap.dataset.fallbackBound = '1';
+                    btn.addEventListener('click', function () {
+                        var isHidden = panel.style.display === 'none' || getComputedStyle(panel).display === 'none';
+                        panel.style.display = isHidden ? 'block' : 'none';
+                    });
+                    document.addEventListener('click', function (e) {
+                        if (!wrap.contains(e.target)) {
+                            panel.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', bindTopCatalogDropdownFallback);
+            } else {
+                bindTopCatalogDropdownFallback();
+            }
         })();
 
         (function () {
