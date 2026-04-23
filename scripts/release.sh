@@ -16,11 +16,11 @@ docker compose build web celery celery-beat
 echo "[release] step 4/6: run migrations"
 docker compose run --rm web python manage.py migrate --noinput
 
-echo "[release] step 5/6: collect static"
-docker compose run --rm web python manage.py collectstatic --noinput
-
-echo "[release] step 6/6: start application stack"
+echo "[release] step 5/6: start application stack"
 docker compose up -d db redis web celery celery-beat
+
+echo "[release] step 6/6: collect static in running web container"
+docker compose exec web python manage.py collectstatic --noinput
 
 echo "[release] smoke checks"
 docker compose exec web python manage.py check
