@@ -11,10 +11,10 @@
 | `DJANGO_ALLOWED_HOSTS` | Домены через запятую: `mysite.ru,www.mysite.ru` |
 | `DJANGO_TIME_ZONE` | Например `Asia/Bishkek` |
 
-База данных — один из вариантов:
+База данных — рекомендуемо PostgreSQL:
 
 - **`DATABASE_URL`** — PostgreSQL (Neon, Supabase, собственный сервер).
-- Или **`DB_NAME`**, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` — MySQL (как в `docker-compose.yml`).
+- Для Docker Compose по умолчанию используется сервис `db` (PostgreSQL 16).
 
 Redis обязателен для Celery:
 
@@ -40,9 +40,9 @@ docker compose build
 docker compose up -d
 ```
 
-Поднимется: **MySQL**, **Redis**, **web** (миграции + `collectstatic` + Gunicorn), **celery**, **celery-beat**.
+Поднимется: **PostgreSQL**, **Redis**, **web** (Gunicorn), **celery**, **celery-beat**.
 
-- Статика собирается при старте контейнера `web` (`collectstatic`), отдаётся через **WhiteNoise**.
+- Миграции и `collectstatic` выполняются отдельным release-шагом (безопаснее, чем автозапуск в `web`).
 - Загрузки пользователей (**media**) монтируются в том **`media_data`** — данные переживают пересборку образа.
 
 Проверка:
@@ -52,12 +52,10 @@ docker compose ps
 docker compose logs -f web
 ```
 
-Обновление после выкладки кода:
+Безопасное обновление после выкладки кода:
 
 ```bash
-git pull
-docker compose build --no-cache web
-docker compose up -d
+bash scripts/release.sh
 ```
 
 ## 3. За reverse proxy (nginx / Caddy)

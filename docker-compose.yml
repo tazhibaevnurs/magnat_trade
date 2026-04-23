@@ -1,17 +1,16 @@
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-magnat_trade}
-      MYSQL_USER: ${DB_USER:-magnat}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-magnat}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      POSTGRES_DB: ${POSTGRES_DB:-magnat_trade}
+      POSTGRES_USER: ${POSTGRES_USER:-magnat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-magnat}
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-magnat} -d ${POSTGRES_DB:-magnat_trade}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,17 +22,12 @@ services:
 
   web:
     build: .
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py collectstatic --noinput &&
-             gunicorn magnat_trade_project.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    command: gunicorn magnat_trade_project.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
     env_file:
       - .env
     environment:
       DJANGO_DEBUG: "false"
-      DB_HOST: db
-      DB_PORT: "3306"
-      SQLITE_DB_PATH: /app/db/db.sqlite3
+      DATABASE_URL: ${DATABASE_URL:-postgresql://magnat:magnat@db:5432/magnat_trade}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -43,7 +37,6 @@ services:
       - "${WEB_PUBLISH_PORT:-8000}:8000"
     volumes:
       - media_data:/app/media
-      - sqlite_data:/app/db
     restart: unless-stopped
     depends_on:
       db:
@@ -58,15 +51,12 @@ services:
       - .env
     environment:
       DJANGO_DEBUG: "false"
-      DB_HOST: db
-      DB_PORT: "3306"
-      SQLITE_DB_PATH: /app/db/db.sqlite3
+      DATABASE_URL: ${DATABASE_URL:-postgresql://magnat:magnat@db:5432/magnat_trade}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     volumes:
       - media_data:/app/media
-      - sqlite_data:/app/db
     restart: unless-stopped
     depends_on:
       db:
@@ -81,15 +71,11 @@ services:
       - .env
     environment:
       DJANGO_DEBUG: "false"
-      DB_HOST: db
-      DB_PORT: "3306"
-      SQLITE_DB_PATH: /app/db/db.sqlite3
+      DATABASE_URL: ${DATABASE_URL:-postgresql://magnat:magnat@db:5432/magnat_trade}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     restart: unless-stopped
-    volumes:
-      - sqlite_data:/app/db
     depends_on:
       db:
         condition: service_healthy
@@ -97,6 +83,5 @@ services:
         condition: service_started
 
 volumes:
-  mysql_data:
+  pg_data:
   media_data:
-  sqlite_data:

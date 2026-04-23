@@ -4,8 +4,43 @@ from urllib.parse import urlparse
 
 from celery import shared_task
 from django.conf import settings
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
+
+_SYNC_FAIL_KEY_PREFIX = "onec:sync_failures:"
+_SYNC_ALERT_SENT_KEY_PREFIX = "onec:sync_alert_sent:"
+
+
+def _sync_fail_key(task_name: str) -> str:
+    return f"{_SYNC_FAIL_KEY_PREFIX}{task_name}"
+
+
+def _sync_alert_sent_key(task_name: str) -> str:
+    return f"{_SYNC_ALERT_SENT_KEY_PREFIX}{task_name}"
+
+
+def _mark_sync_success(task_name: str) -> None:
+    cache.delete(_sync_fail_key(task_name))
+    cache.delete(_sync_alert_sent_key(task_name))
+
+
+def _mark_sync_failure_and_maybe_alert(task_name: str, error: Exception) -> None:
+    threshold = int(getattr(settings, "ONEC_SYNC_FAILURE_ALERT_THRESHOLD", 3) or 0)
+    if threshold <= 0:
+        return
+    failures = cache.get(_sync_fail_key(task_name), 0) + 1
+    cache.set(_sync_fail_key(task_name), failures, timeout=60 * 60 * 24)
+    already_alerted = bool(cache.get(_sync_alert_sent_key(task_name), False))
+    if failures >= threshold and not already_alerted:
+        from integrations.services.telegram_notifications import notify_onec_sync_failures
+
+        notify_onec_sync_failures(
+            task_name=task_name,
+            failures=failures,
+            error_text=str(error),
+        )
+        cache.set(_sync_alert_sent_key(task_name), True, timeout=60 * 60 * 24)
 
 
 def _celery_broker_reachable() -> bool:
@@ -95,10 +130,14 @@ def sync_products_from_onec(self) -> dict:
     if not getattr(settings, "ONEC_BEAT_SYNC_ENABLED", True):
         return {"skipped": True, "reason": "ONEC_BEAT_SYNC_ENABLED=false"}
 
+    task_name = "sync_products_from_onec"
     try:
-        return run_product_list_sync_only()
+        result = run_product_list_sync_only()
+        _mark_sync_success(task_name)
+        return result
     except OneCAPIError as exc:
         logger.warning("sync_products_from_onec failed: %s", exc)
+        _mark_sync_failure_and_maybe_alert(task_name, exc)
         raise self.retry(exc=exc) from exc
 
 
@@ -117,8 +156,12 @@ def sync_all_from_onec(self) -> dict:
         return {"skipped": True, "reason": "ONEC_BEAT_SYNC_ENABLED=false"}
 
     skip_cust = getattr(settings, "ONEC_BEAT_SKIP_CUSTOMERS", False)
+    task_name = "sync_all_from_onec"
     try:
-        return run_full_onec_sync(skip_customers=skip_cust)
+        result = run_full_onec_sync(skip_customers=skip_cust)
+        _mark_sync_success(task_name)
+        return result
     except OneCAPIError as exc:
         logger.warning("sync_all_from_onec failed: %s", exc)
+        _mark_sync_failure_and_maybe_alert(task_name, exc)
         raise self.retry(exc=exc) from exc

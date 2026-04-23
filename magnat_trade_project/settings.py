@@ -386,6 +386,10 @@ ONEC_API_TIMEOUT = float(os.getenv("ONEC_API_TIMEOUT", "120"))
 ONEC_PUSH_ON_REGISTER = os.getenv("ONEC_PUSH_ON_REGISTER", "true").lower() in ("1", "true", "yes")
 # При полной синхронизации по расписанию не тянуть контрагентов (только категории + товары) — быстрее
 ONEC_BEAT_SKIP_CUSTOMERS = os.getenv("ONEC_BEAT_SKIP_CUSTOMERS", "false").lower() in ("1", "true", "yes")
+try:
+    ONEC_SYNC_FAILURE_ALERT_THRESHOLD = max(0, int(os.getenv("ONEC_SYNC_FAILURE_ALERT_THRESHOLD", "3")))
+except ValueError:
+    ONEC_SYNC_FAILURE_ALERT_THRESHOLD = 3
 
 INTEGRATION_API_KEY = os.getenv("INTEGRATION_API_KEY", "")
 INTEGRATION_BASIC_USER = os.getenv("INTEGRATION_BASIC_USER", "")

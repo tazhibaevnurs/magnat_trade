@@ -113,3 +113,13 @@ def notify_wholesale_request_created(*, email: str, comment: str) -> bool:
         f"Комментарий: {comment or '-'}"
     )
     return _dispatch_message(text)
+
+
+def notify_onec_sync_failures(*, task_name: str, failures: int, error_text: str) -> bool:
+    text = (
+        "⚠️ <b>1С sync alert</b>\n"
+        f"Задача: <code>{html.escape(task_name)}</code>\n"
+        f"Подряд ошибок: <b>{failures}</b>\n"
+        f"Ошибка: <code>{html.escape(error_text)[:1800]}</code>"
+    )
+    return _dispatch_message(text)
