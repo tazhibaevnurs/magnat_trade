@@ -11,6 +11,18 @@ mkdir -p "$BACKUP_DIR"
 echo "[backup] ensuring db service is running..."
 docker compose up -d db >/dev/null
 
+for i in $(seq 1 30); do
+  if docker compose exec -T db sh -lc 'export PGPASSWORD="$POSTGRES_PASSWORD"; pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1'; then
+    break
+  fi
+  echo "[backup] waiting for postgres... ($i/30)"
+  sleep 2
+done
+docker compose exec -T db sh -lc 'export PGPASSWORD="$POSTGRES_PASSWORD"; pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1' || {
+  echo "[backup] postgres is not ready after timeout"
+  exit 1
+}
+
 OUT_FILE="$BACKUP_DIR/postgres_${TIMESTAMP}.dump"
 echo "[backup] writing $OUT_FILE"
 
