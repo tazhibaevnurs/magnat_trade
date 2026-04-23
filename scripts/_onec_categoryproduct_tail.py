@@ -20,7 +20,7 @@ import httpx  # noqa: E402
 def main() -> None:
     base = (os.getenv("ONEC_API_BASE_URL") or "").rstrip("/")
     if not base:
-        base = "https://77.235.19.234:4443/bereke_test/hs"
+        base = "https://rdp.it-help.kg:4443/bereke_test/hs"
         print("ONEC_API_BASE_URL пуст, используем:", base, file=sys.stderr)
     path = "/categories_products/categoryProductList"
     url = f"{base}{path}"
