@@ -37,6 +37,9 @@
                                 {% endif %}
                             </p>
                             <p class="section-desc" style="margin-top:var(--spacing-xs);">Кол-во: {{ item.quantity }}</p>
+                            {% if item.special_instructions %}
+                            <p class="section-desc" style="margin-top:4px;"><strong>Особая отметка:</strong> {{ item.special_instructions }}</p>
+                            {% endif %}
                         </div>
                         <div style="font-weight:600;white-space:nowrap;">{{ item.total_price|floatformat:2 }} сом</div>
                     </div>

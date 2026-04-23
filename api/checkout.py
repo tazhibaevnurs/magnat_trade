@@ -32,6 +32,7 @@ class CheckoutConflict(APIException):
 class OrderItemInSerializer(serializers.Serializer):
     product_id = serializers.CharField(max_length=64)
     quantity = serializers.IntegerField(min_value=1)
+    special_instructions = serializers.CharField(required=False, allow_blank=True, default="", max_length=500)
 
 
 class CheckoutCreateSerializer(serializers.Serializer):
@@ -73,10 +74,11 @@ class CheckoutOrderView(APIView):
 
         with transaction.atomic():
             total = Decimal("0.00")
-            lines: list[tuple[str, int, Decimal, str]] = []
+            lines: list[tuple[str, int, Decimal, str, str]] = []
             for row in data["items"]:
                 pid = row["product_id"]
                 qty = row["quantity"]
+                special_instructions = (row.get("special_instructions") or "").strip()[:500]
                 try:
                     p = Product.objects.select_for_update().get(id=pid, is_active=True)
                 except Product.DoesNotExist as err:
@@ -89,7 +91,7 @@ class CheckoutOrderView(APIView):
                 price = p.retail_price if data["price_type"] == "retail" else p.wholesale_price
                 line_total = price * qty
                 total += line_total
-                lines.append((pid, qty, price, p.name))
+                lines.append((pid, qty, price, p.name, special_instructions))
 
             warehouse = (data.get("warehouse_id") or "").strip() or getattr(
                 settings, "DEFAULT_WAREHOUSE_ID", "MAIN"
@@ -105,13 +107,14 @@ class CheckoutOrderView(APIView):
                 warehouse_id=warehouse,
                 comment=data.get("comment") or "",
             )
-            for pid, qty, price, name in lines:
+            for pid, qty, price, name, special_instructions in lines:
                 OrderItem.objects.create(
                     order=order,
                     product_id=pid,
                     quantity=qty,
                     price=price,
                     name_snapshot=name,
+                    special_instructions=special_instructions,
                 )
             for pid, qty, _, _ in lines:
                 updated = Product.objects.filter(pk=pid, stock__gte=qty).update(

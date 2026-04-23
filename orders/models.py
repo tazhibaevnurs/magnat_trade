@@ -133,6 +133,7 @@ class OrderItem(models.Model):
         default="",
         help_text="Наименование на момент заказа (для 1С)",
     )
+    special_instructions = models.CharField(max_length=500, blank=True, default="")
 
     class Meta:
         verbose_name = "Позиция заказа"

@@ -77,19 +77,32 @@
                 {% endif %}
             </div>
 
-            <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-md);margin-top:var(--spacing-xl);">
+            <div style="margin-top:var(--spacing-xl);">
                 {% if product.is_in_stock %}
-                    <button
-                        type="button"
-                        class="btn-add-cart-large add-to-cart-btn"
-                        data-product-id="{{ product.id }}"
-                        data-product-name="{{ product.name }}">
-                        В корзину
-                    </button>
+                    <form method="post" action="{% url 'add_to_cart' %}" class="form-field">
+                        {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <label for="special-shop">Особая отметка (необязательно)</label>
+                        <textarea
+                            id="special-shop"
+                            name="special_instructions"
+                            rows="2"
+                            maxlength="500"
+                            class="input-unnested"
+                            placeholder="Например: выберите расцветку, нужный оттенок и т.д."
+                            style="margin-bottom:var(--spacing-md);"></textarea>
+                        <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-md);">
+                            <button type="submit" class="btn-add-cart-large" style="width:auto;margin:0;">В корзину</button>
+                            <a href="{% url 'shop' %}" class="btn-secondary">В каталог</a>
+                        </div>
+                    </form>
                 {% else %}
-                    <button type="button" class="btn-secondary" disabled style="opacity:0.6;cursor:not-allowed;">{{ product.stock_status }}</button>
+                    <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-md);">
+                        <button type="button" class="btn-secondary" disabled style="opacity:0.6;cursor:not-allowed;">{{ product.stock_status }}</button>
+                        <a href="{% url 'shop' %}" class="btn-secondary">В каталог</a>
+                    </div>
                 {% endif %}
-                <a href="{% url 'shop' %}" class="btn-secondary">В каталог</a>
             </div>
         </div>
     </div>

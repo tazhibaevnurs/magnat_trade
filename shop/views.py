@@ -74,6 +74,7 @@ MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024
 ALLOWED_PROFILE_PICTURE_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 ALLOWED_PROFILE_PICTURE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 POW_TTL_SECONDS = 10 * 60
+MAX_SPECIAL_INSTRUCTIONS_LEN = 500
 
 
 def robots_txt(request):
@@ -139,6 +140,10 @@ def _parse_positive_int_bounded(raw, *, default: int, min_value: int = 1, max_va
     except (TypeError, ValueError):
         return default
     return max(min_value, min(max_value, val))
+
+
+def _sanitize_special_instructions(raw: str | None) -> str:
+    return (raw or "").strip()[:MAX_SPECIAL_INSTRUCTIONS_LEN]
 
 
 def _validate_profile_picture_upload(uploaded_file):
@@ -1032,17 +1037,32 @@ def _get_or_create_cart(request):
                                     "quantity": item.quantity,
                                     "price": item.price,
                                     "product": None,
+                                    "special_instructions": item.special_instructions,
                                 },
                             )
                         else:
                             ci, created = CartItem.objects.get_or_create(
                                 cart=cart,
                                 product=item.product,
-                                defaults={"quantity": item.quantity, "price": item.price},
+                                defaults={
+                                    "quantity": item.quantity,
+                                    "price": item.price,
+                                    "special_instructions": item.special_instructions,
+                                },
                             )
                         if not created:
                             ci.quantity += item.quantity
-                            ci.save(update_fields=["quantity", "updated_at"])
+                            if not ci.special_instructions and item.special_instructions:
+                                ci.special_instructions = item.special_instructions
+                                ci.save(
+                                    update_fields=[
+                                        "quantity",
+                                        "special_instructions",
+                                        "updated_at",
+                                    ]
+                                )
+                            else:
+                                ci.save(update_fields=["quantity", "updated_at"])
                     anon_cart.is_active = False
                     anon_cart.save()
         except Cart.DoesNotExist:
@@ -1061,6 +1081,9 @@ def add_to_cart(request):
         default=1,
         min_value=1,
         max_value=MAX_CART_ITEM_QTY,
+    )
+    special_instructions = _sanitize_special_instructions(
+        request.POST.get("special_instructions")
     )
 
     if qty < 1:
@@ -1090,11 +1113,20 @@ def add_to_cart(request):
             item, created = CartItem.objects.get_or_create(
                 cart=cart,
                 catalog_product=cp,
-                defaults={"quantity": qty, "price": line_price, "product": None},
+                defaults={
+                    "quantity": qty,
+                    "price": line_price,
+                    "product": None,
+                    "special_instructions": special_instructions,
+                },
             )
             if not created:
                 item.quantity += qty
-                item.save(update_fields=["quantity", "updated_at"])
+                update_fields = ["quantity", "updated_at"]
+                if special_instructions:
+                    item.special_instructions = special_instructions
+                    update_fields.insert(1, "special_instructions")
+                item.save(update_fields=update_fields)
         product_name = cp.name
     else:
         if not product_id:
@@ -1125,11 +1157,19 @@ def add_to_cart(request):
             item, created = CartItem.objects.get_or_create(
                 cart=cart,
                 product=product,
-                defaults={"quantity": qty, "price": product.current_price},
+                defaults={
+                    "quantity": qty,
+                    "price": product.current_price,
+                    "special_instructions": special_instructions,
+                },
             )
             if not created:
                 item.quantity += qty
-                item.save(update_fields=["quantity", "updated_at"])
+                update_fields = ["quantity", "updated_at"]
+                if special_instructions:
+                    item.special_instructions = special_instructions
+                    update_fields.insert(1, "special_instructions")
+                item.save(update_fields=update_fields)
         product_name = product.name
 
     cart_item_count = cart.items.count()
@@ -1142,6 +1182,7 @@ def add_to_cart(request):
                 "cart_count": cart_item_count,
                 "product_name": product_name,
                 "quantity_added": qty,
+                "special_instructions": special_instructions,
             }
         )
 
@@ -1172,12 +1213,6 @@ def cart(request):
 @require_POST
 def update_cart_item(request, item_id):
     """Update quantity for a given cart item (set or remove if 0)."""
-    qty = _parse_positive_int_bounded(
-        request.POST.get("quantity", 0),
-        default=0,
-        min_value=0,
-        max_value=MAX_CART_ITEM_QTY,
-    )
     cart = _get_or_create_cart(request)
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     item = get_object_or_404(
@@ -1188,6 +1223,15 @@ def update_cart_item(request, item_id):
         if is_ajax:
             return JsonResponse({"success": False, "error": "Неверная корзина"}, status=403)
         return redirect("cart")
+    qty = _parse_positive_int_bounded(
+        request.POST.get("quantity", item.quantity),
+        default=item.quantity,
+        min_value=0,
+        max_value=MAX_CART_ITEM_QTY,
+    )
+    special_instructions = _sanitize_special_instructions(
+        request.POST.get("special_instructions")
+    )
     if qty <= 0:
         item.delete()
         cart = _get_or_create_cart(request)
@@ -1218,7 +1262,8 @@ def update_cart_item(request, item_id):
                 messages.error(request, msg)
                 return redirect("cart")
         locked.quantity = qty
-        locked.save(update_fields=["quantity", "updated_at"])
+        locked.special_instructions = special_instructions
+        locked.save(update_fields=["quantity", "special_instructions", "updated_at"])
     cart = _get_or_create_cart(request)
     if is_ajax:
         return JsonResponse({"success": True, **_cart_summary_payload(cart)})
@@ -2264,6 +2309,8 @@ def _draw_order_pdf(order: CatalogOrder) -> bytes:
 
     for item in order.items.all():
         item_name = (item.name_snapshot or str(item.product_id or "")).strip() or "Товар"
+        if item.special_instructions:
+            item_name = f"{item_name} (отметка: {item.special_instructions})"
         qty_text = f"x {item.quantity}"
         price_text = f"{item.line_total} сом"
 

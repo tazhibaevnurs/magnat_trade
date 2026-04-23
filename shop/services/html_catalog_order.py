@@ -20,6 +20,17 @@ def _onec_export_enabled() -> bool:
     return bool(getattr(settings, "ONEC_API_BASE_URL", "").strip())
 
 
+def _special_instructions_summary(cart_items: list) -> str:
+    parts: list[str] = []
+    for ci in cart_items:
+        note = (ci.special_instructions or "").strip()
+        if not note:
+            continue
+        name = ci.catalog_product.name if ci.catalog_product_id else str(ci.product_id)
+        parts.append(f"{name}: {note}")
+    return " | ".join(parts)
+
+
 @transaction.atomic
 def place_order_from_catalog_cart_items(
     *,
@@ -47,11 +58,13 @@ def place_order_from_catalog_cart_items(
         raise ValueError(msg)
 
     grand_total = subtotal + shipping_fee
+    special_notes = _special_instructions_summary(cart_items)
     comment = (
         "Заказ с сайта (HTML) | "
         f"{full_name} | {email} | {phone} | {address} | "
         f"доставка: {delivery_method} ({shipping_fee}) | оплата: {payment_method} | "
-        f"комментарий: {order_comment or '-'}"
+        f"комментарий: {order_comment or '-'} | "
+        f"особые отметки: {special_notes or '-'}"
     )
     price_type = "wholesale" if getattr(user, "user_type", "retail") == "wholesale" else "retail"
     warehouse = getattr(settings, "DEFAULT_WAREHOUSE_ID", "MAIN") or "MAIN"
@@ -85,6 +98,7 @@ def place_order_from_catalog_cart_items(
             quantity=qty,
             price=price,
             name_snapshot=cp.name,
+            special_instructions=(ci.special_instructions or "").strip(),
         )
         updated = CatalogProduct.objects.filter(pk=cp.pk, stock__gte=qty).update(
             stock=F("stock") - qty

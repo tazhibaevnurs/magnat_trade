@@ -66,6 +66,15 @@
             <form method="post" action="{% url 'add_to_cart' %}" class="form-field" style="margin-bottom:var(--spacing-lg);">
                 {% csrf_token %}
                 <input type="hidden" name="catalog_product_id" value="{{ product.pk }}">
+                <label for="special-catalog">Особая отметка (необязательно)</label>
+                <textarea
+                    id="special-catalog"
+                    name="special_instructions"
+                    rows="2"
+                    maxlength="500"
+                    class="input-unnested"
+                    placeholder="Например: выберите расцветку, нужный оттенок и т.д."
+                    style="margin-bottom:var(--spacing-md);"></textarea>
                 <label for="qty-catalog">Количество</label>
                 <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-md);align-items:flex-end;">
                     <input id="qty-catalog" name="quantity" type="number" min="1" max="{{ product.stock }}" value="1" class="price-input" style="width:6rem;">

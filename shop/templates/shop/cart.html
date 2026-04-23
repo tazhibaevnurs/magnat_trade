@@ -70,6 +70,17 @@
                                     <p class="cart-list-item-stock">
                                         {% if item.catalog_product %}В наличии: {{ item.catalog_product.stock }} шт.{% else %}В наличии: {{ item.product.stock }} шт.{% endif %}
                                     </p>
+                                    <div class="form-field" style="margin-top:10px;">
+                                        <label for="special-note-{{ item.id }}" style="font-size:12px;">Особая отметка</label>
+                                        <textarea
+                                            id="special-note-{{ item.id }}"
+                                            class="counter-input cart-special-instructions"
+                                            name="special_instructions"
+                                            rows="2"
+                                            maxlength="500"
+                                            form="update-item-form-{{ item.id }}"
+                                            placeholder="Например: нужная расцветка, вариант комплектации">{{ item.special_instructions }}</textarea>
+                                    </div>
                                 </div>
                             </div>
 
@@ -84,7 +95,7 @@
                                     <a class="cart-list-item-actions-view" href="{% if item.catalog_product %}{% url 'catalog_pdp' product_id=item.catalog_product_id %}{% else %}{{ item.product.get_absolute_url }}{% endif %}" title="К товару" aria-label="Открыть карточку товара">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5M18 3h3v3m0-3v6M6 15h6"/></svg>
                                     </a>
-                                    <form method="post" action="{% url 'update_cart_item' item.id %}" class="update-item-form counter">
+                                    <form method="post" action="{% url 'update_cart_item' item.id %}" class="update-item-form counter" id="update-item-form-{{ item.id }}">
                                         {% csrf_token %}
                                         <div class="quantity-control">
                                             <button class="counter-btn" data-action="decrement" type="button" aria-label="Уменьшить">

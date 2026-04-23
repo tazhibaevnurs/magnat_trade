@@ -40,7 +40,12 @@
             <h2 style="margin-top:0;">Заказ №{{ order.id }}</h2>
             {% for item in order.items.all %}
             <div class="row">
-                <span>{{ item.name_snapshot }} × {{ item.quantity }}</span>
+                <span>
+                    {{ item.name_snapshot }} × {{ item.quantity }}
+                    {% if item.special_instructions %}
+                    <br><small>Особая отметка: {{ item.special_instructions }}</small>
+                    {% endif %}
+                </span>
                 <span>{{ item.line_total|floatformat:2 }} сом</span>
             </div>
             {% endfor %}

@@ -43,8 +43,13 @@
         <h2 class="section-title" style="font-size:var(--text-base);margin:0 0 var(--spacing-md);">Товары в заказе</h2>
         <div style="border:1px solid var(--color-border-light);border-radius:12px;overflow:hidden;">
             {% for item in order.items.all %}
-            <div class="product-spec-row" style="padding:12px 14px;">
-                <span>{{ item.name_snapshot }} × {{ item.quantity }}</span>
+            <div class="product-spec-row" style="padding:12px 14px;align-items:flex-start;">
+                <span>
+                    {{ item.name_snapshot }} × {{ item.quantity }}
+                    {% if item.special_instructions %}
+                    <br><small style="color:var(--color-text-secondary);">Особая отметка: {{ item.special_instructions }}</small>
+                    {% endif %}
+                </span>
                 <span>{{ item.line_total }} сом</span>
             </div>
             {% empty %}

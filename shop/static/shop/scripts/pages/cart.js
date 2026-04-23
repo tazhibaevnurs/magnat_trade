@@ -214,6 +214,23 @@ const initializeCartPage = () => {
             return data;
         };
 
+        const syncSpecialInstructionsToForm = (form) => {
+            const row = form?.closest('.cart-list-item');
+            const noteInput = row?.querySelector('.cart-special-instructions');
+            if (!noteInput) return;
+            const existing = form.querySelector('textarea[name="special_instructions"]');
+            if (existing && existing !== noteInput) {
+                existing.remove();
+            }
+            // Keep form payload aligned with current note text.
+            if (noteInput.form && noteInput.form.id === form.id) return;
+            const hidden = document.createElement('textarea');
+            hidden.name = 'special_instructions';
+            hidden.style.display = 'none';
+            hidden.value = noteInput.value || '';
+            form.appendChild(hidden);
+        };
+
         if (cartLineItems) {
             cartLineItems.addEventListener('click', async (e) => {
                 const btn = e.target.closest('.counter-btn');
@@ -245,6 +262,7 @@ const initializeCartPage = () => {
                     showCartToast(`В наличии не более ${maxStock} шт.`, 'warning');
                 }
                 input.value = v;
+                syncSpecialInstructionsToForm(form);
                 btn.disabled = true;
                 btn.style.opacity = '0.6';
                 try {
@@ -279,6 +297,7 @@ const initializeCartPage = () => {
                     if (input) input.value = maxBlur;
                     showCartToast(`В наличии не более ${maxBlur} шт.`, 'warning');
                 }
+                syncSpecialInstructionsToForm(form);
                 try {
                     if (v <= 0) {
                         const data = await postCartFormFetch(form);
@@ -300,6 +319,20 @@ const initializeCartPage = () => {
                 updateCheckoutButtonState();
                 updateSelectAllCheckbox();
             });
+
+            cartLineItems.addEventListener('blur', async (e) => {
+                if (!e.target.matches('.cart-special-instructions')) return;
+                const row = e.target.closest('.cart-list-item');
+                const form = row?.querySelector('form.update-item-form');
+                if (!form) return;
+                syncSpecialInstructionsToForm(form);
+                try {
+                    const data = await postCartFormFetch(form);
+                    applyCartSummary(data);
+                } catch {
+                    showCartToast('Не удалось сохранить особую отметку.', 'danger');
+                }
+            }, true);
 
             cartLineItems.addEventListener('submit', async (e) => {
                 const form = e.target;
@@ -330,6 +363,7 @@ const initializeCartPage = () => {
                     if (input) input.value = maxSubmit;
                     showCartToast(`В наличии не более ${maxSubmit} шт.`, 'warning');
                 }
+                syncSpecialInstructionsToForm(form);
                 try {
                     if (v <= 0) {
                         const data = await postCartFormFetch(form);

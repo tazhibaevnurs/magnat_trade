@@ -13,6 +13,17 @@ from orders.models import Order, OrderItem
 from shop.models import InventoryTransaction, Product as ShopProduct
 
 
+def _special_instructions_summary(cart_items: list) -> str:
+    parts: list[str] = []
+    for ci in cart_items:
+        note = (ci.special_instructions or "").strip()
+        if not note:
+            continue
+        name = ci.product.name if ci.product_id else str(ci.product_id)
+        parts.append(f"{name}: {note}")
+    return " | ".join(parts)
+
+
 @transaction.atomic
 def place_demo_order_from_cart_items(
     *,
@@ -34,11 +45,13 @@ def place_demo_order_from_cart_items(
     Без выгрузки в 1С.
     """
     grand_total = subtotal + shipping_fee
+    special_notes = _special_instructions_summary(cart_items)
     comment = (
         "Демо-витрина | "
         f"{full_name} | {email} | {phone} | {address} | "
         f"доставка: {delivery_method} ({shipping_fee}) | оплата: {payment_method} | "
-        f"комментарий: {order_comment or '-'}"
+        f"комментарий: {order_comment or '-'} | "
+        f"особые отметки: {special_notes or '-'}"
     )
     warehouse = getattr(settings, "DEFAULT_WAREHOUSE_ID", "MAIN") or "MAIN"
 
@@ -81,6 +94,7 @@ def place_demo_order_from_cart_items(
             quantity=ci.quantity,
             price=unit_price,
             name_snapshot=sp.name,
+            special_instructions=(ci.special_instructions or "").strip(),
         )
 
         InventoryTransaction.objects.create(

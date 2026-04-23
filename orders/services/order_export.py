@@ -30,10 +30,13 @@ class OrderExportService:
 
         items: list[dict[str, Any]] = []
         for line in order.items.all():
+            line_name = line.name_snapshot or ""
+            if line.special_instructions:
+                line_name = f"{line_name} ({line.special_instructions})".strip()
             items.append(
                 {
                     "product_id": str(line.product_id),
-                    "name": line.name_snapshot or "",
+                    "name": line_name,
                     "quantity": line.quantity,
                     "price": float(line.price),
                     "amount": float(line.price * line.quantity),
