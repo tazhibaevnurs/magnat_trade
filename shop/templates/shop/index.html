@@ -11,10 +11,33 @@
 <div class="container home-page">
     {# —— Hero на всю ширину экрана (как на av.ru): слайды + градиент —— #}
     <section class="home-hero-bleed"
-             x-data="{ slide: 0, total: 3, next() { this.slide = (this.slide + 1) % this.total }, prev() { this.slide = (this.slide - 1 + this.total) % this.total }, go(i) { this.slide = i } }"
+             x-data="{
+                 slide: 0,
+                 total: 3,
+                 autoplay: null,
+                 next() { this.slide = (this.slide + 1) % this.total },
+                 prev() { this.slide = (this.slide - 1 + this.total) % this.total },
+                 go(i) { this.slide = i },
+                 startAutoplay() {
+                     this.stopAutoplay();
+                     this.autoplay = setInterval(() => { this.next(); }, 4800);
+                 },
+                 stopAutoplay() {
+                     if (this.autoplay) {
+                         clearInterval(this.autoplay);
+                         this.autoplay = null;
+                     }
+                 }
+             }"
+             x-init="startAutoplay(); document.addEventListener('visibilitychange', () => { if (document.hidden) stopAutoplay(); else startAutoplay(); });"
+             @mouseenter="stopAutoplay()"
+             @mouseleave="startAutoplay()"
              aria-roledescription="carousel"
              aria-label="Главные предложения">
-        <div class="home-hero-bleed__track" :style="`transform: translateX(-${slide * 100}%)`">
+        <div class="home-hero-bleed__track"
+             data-hero-track
+             style="transform: translateX(0%);"
+             :style="`transform: translateX(-${slide * 100}%)`">
             {# Слайд 1 #}
             <div class="home-hero-bleed__slide">
                 <div class="home-hero-bleed__media home-hero-bleed__media--slide1" aria-hidden="true">
@@ -74,17 +97,17 @@
             </div>
         </div>
         <div class="home-hero-bleed__arrows">
-            <button type="button" class="home-hero-bleed__arrow home-hero-bleed__arrow--prev" @click="prev()" aria-label="Предыдущий слайд">
+            <button type="button" class="home-hero-bleed__arrow home-hero-bleed__arrow--prev" data-hero-prev @click="prev()" aria-label="Предыдущий слайд">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             </button>
-            <button type="button" class="home-hero-bleed__arrow home-hero-bleed__arrow--next" @click="next()" aria-label="Следующий слайд">
+            <button type="button" class="home-hero-bleed__arrow home-hero-bleed__arrow--next" data-hero-next @click="next()" aria-label="Следующий слайд">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
             </button>
         </div>
         <div class="home-hero-bleed__dots" role="tablist" aria-label="Выбор слайда">
-            <button type="button" role="tab" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 0 }" @click="go(0)" :aria-selected="slide === 0 ? 'true' : 'false'" aria-label="Слайд 1"></button>
-            <button type="button" role="tab" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 1 }" @click="go(1)" :aria-selected="slide === 1 ? 'true' : 'false'" aria-label="Слайд 2"></button>
-            <button type="button" role="tab" class="home-hero-bleed__dot" :class="{ 'is-active': slide === 2 }" @click="go(2)" :aria-selected="slide === 2 ? 'true' : 'false'" aria-label="Слайд 3"></button>
+            <button type="button" role="tab" class="home-hero-bleed__dot is-active" data-hero-dot="0" :class="{ 'is-active': slide === 0 }" @click="go(0)" :aria-selected="slide === 0 ? 'true' : 'false'" aria-label="Слайд 1"></button>
+            <button type="button" role="tab" class="home-hero-bleed__dot" data-hero-dot="1" :class="{ 'is-active': slide === 1 }" @click="go(1)" :aria-selected="slide === 1 ? 'true' : 'false'" aria-label="Слайд 2"></button>
+            <button type="button" role="tab" class="home-hero-bleed__dot" data-hero-dot="2" :class="{ 'is-active': slide === 2 }" @click="go(2)" :aria-selected="slide === 2 ? 'true' : 'false'" aria-label="Слайд 3"></button>
         </div>
     </section>
 
@@ -431,6 +454,75 @@
       if (svg) el.innerHTML = svg;
     });
   });
+})();
+</script>
+<script>
+(function () {
+  // Fallback autoplay for hero slider when Alpine is delayed/not initialized.
+  var hero = document.querySelector('.home-hero-bleed');
+  if (!hero) return;
+  var track = hero.querySelector('[data-hero-track]');
+  var prevBtn = hero.querySelector('[data-hero-prev]');
+  var nextBtn = hero.querySelector('[data-hero-next]');
+  var dots = Array.from(hero.querySelectorAll('[data-hero-dot]'));
+  if (!track || !nextBtn || !prevBtn || !dots.length) return;
+
+  var total = dots.length;
+  var slide = 0;
+
+  var timer = null;
+  function render() {
+    track.style.transform = 'translateX(-' + (slide * 100) + '%)';
+    dots.forEach(function (dot, idx) {
+      var active = idx === slide;
+      dot.classList.toggle('is-active', active);
+      dot.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  }
+  function go(idx) {
+    slide = (idx + total) % total;
+    render();
+  }
+  function next() { go(slide + 1); }
+  function prev() { go(slide - 1); }
+
+  prevBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    prev();
+  });
+  nextBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    next();
+  });
+  dots.forEach(function (dot, idx) {
+    dot.addEventListener('click', function (e) {
+      e.preventDefault();
+      go(idx);
+    });
+  });
+
+  function start() {
+    stop();
+    timer = setInterval(function () {
+      next();
+    }, 4800);
+  }
+  function stop() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stop();
+    else start();
+  });
+  hero.addEventListener('mouseenter', stop);
+  hero.addEventListener('mouseleave', start);
+
+  render();
+  start();
 })();
 </script>
 {% endblock %}

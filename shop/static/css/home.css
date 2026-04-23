@@ -150,23 +150,54 @@
   transform: translateX(-50%);
   z-index: 3;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(12, 16, 24, 0.28);
+  backdrop-filter: blur(2px);
 }
 
 .home-hero-bleed__dot {
-  width: 8px;
-  height: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 9px;
+  height: 9px;
+  min-width: 9px;
+  min-height: 9px;
+  display: inline-block;
   border-radius: 50%;
   border: none;
   padding: 0;
+  margin: 0;
   background: rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  box-shadow: none;
+  line-height: 0;
+  transition: background var(--transition-fast), transform var(--transition-fast), opacity var(--transition-fast);
 }
 
 .home-hero-bleed__dot.is-active {
   background: var(--color-text-white);
-  transform: scale(1.15);
+  transform: scale(1.2);
+  opacity: 1;
+}
+
+.home-hero-bleed__dot:not(.is-active) {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .home-hero-bleed__dot {
+    width: 10px !important;
+    height: 10px !important;
+    min-width: 10px !important;
+    min-height: 10px !important;
+    max-width: 10px !important;
+    max-height: 10px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+  }
 }
 
 .home-hero-bleed__arrows {
@@ -210,7 +241,27 @@
 
 @media (max-width: 640px) {
   .home-hero-bleed__arrow {
-    display: none;
+    display: flex;
+    width: 36px;
+    height: 36px;
+    top: auto;
+    bottom: calc(var(--spacing-xl) + 44px);
+    transform: none;
+    background: rgba(18, 22, 30, 0.35);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+
+  .home-hero-bleed__arrow svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .home-hero-bleed__arrow--prev {
+    left: 10px;
+  }
+
+  .home-hero-bleed__arrow--next {
+    right: 10px;
   }
 }
 
