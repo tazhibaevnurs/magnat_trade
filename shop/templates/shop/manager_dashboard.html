@@ -3,7 +3,7 @@
 {% block title %}Панель менеджера{% endblock %}
 
 {% block content %}
-<div class="container page-block manager-page" x-data="{ tab: '{{ manager_initial_tab|default:"requests"|escapejs }}' }">
+<div class="container page-block manager-page" data-manager-root data-initial-tab="{{ manager_initial_tab|default:'requests'|escapejs }}">
     {% include "includes/breadcrumbs.html" %}
 
     <header class="profile-hero">
@@ -12,14 +12,14 @@
     </header>
 
     <div class="manager-tabs" aria-label="Разделы панели">
-        <button type="button" class="manager-tab" :class="{ 'manager-tab--active': tab === 'requests' }" @click="tab = 'requests'; window.syncManagerTabUrl && window.syncManagerTabUrl('requests')" :aria-pressed="tab === 'requests' ? 'true' : 'false'">Заявки на опт</button>
-        <button type="button" class="manager-tab" :class="{ 'manager-tab--active': tab === 'products' }" @click="tab = 'products'; window.syncManagerTabUrl && window.syncManagerTabUrl('products')" :aria-pressed="tab === 'products' ? 'true' : 'false'">Товары и цены</button>
-        <button type="button" class="manager-tab" :class="{ 'manager-tab--active': tab === 'categories' }" @click="tab = 'categories'; window.syncManagerTabUrl && window.syncManagerTabUrl('categories')" :aria-pressed="tab === 'categories' ? 'true' : 'false'">Категории</button>
-        <button type="button" class="manager-tab" :class="{ 'manager-tab--active': tab === 'users' }" @click="tab = 'users'; window.syncManagerTabUrl && window.syncManagerTabUrl('users')" :aria-pressed="tab === 'users' ? 'true' : 'false'">Пользователи</button>
+        <button type="button" class="manager-tab" data-manager-tab-btn="requests" aria-pressed="false">Заявки на опт</button>
+        <button type="button" class="manager-tab" data-manager-tab-btn="products" aria-pressed="false">Товары и цены</button>
+        <button type="button" class="manager-tab" data-manager-tab-btn="categories" aria-pressed="false">Категории</button>
+        <button type="button" class="manager-tab" data-manager-tab-btn="users" aria-pressed="false">Пользователи</button>
     </div>
 
     {# Заявки #}
-    <section x-show="tab === 'requests'" x-cloak class="space-y-6">
+    <section class="space-y-6" data-manager-tab-pane="requests" hidden>
         <div class="auth-card contact-page__form-card">
             <h2 class="contact-page__form-title">Ожидают решения</h2>
             {% if pending_wholesale %}
@@ -79,7 +79,7 @@
     </section>
 
     {# Товары #}
-    <section x-show="tab === 'products'" x-cloak>
+    <section data-manager-tab-pane="products" hidden>
         <div class="auth-card contact-page__form-card">
             <div id="manager-products-panel">
                 {% include "shop/partials/manager_products_panel.html" %}
@@ -88,7 +88,7 @@
     </section>
 
     {# Категории #}
-    <section x-show="tab === 'categories'" x-cloak class="space-y-6">
+    <section class="space-y-6" data-manager-tab-pane="categories" hidden>
         <div class="auth-card contact-page__form-card">
             <h2 class="contact-page__form-title">Новая категория</h2>
             <form method="post" class="contact-page__form feedback-form">
@@ -115,7 +115,7 @@
     </section>
 
     {# Пользователи #}
-    <section x-show="tab === 'users'" x-cloak class="auth-card contact-page__form-card">
+    <section class="auth-card contact-page__form-card" data-manager-tab-pane="users" hidden>
         <h2 class="contact-page__form-title">Пользователи (без менеджеров и суперпользователей)</h2>
         <div id="manager-users-panel">
             {% include "shop/partials/manager_users_panel.html" %}
@@ -127,6 +127,37 @@
 {% block extra_js %}
 <script>
     (function () {
+        var root = document.querySelector('[data-manager-root]');
+        if (!root) return;
+
+        var tabs = ['requests', 'products', 'categories', 'users'];
+        var activeTab = (root.getAttribute('data-initial-tab') || 'requests').toLowerCase();
+        if (tabs.indexOf(activeTab) === -1) activeTab = 'requests';
+
+        var tabButtons = root.querySelectorAll('[data-manager-tab-btn]');
+        var tabPanes = root.querySelectorAll('[data-manager-tab-pane]');
+
+        function setTab(tab) {
+            activeTab = tabs.indexOf(tab) === -1 ? 'requests' : tab;
+            tabButtons.forEach(function (btn) {
+                var t = btn.getAttribute('data-manager-tab-btn');
+                var on = t === activeTab;
+                btn.classList.toggle('manager-tab--active', on);
+                btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            tabPanes.forEach(function (pane) {
+                var t = pane.getAttribute('data-manager-tab-pane');
+                pane.hidden = t !== activeTab;
+            });
+            window.syncManagerTabUrl && window.syncManagerTabUrl(activeTab);
+        }
+
+        tabButtons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                setTab(btn.getAttribute('data-manager-tab-btn') || 'requests');
+            });
+        });
+
         window.syncManagerTabUrl = function (tab) {
             try {
                 const u = new URL(window.location.href);
@@ -306,6 +337,7 @@
         bindPanelEvents();
         bindCategoriesPanelEvents();
         bindUsersPanelEvents();
+        setTab(activeTab);
     })();
 </script>
 {% endblock %}
