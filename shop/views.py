@@ -2469,3 +2469,21 @@ def admin_media_proxy(request, file_path: str):
         default_storage.open(normalized, "rb"),
         content_type=content_type or "application/octet-stream",
     )
+
+
+@require_GET
+def public_media_proxy(request, file_path: str):
+    # Production-safe media serving for public product/profile images when /media
+    # is not terminated by a reverse proxy.
+    normalized = (file_path or "").lstrip("/").replace("\\", "/")
+    if not normalized or ".." in normalized:
+        raise Http404
+    if not (normalized.startswith("products/") or normalized.startswith("profiles/")):
+        raise Http404
+    if not default_storage.exists(normalized):
+        raise Http404
+    content_type, _ = mimetypes.guess_type(normalized)
+    return FileResponse(
+        default_storage.open(normalized, "rb"),
+        content_type=content_type or "application/octet-stream",
+    )
