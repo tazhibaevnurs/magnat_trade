@@ -2,6 +2,7 @@ from urllib.parse import quote, urlencode
 
 from django.contrib import admin
 from django.conf import settings
+from django import forms
 from django.db.models import Case, IntegerField, When
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
@@ -325,6 +326,22 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    class ProductAdminForm(forms.ModelForm):
+        class Meta:
+            model = Product
+            fields = "__all__"
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            # В данных 1С поля цен исторически приходят инвертированно относительно бизнес-терминов.
+            # В админ-форме показываем привычные подписи для менеджеров.
+            if "wholesale_price" in self.fields:
+                self.fields["wholesale_price"].label = "Розничная цена"
+            if "retail_price" in self.fields:
+                self.fields["retail_price"].label = "Оптовая цена"
+
+    form = ProductAdminForm
+
     list_display = (
         "id",
         "image_thumb",
@@ -352,7 +369,7 @@ class ProductAdmin(admin.ModelAdmin):
         (
             "Цены и склад",
             {
-                "fields": ("retail_price", "wholesale_price", "stock", "unit", "is_active"),
+                "fields": ("wholesale_price", "retail_price", "stock", "unit", "is_active"),
             },
         ),
         (
