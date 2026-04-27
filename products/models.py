@@ -25,7 +25,12 @@ class Category(models.Model):
     Товары привязаны через ``Product.category`` (ForeignKey); отдельная M2M не используется.
     """
 
-    id = models.CharField(primary_key=True, max_length=64, editable=False)
+    id = models.CharField(
+        primary_key=True,
+        max_length=64,
+        editable=False,
+        verbose_name="Код категории",
+    )
     slug = models.SlugField(
         max_length=220,
         unique=True,
@@ -33,7 +38,7 @@ class Category(models.Model):
         allow_unicode=True,
         help_text="ЧПУ для ссылок на сайте (генерируется из кода и названия 1С).",
     )
-    name = models.CharField(max_length=500)
+    name = models.CharField(max_length=500, verbose_name="Название")
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -41,8 +46,8 @@ class Category(models.Model):
         on_delete=models.SET_NULL,
         related_name="children",
     )
-    is_active = models.BooleanField(default=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True, db_index=True, verbose_name="Активна")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Обновлено")
 
     class Meta:
         verbose_name = "Категория"
@@ -56,20 +61,21 @@ class Category(models.Model):
 class Product(models.Model):
     """Товар из 1С; первичный ключ — код номенклатуры из 1С (например НФ-00004612)."""
 
-    id = models.CharField(primary_key=True, max_length=64, editable=False)
-    sku = models.CharField(max_length=120, db_index=True, blank=True, default="")
-    name = models.CharField(max_length=500)
+    id = models.CharField(primary_key=True, max_length=64, editable=False, verbose_name="Код товара")
+    sku = models.CharField(max_length=120, db_index=True, blank=True, default="", verbose_name="Артикул")
+    name = models.CharField(max_length=500, verbose_name="Название")
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
         related_name="products",
+        verbose_name="Категория",
     )
-    retail_price = models.DecimalField(max_digits=14, decimal_places=2)
-    wholesale_price = models.DecimalField(max_digits=14, decimal_places=2)
-    stock = models.PositiveIntegerField(default=0)
-    unit = models.CharField(max_length=32, default="pcs")
-    is_active = models.BooleanField(default=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    retail_price = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="Розничная цена")
+    wholesale_price = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="Оптовая цена")
+    stock = models.PositiveIntegerField(default=0, verbose_name="Остаток")
+    unit = models.CharField(max_length=32, default="pcs", verbose_name="Ед. изм.")
+    is_active = models.BooleanField(default=True, db_index=True, verbose_name="Активен")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Обновлено")
 
     class Meta:
         verbose_name = "Товар"
@@ -105,11 +111,13 @@ class ProductImage(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="images",
+        verbose_name="Товар",
     )
-    image = models.ImageField(upload_to=product_gallery_upload_path)
+    image = models.ImageField(upload_to=product_gallery_upload_path, verbose_name="Изображение")
     sort_order = models.PositiveSmallIntegerField(
         default=0,
         help_text="Порядок слева направо (меньше — раньше).",
+        verbose_name="Порядок",
     )
 
     class Meta:

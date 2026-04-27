@@ -24,7 +24,7 @@
        </th>
      {% endfor %}
      <th class="column-direct-product-actions">{% translate "Change" %}</th>
-     <th>{% if inline_admin_formset.formset.can_delete and inline_admin_formset.has_delete_permission %}{% translate "Delete?" %}{% endif %}</th>
+     <th>{% if inline_admin_formset.formset.can_delete and inline_admin_formset.has_delete_permission %}Удалить?{% endif %}</th>
      </tr></thead>
 
      <tbody>
