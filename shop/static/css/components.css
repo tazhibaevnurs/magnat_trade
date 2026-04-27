@@ -2511,12 +2511,14 @@ a.product-card__wish {
 .pdp-gallery-modal {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: 20000;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(var(--color-primary-dark-rgb), 0.92);
   padding: var(--spacing-md);
+  pointer-events: auto;
+  isolation: isolate;
 }
 
 .pdp-gallery-modal[hidden] {
@@ -2527,7 +2529,7 @@ a.product-card__wish {
   position: absolute;
   right: var(--spacing-md);
   top: var(--spacing-md);
-  z-index: 40;
+  z-index: 100;
   width: 48px;
   height: 48px;
   min-width: 48px;
@@ -2554,6 +2556,8 @@ a.product-card__wish {
   max-height: 90vh;
   text-align: center;
   z-index: 20;
+  position: relative;
+  touch-action: pan-y pinch-zoom;
 }
 
 .pdp-gallery-modal__content img {
@@ -2572,7 +2576,7 @@ a.product-card__wish {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 40;
+  z-index: 100;
   width: 48px;
   height: 48px;
   min-width: 48px;

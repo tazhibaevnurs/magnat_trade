@@ -147,7 +147,6 @@
         <button type="button"
                 class="pdp-gallery-modal__close"
                 data-gallery-close
-                onclick="if (window.closePdpGalleryModal) { window.closePdpGalleryModal(); } return false;"
                 aria-label="Закрыть">
             <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
         </button>
@@ -288,16 +287,16 @@
         }
     });
 
-    root.querySelectorAll('[data-gallery-prev], [data-gallery-modal-prev]').forEach(function (btn) {
-        ['click', 'pointerup', 'touchend'].forEach(function (evtName) {
-            btn.addEventListener(evtName, function (e) { e.preventDefault(); e.stopPropagation(); prev(); });
+    function bindNav(btn, fn) {
+        if (!btn) return;
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            fn();
         });
-    });
-    root.querySelectorAll('[data-gallery-next], [data-gallery-modal-next]').forEach(function (btn) {
-        ['click', 'pointerup', 'touchend'].forEach(function (evtName) {
-            btn.addEventListener(evtName, function (e) { e.preventDefault(); e.stopPropagation(); next(); });
-        });
-    });
+    }
+    root.querySelectorAll('[data-gallery-prev], [data-gallery-modal-prev]').forEach(function (btn) { bindNav(btn, prev); });
+    root.querySelectorAll('[data-gallery-next], [data-gallery-modal-next]').forEach(function (btn) { bindNav(btn, next); });
 
     thumbs.forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -306,13 +305,7 @@
     });
 
     if (closeBtn) {
-        ['click', 'pointerup', 'touchend'].forEach(function (evtName) {
-            closeBtn.addEventListener(evtName, function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                closeModal();
-            });
-        });
+        bindNav(closeBtn, closeModal);
     }
 
     if (modalContent) {
@@ -326,41 +319,28 @@
             var dx = e.changedTouches[0].clientX - touchStartX;
             touchStartX = null;
             if (Math.abs(dx) < 40) return;
+            e.preventDefault();
             if (dx < 0) next(); else prev();
-        }, { passive: true });
+        }, { passive: false });
     }
 
-    // Доп. делегирование для iOS Safari: обрабатываем tap по data-кнопкам в модалке.
-    modal.addEventListener('touchend', function (e) {
-        var target = e.target;
-        if (!target) return;
-        if (target.closest('[data-gallery-close]')) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeModal();
-            return;
-        }
-        if (target.closest('[data-gallery-modal-prev]')) {
-            e.preventDefault();
-            e.stopPropagation();
-            prev();
-            return;
-        }
-        if (target.closest('[data-gallery-modal-next]')) {
-            e.preventDefault();
-            e.stopPropagation();
-            next();
-        }
-    }, { passive: false });
     modal.addEventListener('click', function (e) {
         e.stopPropagation();
-        if (!e.target.closest('.pdp-gallery-modal__content')) closeModal();
+        var t = e.target;
+        if (t.closest && (t.closest('[data-gallery-close]') || t.closest('[data-gallery-modal-prev]') || t.closest('[data-gallery-modal-next]'))) {
+            return;
+        }
+        if (t.closest && t.closest('.pdp-gallery-modal__content')) {
+            return;
+        }
+        closeModal();
     });
 
     window.addEventListener('keydown', function (e) {
-        if (e.key === 'ArrowRight') next();
-        if (e.key === 'ArrowLeft') prev();
-        if (e.key === 'Escape' && isOpen) closeModal();
+        if (!isOpen) return;
+        if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+        else if (e.key === 'Escape') { e.preventDefault(); closeModal(); }
     });
 
     window.closePdpGalleryModal = closeModal;
