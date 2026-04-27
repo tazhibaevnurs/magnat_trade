@@ -2937,17 +2937,27 @@ a.product-card__wish {
     bottom: calc(64px + env(safe-area-inset-bottom, 0px));
     top: calc(24px + env(safe-area-inset-top, 0px));
     max-height: calc(100dvh - 64px - env(safe-area-inset-bottom, 0px));
+    /* Alpine x-show задаёт display:block в inline-стиле — без flex колонка схлопывается, список не виден. */
+    display: flex !important;
+    flex-direction: column;
   }
 
   /* In mobile catalog drawer use one main scroll container,
      so all categories are reachable to the very bottom. */
   .shop-sidebar__panel--catalog .shop-sidebar__nav {
+    flex: 1 1 0;
+    min-height: 0;
     max-height: none;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
     padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0px));
   }
 
   .shop-sidebar__panel--catalog .cat-dropdown {
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: none;
     overflow: visible;
     padding-bottom: var(--spacing-lg);

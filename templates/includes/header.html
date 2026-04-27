@@ -62,12 +62,13 @@
                         class="icon-btn hide-desktop mobile-burger-btn"
                         @click="mobileSidebar = !mobileSidebar; mobileCatalog = false"
                         onclick="window.magnatToggleMobileSidebarDom && window.magnatToggleMobileSidebarDom(event)"
-                        :aria-label="mobileSidebar ? 'Закрыть меню' : 'Открыть меню'"
-                        :aria-expanded="mobileSidebar ? 'true' : 'false'">
-                    <svg data-burger-open-icon x-show="!mobileSidebar" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        aria-label="Открыть меню"
+                        aria-expanded="false">
+                    <!-- Без x-show: в @alpinejs/csp выражения в шаблоне не работают, и «гамбургер» оставался скрытым. Видимость — через magnatToggleMobileSidebarDom. -->
+                    <svg data-burger-open-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" focusable="false">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
                     </svg>
-                    <svg data-burger-close-icon x-show="mobileSidebar" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;">
+                    <svg data-burger-close-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;" aria-hidden="true" focusable="false">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>

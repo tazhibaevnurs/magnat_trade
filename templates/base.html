@@ -351,6 +351,7 @@
             drawer.classList.toggle('is-open', nextOpen);
             if (toggleBtn) {
                 toggleBtn.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+                toggleBtn.setAttribute('aria-label', nextOpen ? 'Закрыть меню' : 'Открыть меню');
                 var openIcon = toggleBtn.querySelector('[data-burger-open-icon]');
                 var closeIcon = toggleBtn.querySelector('[data-burger-close-icon]');
                 if (openIcon) openIcon.style.display = nextOpen ? 'none' : '';
@@ -412,6 +413,13 @@
                     rootData.mobileSidebar = false;
                 }
             }
+            const catalogDrawer = document.getElementById('mobile-catalog-drawer');
+            const catalogBackdrop = document.getElementById('mobile-catalog-backdrop');
+            if (catalogDrawer && catalogBackdrop) {
+                catalogDrawer.style.display = nextOpen ? 'flex' : 'none';
+                catalogBackdrop.style.display = nextOpen ? 'block' : 'none';
+                catalogDrawer.classList.toggle('is-open', nextOpen);
+            }
             return false;
         };
 
@@ -427,8 +435,9 @@
             const currentlyOpen = drawer.classList.contains('is-open') && drawer.style.display !== 'none';
             const nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !currentlyOpen;
 
-            drawer.style.display = nextOpen ? '' : 'none';
-            backdrop.style.display = nextOpen ? '' : 'none';
+            /* flex-колонка: пустой display ломал список категорий при конкурировании с Alpine x-show. */
+            drawer.style.display = nextOpen ? 'flex' : 'none';
+            backdrop.style.display = nextOpen ? 'block' : 'none';
             drawer.classList.toggle('is-open', nextOpen);
 
             const body = document.body;

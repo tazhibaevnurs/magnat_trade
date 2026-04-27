@@ -99,11 +99,22 @@
 </div>
 <script>
 (function () {
-  if (window.__catDropdownToggleBound) return;
-  window.__catDropdownToggleBound = true;
+  /* Второй include того же фрагмента (моб. drawer в base) — выход, инициализация одна. */
+  if (window.__catDropdownInit) return;
+  window.__catDropdownInit = true;
 
   var GAP_MS = 280;
   var TOUCH_DBL_MS = 320;
+
+  function subsIsOpen(subs) {
+    var d = (subs && subs.style && subs.style.display) || "";
+    if (d) return d !== "none" && d !== "";
+    try {
+      return window.getComputedStyle(subs).display !== "none";
+    } catch (e) {
+      return false;
+    }
+  }
 
   function toggleRow(row) {
     if (!row) return;
@@ -113,7 +124,7 @@
     var btn = row.querySelector("[data-cat-toggle]");
     if (!btn) return;
 
-    var isOpen = subs.style.display !== "none";
+    var isOpen = subsIsOpen(subs);
     subs.style.display = isOpen ? "none" : "block";
     btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
     var icon = btn.querySelector("svg");
@@ -199,15 +210,28 @@
     });
   }
 
-  document.addEventListener("click", function (event) {
-    var btn = event.target && event.target.closest(".cat-dropdown [data-cat-toggle]");
-    if (btn) {
+  /* В фазе capture: в моб. drawer у aside стоит @click.stop — до document в bubble клик не дойдёт. */
+  document.addEventListener(
+    "click",
+    function (event) {
+      var t = event.target;
+      if (!t || !t.closest) return;
+      var btn = t.closest(".cat-dropdown [data-cat-toggle]");
+      if (!btn) return;
       event.preventDefault();
       event.stopPropagation();
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
       toggleRow(btn.closest(".cat-dropdown__row"));
-    }
-  });
+    },
+    true
+  );
 
-  bindRowCategoryLinks();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      bindRowCategoryLinks();
+    });
+  } else {
+    bindRowCategoryLinks();
+  }
 })();
 </script>
