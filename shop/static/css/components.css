@@ -2507,6 +2507,10 @@ a.product-card__wish {
   padding: var(--spacing-md);
 }
 
+.pdp-gallery-modal[hidden] {
+  display: none !important;
+}
+
 .pdp-gallery-modal__close {
   position: absolute;
   right: var(--spacing-md);
