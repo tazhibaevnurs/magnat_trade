@@ -5,9 +5,7 @@
 {% block content %}
 {{ pdp_gallery_urls|json_script:"pdp-gallery-json" }}
 <div class="container page-block pdp-page"
-     x-data="galleryModal()"
-     x-init="init()"
-     @keydown.window="onKey($event)">
+     data-pdp-gallery-root>
     {% include "includes/breadcrumbs.html" %}
 
     <div class="product-detail pdp-card-wrap">
@@ -16,24 +14,21 @@
                  role="button"
                  tabindex="0"
                  aria-label="Открыть галерею товара"
-                 @click="openAt(idx)"
-                 @keydown.enter.prevent="openAt(idx)">
+                 data-gallery-main-wrap>
                 <button type="button"
-                        x-show="imgs.length > 1"
                         class="product-gallery__nav product-gallery__nav--prev"
-                        @click.stop="prev()"
+                        data-gallery-prev
                         aria-label="Предыдущее фото">
                     <svg width="22" height="22" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
                 </button>
                 <img src="{{ product.image_url }}"
-                     :src="currentImage"
+                     data-gallery-main-img
                      alt="{{ product.name }}"
                      width="600"
                      height="600">
                 <button type="button"
-                        x-show="imgs.length > 1"
                         class="product-gallery__nav product-gallery__nav--next"
-                        @click.stop="next()"
+                        data-gallery-next
                         aria-label="Следующее фото">
                     <svg width="22" height="22" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
                 </button>
@@ -43,9 +38,8 @@
                 {% for url in pdp_gallery_urls %}
                 <button type="button"
                         class="product-gallery__thumb"
-                        :class="{ 'active': idx === {{ forloop.counter0 }} }"
+                        data-gallery-thumb
                         data-gallery-index="{{ forloop.counter0 }}"
-                        @click="setCurrent({{ forloop.counter0 }})"
                         aria-label="Фото {{ forloop.counter }}">
                     <img src="{{ url }}" alt="Миниатюра товара {{ product.name }} {{ forloop.counter }}" loading="lazy" width="72" height="72">
                 </button>
@@ -108,35 +102,31 @@
         </div>
     </div>
 
-    <div x-show="open"
-         x-cloak
-         x-transition.opacity
+    <div hidden
          class="pdp-gallery-modal"
-         @click.self="close()"
+         data-gallery-modal
          role="dialog"
          aria-modal="true"
          aria-label="Просмотр фото">
         <button type="button"
                 class="pdp-gallery-modal__close"
-                @click="close()"
+                data-gallery-close
                 aria-label="Закрыть">
             <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
         </button>
         <button type="button"
-                x-show="open && imgs.length > 1"
                 class="pdp-gallery-modal__nav pdp-gallery-modal__nav--prev"
-                @click.stop="prev()"
+                data-gallery-modal-prev
                 aria-label="Предыдущее фото">
             <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
         </button>
-        <div class="pdp-gallery-modal__content" @click.stop>
-            <img src="{{ product.image_url }}" :src="currentImage" :alt="'Товар {{ product.name|escapejs }}'" width="1200" height="1200">
-            <p x-show="imgs.length > 1" class="pdp-gallery-modal__counter" x-text="(idx + 1) + ' / ' + imgs.length"></p>
+        <div class="pdp-gallery-modal__content">
+            <img src="{{ product.image_url }}" data-gallery-modal-img alt="Товар {{ product.name }}" width="1200" height="1200">
+            <p class="pdp-gallery-modal__counter" data-gallery-counter></p>
         </div>
         <button type="button"
-                x-show="open && imgs.length > 1"
                 class="pdp-gallery-modal__nav pdp-gallery-modal__nav--next"
-                @click.stop="next()"
+                data-gallery-modal-next
                 aria-label="Следующее фото">
             <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
         </button>
@@ -160,55 +150,122 @@
 
 {% block extra_js %}
 <script>
-function galleryModal() {
-    return {
-        defaultImg: "{{ product.image_url|escapejs }}",
-        imgs: [],
-        idx: 0,
-        open: false,
-        init() {
-            const el = document.getElementById('pdp-gallery-json');
-            try {
-                this.imgs = el ? JSON.parse(el.textContent) : [];
-            } catch (e) {
-                this.imgs = [];
+(function () {
+    var root = document.querySelector('[data-pdp-gallery-root]');
+    if (!root) return;
+
+    var dataEl = document.getElementById('pdp-gallery-json');
+    var mainWrap = root.querySelector('[data-gallery-main-wrap]');
+    var mainImg = root.querySelector('[data-gallery-main-img]');
+    var modal = root.querySelector('[data-gallery-modal]');
+    var modalImg = root.querySelector('[data-gallery-modal-img]');
+    var counter = root.querySelector('[data-gallery-counter]');
+    var thumbs = root.querySelectorAll('[data-gallery-thumb]');
+    var prevBtns = root.querySelectorAll('[data-gallery-prev], [data-gallery-modal-prev]');
+    var nextBtns = root.querySelectorAll('[data-gallery-next], [data-gallery-modal-next]');
+    var closeBtn = root.querySelector('[data-gallery-close]');
+
+    if (!mainImg || !modal || !modalImg) return;
+
+    var fallback = mainImg.getAttribute('src') || '';
+    var imgs = [];
+    try { imgs = dataEl ? JSON.parse(dataEl.textContent || '[]') : []; } catch (e) { imgs = []; }
+    if (!imgs.length && fallback) imgs = [fallback];
+    if (!imgs.length) return;
+
+    var idx = 0;
+    var isOpen = false;
+
+    function render() {
+        var current = imgs[idx] || fallback;
+        mainImg.src = current;
+        modalImg.src = current;
+
+        if (counter) {
+            if (imgs.length > 1) {
+                counter.textContent = (idx + 1) + ' / ' + imgs.length;
+                counter.hidden = false;
+            } else {
+                counter.hidden = true;
             }
-            if (!this.imgs.length) {
-                this.imgs = [this.defaultImg];
-            }
-        },
-        openAt(i) {
-            if (!this.imgs.length) return;
-            this.setCurrent(i);
-            this.open = true;
-            document.body.style.overflow = 'hidden';
-        },
-        setCurrent(i) {
-            if (!this.imgs.length) return;
-            this.idx = Math.min(Math.max(0, i), this.imgs.length - 1);
-        },
-        get currentImage() {
-            return this.imgs[this.idx] || this.defaultImg;
-        },
-        close() {
-            this.open = false;
-            document.body.style.overflow = '';
-        },
-        next() {
-            if (this.imgs.length < 2) return;
-            this.idx = (this.idx + 1) % this.imgs.length;
-        },
-        prev() {
-            if (this.imgs.length < 2) return;
-            this.idx = (this.idx - 1 + this.imgs.length) % this.imgs.length;
-        },
-        onKey(e) {
-            if (!this.open) return;
-            if (e.key === 'Escape') this.close();
-            if (e.key === 'ArrowRight') this.next();
-            if (e.key === 'ArrowLeft') this.prev();
-        },
-    };
-}
+        }
+
+        thumbs.forEach(function (btn) {
+            var i = Number(btn.getAttribute('data-gallery-index') || 0);
+            btn.classList.toggle('active', i === idx);
+        });
+
+        prevBtns.forEach(function (btn) { btn.hidden = imgs.length <= 1; });
+        nextBtns.forEach(function (btn) { btn.hidden = imgs.length <= 1; });
+    }
+
+    function setCurrent(i) {
+        if (!imgs.length) return;
+        idx = Math.max(0, Math.min(i, imgs.length - 1));
+        render();
+    }
+
+    function next() {
+        if (imgs.length <= 1) return;
+        idx = (idx + 1) % imgs.length;
+        render();
+    }
+
+    function prev() {
+        if (imgs.length <= 1) return;
+        idx = (idx - 1 + imgs.length) % imgs.length;
+        render();
+    }
+
+    function openModal() {
+        isOpen = true;
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        isOpen = false;
+        modal.hidden = true;
+        document.body.style.overflow = '';
+    }
+
+    mainWrap.addEventListener('click', function (e) {
+        if (e.target.closest('[data-gallery-prev]') || e.target.closest('[data-gallery-next]')) return;
+        openModal();
+    });
+
+    mainWrap.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            openModal();
+        }
+    });
+
+    root.querySelectorAll('[data-gallery-prev], [data-gallery-modal-prev]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) { e.stopPropagation(); prev(); });
+    });
+    root.querySelectorAll('[data-gallery-next], [data-gallery-modal-next]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) { e.stopPropagation(); next(); });
+    });
+
+    thumbs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            setCurrent(Number(btn.getAttribute('data-gallery-index') || 0));
+        });
+    });
+
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+
+    window.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight') next();
+        if (e.key === 'ArrowLeft') prev();
+        if (e.key === 'Escape' && isOpen) closeModal();
+    });
+
+    render();
+})();
 </script>
 {% endblock %}
