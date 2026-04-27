@@ -7,6 +7,10 @@ from io import BytesIO
 from pathlib import Path
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
+import mimetypes
+from django.core.files.storage import default_storage
+from django.http import FileResponse
+from django.views.decorators.http import require_GET
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, update_session_auth_hash
@@ -79,7 +83,20 @@ ALLOWED_PROFILE_PICTURE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 POW_TTL_SECONDS = 10 * 60
 MAX_SPECIAL_INSTRUCTIONS_LEN = 500
 
-
+@require_GET
+def public_media_proxy(request, file_path: str):
+    normalized = (file_path or "").lstrip("/").replace("\\", "/")
+    if not normalized or ".." in normalized:
+        raise Http404
+    if not (normalized.startswith("products/") or normalized.startswith("profiles/")):
+        raise Http404
+    if not default_storage.exists(normalized):
+        raise Http404
+    content_type, _ = mimetypes.guess_type(normalized)
+    return FileResponse(
+        default_storage.open(normalized, "rb"),
+        content_type=content_type or "application/octet-stream",
+    )
 def robots_txt(request):
     lines = [
         "User-agent: *",
@@ -2475,7 +2492,7 @@ def admin_media_proxy(request, file_path: str):
 def public_media_proxy(request, file_path: str):
     # Production-safe media serving for public product/profile images when /media
     # is not terminated by a reverse proxy.
-    normalized = (file_path or "").lstrip("/").replace("\\", "/")
+    normalized = (file_path or "").strip("/").replace("\\", "/")
     if not normalized or ".." in normalized:
         raise Http404
     if not (normalized.startswith("products/") or normalized.startswith("profiles/")):
