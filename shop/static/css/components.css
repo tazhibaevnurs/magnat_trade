@@ -2451,6 +2451,18 @@ a.product-card__wish {
   font-weight: 600;
 }
 
+.cart-special-instructions {
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  text-align: left;
+  font-weight: 400;
+  resize: none;
+}
+
 .cart-summary {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
