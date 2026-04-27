@@ -102,6 +102,9 @@
   if (window.__catDropdownToggleBound) return;
   window.__catDropdownToggleBound = true;
 
+  var GAP_MS = 280;
+  var TOUCH_DBL_MS = 320;
+
   function toggleRow(row) {
     if (!row) return;
     var group = row && row.parentElement;
@@ -117,27 +120,94 @@
     if (icon) icon.style.transform = isOpen ? "rotate(0deg)" : "rotate(90deg)";
   }
 
+  function bindRowCategoryLinks() {
+    document.querySelectorAll(".cat-dropdown .cat-dropdown__row > .cat-dropdown__link").forEach(function (link) {
+      if (link.getAttribute("data-cat-smartlink") === "1") return;
+      var row = link.closest(".cat-dropdown__row");
+      var toggle = row && row.querySelector("[data-cat-toggle]");
+      if (!toggle) return;
+      link.setAttribute("data-cat-smartlink", "1");
+
+      var clickTimer = null;
+      var lastTouchTime = 0;
+      var href = function () {
+        return link.getAttribute("href") || link.href;
+      };
+      var go = function (e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+        }
+        window.location.assign(href());
+      };
+
+      function scheduleExpand() {
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+        }
+        clickTimer = setTimeout(function () {
+          clickTimer = null;
+          toggleRow(row);
+        }, GAP_MS);
+      }
+
+      link.addEventListener("click", function (e) {
+        if (link.getAttribute("data-cat-skipnextclick") === "1") {
+          link.removeAttribute("data-cat-skipnextclick");
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        lastTouchTime = 0;
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+          go(e);
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        scheduleExpand();
+      });
+
+      /* Двойной tap на touch: два touchend близко по времени — сразу в каталог (без ожидания click). */
+      link.addEventListener(
+        "touchend",
+        function (e) {
+          if (!e.changedTouches || e.changedTouches.length !== 1) return;
+          var now = Date.now();
+          if (now - lastTouchTime < TOUCH_DBL_MS && now - lastTouchTime > 0) {
+            lastTouchTime = 0;
+            e.preventDefault();
+            link.setAttribute("data-cat-skipnextclick", "1");
+            if (clickTimer) {
+              clearTimeout(clickTimer);
+              clickTimer = null;
+            }
+            go();
+            return;
+          }
+          lastTouchTime = now;
+        },
+        { passive: false }
+      );
+    });
+  }
+
   document.addEventListener("click", function (event) {
     var btn = event.target && event.target.closest(".cat-dropdown [data-cat-toggle]");
     if (btn) {
       event.preventDefault();
       event.stopPropagation();
       toggleRow(btn.closest(".cat-dropdown__row"));
-      return;
     }
-
-    var link = event.target && event.target.closest(".cat-dropdown .cat-dropdown__row > .cat-dropdown__link");
-    if (!link) return;
-    var row = link.closest(".cat-dropdown__row");
-    var group = row && row.parentElement;
-    var subs = group && group.querySelector(".cat-dropdown__subs");
-    if (!subs) return;
-
-    // Для разделов с подкатегориями первый клик раскрывает список,
-    // чтобы на мобильной версии можно было нажимать и на название, и на стрелку.
-    event.preventDefault();
-    event.stopPropagation();
-    toggleRow(row);
   });
+
+  bindRowCategoryLinks();
 })();
 </script>
