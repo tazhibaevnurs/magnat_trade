@@ -99,18 +99,26 @@
 </div>
 <script>
 (function () {
-  document.querySelectorAll(".cat-dropdown [data-cat-toggle]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var row = btn.closest(".cat-dropdown__row");
-      var group = row && row.parentElement;
-      var subs = group && group.querySelector(".cat-dropdown__subs");
-      if (!subs) return;
-      var isOpen = subs.style.display !== "none";
-      subs.style.display = isOpen ? "none" : "block";
-      btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
-      var icon = btn.querySelector("svg");
-      if (icon) icon.style.transform = isOpen ? "rotate(0deg)" : "rotate(90deg)";
-    });
+  if (window.__catDropdownToggleBound) return;
+  window.__catDropdownToggleBound = true;
+
+  document.addEventListener("click", function (event) {
+    var btn = event.target && event.target.closest(".cat-dropdown [data-cat-toggle]");
+    if (!btn) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    var row = btn.closest(".cat-dropdown__row");
+    var group = row && row.parentElement;
+    var subs = group && group.querySelector(".cat-dropdown__subs");
+    if (!subs) return;
+
+    var isOpen = subs.style.display !== "none";
+    subs.style.display = isOpen ? "none" : "block";
+    btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    var icon = btn.querySelector("svg");
+    if (icon) icon.style.transform = isOpen ? "rotate(0deg)" : "rotate(90deg)";
   });
 })();
 </script>

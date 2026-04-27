@@ -1,4 +1,4 @@
-{% load nav_extras %}
+{% load nav_extras static %}
 <header class="header">
     {% csrf_token %}
     <div class="top-bar">
@@ -7,7 +7,7 @@
                 <span>Доставка по городу · Пн–Вс 8:00–23:00</span>
             </div>
             <div class="top-bar__right">
-                <a href="tel:+996500600600" class="top-bar__link">+996 500 600 600</a>
+                <a href="tel:+996501676667" class="top-bar__link">+996 501 676 667</a>
             </div>
         </div>
     </div>
@@ -15,8 +15,7 @@
     <div class="main-header main-header--home">
         <div class="main-header__row main-header__row--home">
             <a href="{% url 'landing' %}" class="main-header__brand">
-                <span class="main-header__logo-mark" aria-hidden="true">МТ</span>
-                <span class="main-header__logo-text">Magnat Trade</span>
+                <img src="{% static 'shop/images/logo-light.svg' %}" alt="Береке Канц" class="main-header__logo-image" width="147" height="58">
             </a>
 
             <div class="main-header__search">
@@ -141,9 +140,14 @@
                 </a>
                 <a href="{% url 'contact-us' %}" class="sub-nav__link {% nav_active request '/contact-us' %}">Доставка</a>
                 <a href="{% url 'about-us' %}" class="sub-nav__link {% nav_active request '/about-us' %}">О нас</a>
-                <div class="sub-nav__more" x-data="{ open: false }">
-                    <button type="button" class="sub-nav__dropdown-btn" @click="open = !open" @click.outside="open = false">Ещё ▾</button>
-                    <div x-show="open" x-transition class="sub-nav__dropdown" style="display:none;right:0;left:auto;">
+                <div class="sub-nav__more">
+                    <button type="button"
+                            class="sub-nav__dropdown-btn"
+                            aria-expanded="false"
+                            onclick="const root=this.closest('.sub-nav__more'); const menu=root && root.querySelector('.sub-nav__dropdown'); if(!menu) return; const next=menu.style.display==='none' || !menu.style.display; menu.style.display=next?'block':'none'; this.setAttribute('aria-expanded', next ? 'true' : 'false');">
+                        Ещё ▾
+                    </button>
+                    <div class="sub-nav__dropdown" style="display:none;right:0;left:auto;">
                         <a href="{% url 'cart' %}" class="sub-nav__link" style="display:block;">Корзина</a>
                         <a href="{% url 'orders' %}" class="sub-nav__link" style="display:block;">Заказы</a>
                         <a href="{% url 'feedback' %}" class="sub-nav__link" style="display:block;">Обратная связь</a>

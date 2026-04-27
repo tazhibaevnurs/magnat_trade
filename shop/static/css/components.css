@@ -119,6 +119,13 @@
   letter-spacing: -0.02em;
 }
 
+.main-header__logo-image {
+  display: block;
+  width: auto;
+  height: 42px;
+  max-width: min(100%, 147px);
+}
+
 @media (max-width: 639px) {
   .main-header__logo-text {
     font-size: var(--text-base);
@@ -127,6 +134,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .main-header__logo-image {
+    height: 34px;
   }
 }
 

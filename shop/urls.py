@@ -5,6 +5,7 @@ from django.contrib.auth.views import LogoutView
 
 
 urlpatterns = [
+    path("admin/media/<path:file_path>/", views.admin_media_proxy, name="admin_media_proxy"),
     path("robots.txt", views.robots_txt, name="robots_txt"),
     path("sitemap.xml", views.sitemap_xml, name="sitemap_xml"),
     path('', views.landing, name='landing'),

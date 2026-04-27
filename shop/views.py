@@ -1,4 +1,5 @@
 import json
+import mimetypes
 import secrets
 import uuid
 from datetime import datetime
@@ -10,13 +11,15 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth import authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import SuspiciousOperation, ValidationError
+from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
 from django.core.validators import validate_email
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Value, When
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -2273,7 +2276,7 @@ def _draw_order_pdf(order: CatalogOrder) -> bytes:
     c.roundRect(margin, y - 40, content_width, 42, 10, fill=1, stroke=0)
     c.setFillColor(colors.white)
     c.setFont(font_name, 16)
-    c.drawString(margin + 14, y - 24, "Magnat Trade")
+    c.drawString(margin + 14, y - 24, "Береке Канц")
     c.setFont(font_name, 11)
     c.drawRightString(margin + content_width - 14, y - 22, "Подтверждение заказа")
     y -= 58
@@ -2411,7 +2414,7 @@ def _draw_order_pdf(order: CatalogOrder) -> bytes:
 
     c.setFillColor(text_muted)
     c.setFont(font_name, 9)
-    c.drawString(margin, margin - 8, "Спасибо, что выбрали Magnat Trade")
+    c.drawString(margin, margin - 8, "Спасибо, что выбрали Береке Канц")
     c.showPage()
     c.save()
     return buf.getvalue()
@@ -2451,3 +2454,18 @@ def order_print(request, order_id):
         user=request.user,
     )
     return render(request, "shop/order_print.html", {"order": order})
+
+
+@staff_member_required
+def admin_media_proxy(request, file_path: str):
+    # Serve media files for admin previews in production where /media is not publicly routed.
+    normalized = (file_path or "").lstrip("/").replace("\\", "/")
+    if not normalized or ".." in normalized:
+        raise Http404
+    if not default_storage.exists(normalized):
+        raise Http404
+    content_type, _ = mimetypes.guess_type(normalized)
+    return FileResponse(
+        default_storage.open(normalized, "rb"),
+        content_type=content_type or "application/octet-stream",
+    )

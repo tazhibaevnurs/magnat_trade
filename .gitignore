@@ -53,3 +53,6 @@ celerybeat-schedule.*
 
 # Cursor / локальная конфигурация MCP (ключи не в репозитории)
 .cursor/
+
+# Generated runbook pdf
+docs/DEPLOY_RUNBOOK.pdf

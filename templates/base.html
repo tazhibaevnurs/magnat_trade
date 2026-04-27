@@ -5,19 +5,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Magnat Trade{% endblock %} | Продуктовый магазин</title>
-    <meta name="description" content="{% block meta_description %}Magnat Trade — интернет-магазин товаров для офиса и школы: каталог, корзина, доставка и удобный личный кабинет.{% endblock %}">
+    <title>{% block title %}Береке Канц{% endblock %} | Канцелярский интернет-магазин</title>
+    <meta name="description" content="{% block meta_description %}Береке Канц — интернет-магазин товаров для офиса и школы: каталог, корзина, доставка и удобный личный кабинет.{% endblock %}">
     <meta name="robots" content="{% block meta_robots %}index,follow{% endblock %}">
     <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
 
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-    <meta property="og:site_name" content="Magnat Trade">
-    <meta property="og:title" content="{% block og_title %}{% block og_title_inner %}Magnat Trade | Продуктовый магазин{% endblock %}{% endblock %}">
+    <meta property="og:site_name" content="Береке Канц">
+    <meta property="og:title" content="{% block og_title %}{% block og_title_inner %}Береке Канц | Канцелярский интернет-магазин{% endblock %}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Надежный онлайн-каталог товаров для офиса и учебы с удобным заказом.{% endblock %}">
     <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{% block twitter_title %}Magnat Trade | Продуктовый магазин{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}Береке Канц | Канцелярский интернет-магазин{% endblock %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'shop/images/favicon.svg' %}">
+    <link rel="shortcut icon" href="{% static 'shop/images/favicon.svg' %}">
     <meta name="twitter:description" content="{% block twitter_description %}Товары для офиса и школы: каталог, избранное, быстрая корзина и заказы.{% endblock %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -65,7 +67,7 @@
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "Magnat Trade",
+      "name": "Береке Канц",
       "url": "{{ request.scheme }}://{{ request.get_host }}",
       "sameAs": []
     }

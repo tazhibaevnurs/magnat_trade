@@ -1,4 +1,4 @@
-# Magnat Trade | Premium Stationery E-commerce
+# Береке Канц | Premium Stationery E-commerce
 
 A full-stack Django-based e-commerce platform for premium stationery products, featuring comprehensive inventory management, shopping cart functionality, user profiles, and an enhanced admin dashboard with analytics.
 

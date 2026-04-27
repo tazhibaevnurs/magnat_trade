@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib import messages
 from django.db.models import Count, DecimalField, F, Q, Sum
 from django.shortcuts import render
-from django.urls import path
+from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
 
 from .models import (
@@ -23,8 +23,8 @@ from .models import (
     WishlistItem,
 )
 
-admin.site.site_header = "Magnat Trade — Админка"
-admin.site.site_title = "Magnat Trade"
+admin.site.site_header = "Береке Канц — Админка"
+admin.site.site_title = "Береке Канц"
 admin.site.index_title = "Управление сайтом"
 
 
@@ -127,8 +127,9 @@ class ProductAdmin(admin.ModelAdmin):
 
     @admin.display(description="Превью")
     def image_preview(self, obj):
-        url = obj.image_url
-        if url and not url.endswith("placeholder-product.svg"):
+        first = obj.images.order_by("sort_order", "id").first()
+        if first and first.image:
+            url = reverse("admin_media_proxy", kwargs={"file_path": first.image.name})
             return format_html(
                 '<img src="{}" width="100" height="100" style="object-fit: cover; border-radius: 4px;" />',
                 url,

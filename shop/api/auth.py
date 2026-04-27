@@ -114,7 +114,7 @@ def _make_email_verify_token(user_id: int) -> str:
 def _send_verification_email(request, user):
     token = _make_email_verify_token(user.pk)
     verify_url = request.build_absolute_uri(f"{reverse('api-verify-email')}?token={token}")
-    subject = "Подтверждение email для Magnat Trade"
+    subject = "Подтверждение email для Береке Канц"
     body = (
         "Здравствуйте!\n\n"
         "Подтвердите ваш email, чтобы активировать аккаунт:\n"
@@ -128,7 +128,7 @@ def _send_password_reset_email(request, user):
     token = PasswordResetTokenGenerator().make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     reset_url = request.build_absolute_uri(f"{reverse('api-password-reset-confirm')}?uid={uid}&token={token}")
-    subject = "Сброс пароля для Magnat Trade"
+    subject = "Сброс пароля для Береке Канц"
     body = (
         "Здравствуйте!\n\n"
         "Чтобы сбросить пароль, перейдите по ссылке:\n"
