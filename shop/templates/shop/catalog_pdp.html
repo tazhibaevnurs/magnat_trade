@@ -111,6 +111,7 @@
         <button type="button"
                 class="pdp-gallery-modal__close"
                 data-gallery-close
+                onclick="if (window.closePdpGalleryModal) { window.closePdpGalleryModal(); } return false;"
                 aria-label="Закрыть">
             <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
         </button>
@@ -260,15 +261,17 @@
     });
 
     if (closeBtn) {
-        closeBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeModal();
+        ['click', 'pointerup', 'touchend'].forEach(function (evtName) {
+            closeBtn.addEventListener(evtName, function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeModal();
+            });
         });
     }
     modal.addEventListener('click', function (e) {
         e.stopPropagation();
-        if (e.target === modal) closeModal();
+        if (!e.target.closest('.pdp-gallery-modal__content')) closeModal();
     });
 
     window.addEventListener('keydown', function (e) {
@@ -277,6 +280,7 @@
         if (e.key === 'Escape' && isOpen) closeModal();
     });
 
+    window.closePdpGalleryModal = closeModal;
     render();
 })();
 </script>

@@ -102,23 +102,42 @@
   if (window.__catDropdownToggleBound) return;
   window.__catDropdownToggleBound = true;
 
-  document.addEventListener("click", function (event) {
-    var btn = event.target && event.target.closest(".cat-dropdown [data-cat-toggle]");
-    if (!btn) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    var row = btn.closest(".cat-dropdown__row");
+  function toggleRow(row) {
+    if (!row) return;
     var group = row && row.parentElement;
     var subs = group && group.querySelector(".cat-dropdown__subs");
     if (!subs) return;
+    var btn = row.querySelector("[data-cat-toggle]");
+    if (!btn) return;
 
     var isOpen = subs.style.display !== "none";
     subs.style.display = isOpen ? "none" : "block";
     btn.setAttribute("aria-expanded", isOpen ? "false" : "true");
     var icon = btn.querySelector("svg");
     if (icon) icon.style.transform = isOpen ? "rotate(0deg)" : "rotate(90deg)";
+  }
+
+  document.addEventListener("click", function (event) {
+    var btn = event.target && event.target.closest(".cat-dropdown [data-cat-toggle]");
+    if (btn) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleRow(btn.closest(".cat-dropdown__row"));
+      return;
+    }
+
+    var link = event.target && event.target.closest(".cat-dropdown .cat-dropdown__row > .cat-dropdown__link");
+    if (!link) return;
+    var row = link.closest(".cat-dropdown__row");
+    var group = row && row.parentElement;
+    var subs = group && group.querySelector(".cat-dropdown__subs");
+    if (!subs) return;
+
+    // Для разделов с подкатегориями первый клик раскрывает список,
+    // чтобы на мобильной версии можно было нажимать и на название, и на стрелку.
+    event.preventDefault();
+    event.stopPropagation();
+    toggleRow(row);
   });
 })();
 </script>
