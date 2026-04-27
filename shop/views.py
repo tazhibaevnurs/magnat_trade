@@ -671,10 +671,15 @@ def pdp(request, slug):
         {"name": product.name, "url": None},
     ]
 
+    gallery = [img.image.url for img in product.images.order_by("sort_order", "id") if img.image]
+    if not gallery:
+        gallery = [product.image_url]
+
     context = {
         "product": product,
         "related_products": related_products,
         "breadcrumb_items": breadcrumb_items,
+        "pdp_gallery_urls": gallery,
     }
 
     return render(request, "shop/pdp.html", context)

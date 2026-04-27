@@ -4,14 +4,50 @@
 {% block title %}{{ product.name }}{% endblock %}
 
 {% block content %}
-<div class="container page-block pdp-page">
+{{ pdp_gallery_urls|json_script:"pdp-gallery-json" }}
+<div class="container page-block pdp-page"
+     x-data="galleryModal()"
+     x-init="init()"
+     @keydown.window="onKey($event)">
     {% include "includes/breadcrumbs.html" %}
 
     <div class="product-detail pdp-card-wrap">
         <div class="product-gallery">
-            <div class="product-gallery__main">
-                <img src="{{ product.image_url }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" decoding="async" />
+            <div class="product-gallery__main cursor-zoom"
+                 role="button"
+                 tabindex="0"
+                 aria-label="Открыть галерею товара"
+                 @click="openAt(idx)"
+                 @keydown.enter.prevent="openAt(idx)">
+                <button type="button"
+                        x-show="imgs.length > 1"
+                        class="product-gallery__nav product-gallery__nav--prev"
+                        @click.stop="prev()"
+                        aria-label="Предыдущее фото">
+                    <svg width="22" height="22" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+                </button>
+                <img :src="currentImage" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" decoding="async" />
+                <button type="button"
+                        x-show="imgs.length > 1"
+                        class="product-gallery__nav product-gallery__nav--next"
+                        @click.stop="next()"
+                        aria-label="Следующее фото">
+                    <svg width="22" height="22" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                </button>
             </div>
+            {% if pdp_gallery_urls|length > 1 %}
+            <div class="product-gallery__thumbs">
+                {% for url in pdp_gallery_urls %}
+                <button type="button"
+                        class="product-gallery__thumb"
+                        :class="{ 'active': idx === {{ forloop.counter0 }} }"
+                        @click="setCurrent({{ forloop.counter0 }})"
+                        aria-label="Фото {{ forloop.counter }}">
+                    <img src="{{ url }}" alt="Миниатюра товара {{ product.name }} {{ forloop.counter }}" loading="lazy" width="72" height="72">
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
 
         <div>
@@ -107,6 +143,40 @@
         </div>
     </div>
 
+    <div x-show="open"
+         x-cloak
+         x-transition.opacity
+         class="pdp-gallery-modal"
+         @click.self="close()"
+         role="dialog"
+         aria-modal="true"
+         aria-label="Просмотр фото">
+        <button type="button"
+                class="pdp-gallery-modal__close"
+                @click="close()"
+                aria-label="Закрыть">
+            <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+        <button type="button"
+                x-show="open && imgs.length > 1"
+                class="pdp-gallery-modal__nav pdp-gallery-modal__nav--prev"
+                @click.stop="prev()"
+                aria-label="Предыдущее фото">
+            <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+        </button>
+        <div class="pdp-gallery-modal__content" @click.stop>
+            <img :src="currentImage" :alt="'Товар {{ product.name|escapejs }}'" width="1200" height="1200">
+            <p x-show="imgs.length > 1" class="pdp-gallery-modal__counter" x-text="(idx + 1) + ' / ' + imgs.length"></p>
+        </div>
+        <button type="button"
+                x-show="open && imgs.length > 1"
+                class="pdp-gallery-modal__nav pdp-gallery-modal__nav--next"
+                @click.stop="next()"
+                aria-label="Следующее фото">
+            <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+        </button>
+    </div>
+
     {% if related_products %}
     <section class="section" style="padding-top:var(--spacing-3xl);">
         <div class="section-header">
@@ -121,4 +191,59 @@
     </section>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function galleryModal() {
+    return {
+        imgs: [],
+        idx: 0,
+        open: false,
+        init() {
+            const el = document.getElementById('pdp-gallery-json');
+            try {
+                this.imgs = el ? JSON.parse(el.textContent) : [];
+            } catch (e) {
+                this.imgs = [];
+            }
+            if (!this.imgs.length) {
+                const main = document.querySelector('.product-gallery__main img');
+                if (main && main.src) this.imgs = [main.src];
+            }
+        },
+        setCurrent(i) {
+            if (!this.imgs.length) return;
+            this.idx = Math.min(Math.max(0, i), this.imgs.length - 1);
+        },
+        openAt(i) {
+            if (!this.imgs.length) return;
+            this.setCurrent(i);
+            this.open = true;
+            document.body.style.overflow = 'hidden';
+        },
+        close() {
+            this.open = false;
+            document.body.style.overflow = '';
+        },
+        next() {
+            if (this.imgs.length < 2) return;
+            this.idx = (this.idx + 1) % this.imgs.length;
+        },
+        prev() {
+            if (this.imgs.length < 2) return;
+            this.idx = (this.idx - 1 + this.imgs.length) % this.imgs.length;
+        },
+        onKey(e) {
+            if (!this.open) return;
+            if (e.key === 'Escape') this.close();
+            if (e.key === 'ArrowRight') this.next();
+            if (e.key === 'ArrowLeft') this.prev();
+        },
+        get currentImage() {
+            return this.imgs[this.idx] || '';
+        },
+    };
+}
+</script>
 {% endblock %}

@@ -1739,6 +1739,7 @@ a.product-card__wish {
 }
 
 .product-gallery__main {
+  position: relative;
   aspect-ratio: 1 / 1;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -1779,6 +1780,36 @@ a.product-card__wish {
 .product-gallery__thumb.active,
 .product-gallery__thumb:hover {
   border-color: var(--color-primary);
+}
+
+.product-gallery__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: rgba(23, 23, 28, 0.48);
+  color: var(--color-text-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background var(--transition-fast);
+}
+
+.product-gallery__nav:hover {
+  background: rgba(23, 23, 28, 0.7);
+}
+
+.product-gallery__nav--prev {
+  left: var(--spacing-sm);
+}
+
+.product-gallery__nav--next {
+  right: var(--spacing-sm);
 }
 
 .product-info__title {
@@ -3540,6 +3571,11 @@ a.product-card__wish {
     filter: none !important;
     mix-blend-mode: normal;
     opacity: 1;
+  }
+
+  .product-gallery__nav {
+    width: 36px;
+    height: 36px;
   }
 
   .filters-panel--desktop {
