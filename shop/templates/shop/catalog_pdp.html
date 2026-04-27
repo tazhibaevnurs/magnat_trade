@@ -165,6 +165,7 @@
     var prevBtns = root.querySelectorAll('[data-gallery-prev], [data-gallery-modal-prev]');
     var nextBtns = root.querySelectorAll('[data-gallery-next], [data-gallery-modal-next]');
     var closeBtn = root.querySelector('[data-gallery-close]');
+    var modalContent = root.querySelector('.pdp-gallery-modal__content');
 
     if (!mainImg || !modal || !modalImg) return;
 
@@ -177,6 +178,7 @@
     var idx = 0;
     var isOpen = false;
     var suppressOpenUntil = 0;
+    var touchStartX = null;
 
     function render() {
         var current = imgs[idx] || fallback;
@@ -251,10 +253,14 @@
     });
 
     root.querySelectorAll('[data-gallery-prev], [data-gallery-modal-prev]').forEach(function (btn) {
-        btn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); prev(); });
+        ['click', 'pointerup', 'touchend'].forEach(function (evtName) {
+            btn.addEventListener(evtName, function (e) { e.preventDefault(); e.stopPropagation(); prev(); });
+        });
     });
     root.querySelectorAll('[data-gallery-next], [data-gallery-modal-next]').forEach(function (btn) {
-        btn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); next(); });
+        ['click', 'pointerup', 'touchend'].forEach(function (evtName) {
+            btn.addEventListener(evtName, function (e) { e.preventDefault(); e.stopPropagation(); next(); });
+        });
     });
 
     thumbs.forEach(function (btn) {
@@ -272,6 +278,44 @@
             });
         });
     }
+
+    if (modalContent) {
+        modalContent.addEventListener('touchstart', function (e) {
+            if (!e.touches || !e.touches.length) return;
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        modalContent.addEventListener('touchend', function (e) {
+            if (touchStartX === null || !e.changedTouches || !e.changedTouches.length) return;
+            var dx = e.changedTouches[0].clientX - touchStartX;
+            touchStartX = null;
+            if (Math.abs(dx) < 40) return;
+            if (dx < 0) next(); else prev();
+        }, { passive: true });
+    }
+
+    // Доп. делегирование для iOS Safari: обрабатываем tap по data-кнопкам в модалке.
+    modal.addEventListener('touchend', function (e) {
+        var target = e.target;
+        if (!target) return;
+        if (target.closest('[data-gallery-close]')) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModal();
+            return;
+        }
+        if (target.closest('[data-gallery-modal-prev]')) {
+            e.preventDefault();
+            e.stopPropagation();
+            prev();
+            return;
+        }
+        if (target.closest('[data-gallery-modal-next]')) {
+            e.preventDefault();
+            e.stopPropagation();
+            next();
+        }
+    }, { passive: false });
     modal.addEventListener('click', function (e) {
         e.stopPropagation();
         if (!e.target.closest('.pdp-gallery-modal__content')) closeModal();

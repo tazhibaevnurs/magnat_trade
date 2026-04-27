@@ -2527,9 +2527,11 @@ a.product-card__wish {
   position: absolute;
   right: var(--spacing-md);
   top: var(--spacing-md);
-  z-index: 10;
-  width: 44px;
-  height: 44px;
+  z-index: 40;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border: none;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.12);
@@ -2539,6 +2541,8 @@ a.product-card__wish {
   align-items: center;
   justify-content: center;
   transition: background var(--transition-fast);
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .pdp-gallery-modal__close:hover {
@@ -2549,6 +2553,7 @@ a.product-card__wish {
   max-width: min(100%, 1200px);
   max-height: 90vh;
   text-align: center;
+  z-index: 20;
 }
 
 .pdp-gallery-modal__content img {
@@ -2567,9 +2572,11 @@ a.product-card__wish {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 10;
+  z-index: 40;
   width: 48px;
   height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border: none;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.12);
@@ -2579,6 +2586,8 @@ a.product-card__wish {
   align-items: center;
   justify-content: center;
   transition: background var(--transition-fast);
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .pdp-gallery-modal__nav:hover {
