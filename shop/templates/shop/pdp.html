@@ -197,6 +197,7 @@
 <script>
 function galleryModal() {
     return {
+        defaultImg: "{{ product.image_url|escapejs }}",
         imgs: [],
         idx: 0,
         open: false,
@@ -208,8 +209,7 @@ function galleryModal() {
                 this.imgs = [];
             }
             if (!this.imgs.length) {
-                const main = document.querySelector('.product-gallery__main img');
-                if (main && main.src) this.imgs = [main.src];
+                this.imgs = [this.defaultImg];
             }
         },
         setCurrent(i) {
@@ -241,7 +241,7 @@ function galleryModal() {
             if (e.key === 'ArrowLeft') this.prev();
         },
         get currentImage() {
-            return this.imgs[this.idx] || '';
+            return this.imgs[this.idx] || this.defaultImg;
         },
     };
 }
