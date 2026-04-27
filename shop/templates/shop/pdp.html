@@ -212,7 +212,7 @@
 
     var idx = 0;
     var isOpen = false;
-    var justClosedAt = 0;
+    var suppressOpenUntil = 0;
 
     function render() {
         var current = imgs[idx] || fallback;
@@ -256,6 +256,7 @@
     }
 
     function openModal() {
+        if (Date.now() < suppressOpenUntil) return;
         if (isOpen) return;
         isOpen = true;
         modal.hidden = false;
@@ -265,13 +266,15 @@
     function closeModal() {
         if (!isOpen) return;
         isOpen = false;
-        justClosedAt = Date.now();
+        // Мобильный браузер может отдать отложенный click (ghost click) по подложке/картинке.
+        // Блокируем повторное открытие на короткое время.
+        suppressOpenUntil = Date.now() + 1200;
         modal.hidden = true;
         document.body.style.overflow = '';
     }
 
     mainWrap.addEventListener('click', function (e) {
-        if (Date.now() - justClosedAt < 250) return;
+        if (Date.now() < suppressOpenUntil) return;
         if (e.target.closest('[data-gallery-prev]') || e.target.closest('[data-gallery-next]')) return;
         openModal();
     });
