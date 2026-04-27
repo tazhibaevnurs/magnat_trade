@@ -26,7 +26,7 @@
                         aria-label="Предыдущее фото">
                     <svg width="22" height="22" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
                 </button>
-                <img :src="currentImage" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" decoding="async" />
+                <img src="{{ product.image_url }}" :src="currentImage" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" decoding="async" />
                 <button type="button"
                         x-show="imgs.length > 1"
                         class="product-gallery__nav product-gallery__nav--next"
@@ -165,7 +165,7 @@
             <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
         </button>
         <div class="pdp-gallery-modal__content" @click.stop>
-            <img :src="currentImage" :alt="'Товар {{ product.name|escapejs }}'" width="1200" height="1200">
+            <img src="{{ product.image_url }}" :src="currentImage" :alt="'Товар {{ product.name|escapejs }}'" width="1200" height="1200">
             <p x-show="imgs.length > 1" class="pdp-gallery-modal__counter" x-text="(idx + 1) + ' / ' + imgs.length"></p>
         </div>
         <button type="button"
