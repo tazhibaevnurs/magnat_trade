@@ -27,7 +27,7 @@ from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_safe
 
 from .category_nav import (
     build_category_nav_payload,
@@ -83,7 +83,7 @@ ALLOWED_PROFILE_PICTURE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 POW_TTL_SECONDS = 10 * 60
 MAX_SPECIAL_INSTRUCTIONS_LEN = 500
 
-@require_GET
+@require_safe
 def public_media_proxy(request, file_path: str):
     normalized = (file_path or "").lstrip("/").replace("\\", "/")
     if not normalized or ".." in normalized:
