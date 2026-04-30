@@ -43,6 +43,7 @@
     <div class="cat-dropdown__list">
         {% for cat in catalog_categories_nav %}
         <div class="cat-dropdown__group">
+            <div class="cat-dropdown__expandable cat-dropdown__expandable--root">
             <div class="cat-dropdown__row">
                 <a href="{% url 'shop' %}?categories={{ cat.slug|urlencode }}"
                    class="cat-dropdown__link cat-dropdown__with-icon"
@@ -63,34 +64,20 @@
                 <button type="button"
                         class="cat-dropdown__toggle"
                         data-cat-toggle
-                        aria-expanded="{% if cat.slug in selected_category_slugs %}true{% else %}false{% endif %}"
+                        aria-expanded="{% if cat.slug in catalog_nav_expand_slugs %}true{% else %}false{% endif %}"
                         aria-label="Развернуть подкатегории">
-                    <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" style="transition:transform 0.2s;{% if cat.slug in selected_category_slugs %}transform:rotate(90deg);{% endif %}">
+                    <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" style="transition:transform 0.2s;{% if cat.slug in catalog_nav_expand_slugs %}transform:rotate(90deg);{% endif %}">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m9 5.25 6 6.75-6 6.75"/>
                     </svg>
                 </button>
                 {% endif %}
             </div>
             {% if cat.subs %}
-            <div class="cat-dropdown__subs" {% if cat.slug in selected_category_slugs %}style="display:block;"{% else %}style="display:none;"{% endif %}>
-                {% for sub in cat.subs %}
-                <a href="{% url 'shop' %}?categories={{ sub.slug|urlencode }}"
-                   class="cat-dropdown__sublink"
-                   {% if request.resolver_match and request.resolver_match.url_name == 'shop' %}
-                   hx-get="{% url 'shop_grid' %}"
-                   hx-include="#shop-filters"
-                   hx-target="#product-grid"
-                   hx-swap="outerHTML"
-                   hx-indicator="#product-grid-skeleton"
-                   hx-vals='{"categories":"{{ sub.slug|escapejs }}"}'
-                   hx-push-url="{% url 'shop' %}?categories={{ sub.slug|urlencode }}"
-                   data-shop-category-nav
-                   {% endif %}>
-                    <span>— {{ sub.name }}</span>
-                </a>
-                {% endfor %}
+            <div class="cat-dropdown__subs" {% if cat.slug in catalog_nav_expand_slugs %}style="display:block;"{% else %}style="display:none;"{% endif %}>
+                {% include "includes/category_dropdown_branch.html" with branch=cat.subs %}
             </div>
             {% endif %}
+            </div>
         </div>
         {% empty %}
         <p class="cat-dropdown__empty">Нет категорий в базе.</p>
@@ -118,8 +105,9 @@
 
   function toggleRow(row) {
     if (!row) return;
-    var group = row && row.parentElement;
-    var subs = group && group.querySelector(".cat-dropdown__subs");
+    var exp = row.closest(".cat-dropdown__expandable");
+    if (!exp) return;
+    var subs = exp.querySelector(":scope > .cat-dropdown__subs");
     if (!subs) return;
     var btn = row.querySelector("[data-cat-toggle]");
     if (!btn) return;
@@ -132,10 +120,10 @@
   }
 
   function bindRowCategoryLinks() {
-    document.querySelectorAll(".cat-dropdown .cat-dropdown__row > .cat-dropdown__link").forEach(function (link) {
-      if (link.getAttribute("data-cat-smartlink") === "1") return;
-      var row = link.closest(".cat-dropdown__row");
-      var toggle = row && row.querySelector("[data-cat-toggle]");
+    document.querySelectorAll(".cat-dropdown .cat-dropdown__expandable > .cat-dropdown__row").forEach(function (row) {
+      var link = row.querySelector("a.cat-dropdown__link, a.cat-dropdown__sublink");
+      if (!link || link.getAttribute("data-cat-smartlink") === "1") return;
+      var toggle = row.querySelector("[data-cat-toggle]");
       if (!toggle) return;
       link.setAttribute("data-cat-smartlink", "1");
 

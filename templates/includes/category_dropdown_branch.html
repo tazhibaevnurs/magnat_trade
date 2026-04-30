@@ -1,0 +1,37 @@
+{% for node in branch %}
+<div class="cat-dropdown__expandable">
+  <div class="cat-dropdown__row cat-dropdown__row--nested">
+    <a href="{% url 'shop' %}?categories={{ node.slug|urlencode }}"
+       class="cat-dropdown__sublink cat-dropdown__sublink--nested"
+       {% if request.resolver_match and request.resolver_match.url_name == 'shop' %}
+       hx-get="{% url 'shop_grid' %}"
+       hx-include="#shop-filters"
+       hx-target="#product-grid"
+       hx-swap="outerHTML"
+       hx-indicator="#product-grid-skeleton"
+       hx-vals='{"categories":"{{ node.slug|escapejs }}"}'
+       hx-push-url="{% url 'shop' %}?categories={{ node.slug|urlencode }}"
+       data-shop-category-nav
+       {% endif %}>
+      <span>— {{ node.name }}</span>
+    </a>
+    {% if node.subs %}
+    <button type="button"
+            class="cat-dropdown__toggle"
+            data-cat-toggle
+            aria-expanded="{% if node.slug in catalog_nav_expand_slugs %}true{% else %}false{% endif %}"
+            aria-label="Подразделы">
+      <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" style="transition:transform 0.2s;{% if node.slug in catalog_nav_expand_slugs %}transform:rotate(90deg);{% endif %}">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m9 5.25 6 6.75-6 6.75"/>
+      </svg>
+    </button>
+    {% endif %}
+  </div>
+  {% if node.subs %}
+  <div class="cat-dropdown__subs cat-dropdown__subs--nested"
+       {% if node.slug in catalog_nav_expand_slugs %}style="display:block;"{% else %}style="display:none;"{% endif %}>
+    {% include "includes/category_dropdown_branch.html" with branch=node.subs %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}

@@ -181,15 +181,18 @@
 
         function syncOpenFromSelected() {
           var selected = Array.isArray(self.selectedSlugs) ? self.selectedSlugs : [];
+          function subtreeHasSelected(node) {
+            if (!node || !node.slug) return false;
+            if (selected.indexOf(node.slug) !== -1) return true;
+            var subs = node.subs || [];
+            for (var i = 0; i < subs.length; i++) {
+              if (subtreeHasSelected(subs[i])) return true;
+            }
+            return false;
+          }
           var nextOpen = {};
           (self.categories || []).forEach(function (cat) {
-            var isCatSelected = selected.indexOf(cat.slug) !== -1;
-            var hasSelectedSub = (cat.subs || []).some(function (sub) {
-              return selected.indexOf(sub.slug) !== -1;
-            });
-            if (isCatSelected || hasSelectedSub) {
-              nextOpen[cat.slug] = true;
-            }
+            if (subtreeHasSelected(cat)) nextOpen[cat.slug] = true;
           });
           self.openCats = Object.assign({}, self.openCats, nextOpen);
         }

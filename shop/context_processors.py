@@ -1,4 +1,8 @@
-from .category_nav import build_category_nav_payload, get_shop_catalog_nav_roots_and_allowed_slugs
+from .category_nav import (
+    ancestor_shop_category_slugs_for_selection,
+    build_category_nav_payload,
+    get_shop_catalog_nav_roots_and_allowed_slugs,
+)
 from .models import Cart, WishlistItem
 
 
@@ -58,6 +62,8 @@ def cart_context(request):
     if hasattr(request, "GET"):
         selected_category_slugs = request.GET.getlist("categories")
 
+    catalog_nav_expand_slugs = ancestor_shop_category_slugs_for_selection(selected_category_slugs)
+
     out = wishlist_context(request)
     out.update(
         {
@@ -67,6 +73,7 @@ def cart_context(request):
             "root_categories": root_categories,
             "catalog_categories_nav": catalog_categories_nav,
             "selected_category_slugs": selected_category_slugs,
+            "catalog_nav_expand_slugs": catalog_nav_expand_slugs,
         }
     )
     return out

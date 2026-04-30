@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import logging
 import re
+from collections import defaultdict
 from typing import Any
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db.models import Q
 
 from integrations.parsers.category_product_tree import CATEGORY_TREE_ROOT_ORDER_CACHE_KEY
 
@@ -172,45 +174,92 @@ def get_shop_catalog_product_category_roots():
     return pc_roots
 
 
+def _shop_category_descendant_pks(roots: list[Category]) -> set[int]:
+    """Все shop.Category.pk в поддеревьях переданных корней (включая сами корни)."""
+    ids: set[int] = set()
+    frontier = [int(r.pk) for r in roots]
+    while frontier:
+        pk = frontier.pop()
+        if pk in ids:
+            continue
+        ids.add(pk)
+        frontier.extend(Category.objects.filter(parent_id=pk).values_list("pk", flat=True))
+    return ids
+
+
 def build_category_nav_payload(
     roots: list[Category] | None = None,
     *,
     allowed_descendant_slugs: set[str] | None = None,
 ) -> list[dict[str, Any]]:
+    """
+    Полное дерево под каждым корнем (не только прямые дочерние), как в JSON categoryProductList.
+
+    Каждый узел: ``slug``, ``name``, ``subs`` — список таких же узлов (рекурсивно).
+    """
     if roots is None:
-        roots = list(
-            Category.objects.filter(parent__isnull=True)
-            .prefetch_related("children")
-            .order_by("name")
-        )
-    out: list[dict[str, Any]] = []
-    for root in roots:
-        subs = list(root.children.all())
-        if allowed_descendant_slugs is not None:
-            subs = [s for s in subs if s.slug in allowed_descendant_slugs]
-        out.append(
-            {
-                "slug": root.slug,
-                "name": root.name,
-                "subs": [{"slug": s.slug, "name": s.name} for s in subs],
-            }
-        )
-    return out
+        roots = list(Category.objects.filter(parent__isnull=True).order_by("name"))
+
+    if not roots:
+        return []
+
+    desc_ids = _shop_category_descendant_pks(roots)
+    qs = Category.objects.filter(pk__in=desc_ids).order_by("name")
+    if allowed_descendant_slugs is not None:
+        root_pk_set = {int(r.pk) for r in roots}
+        qs = qs.filter(Q(slug__in=allowed_descendant_slugs) | Q(pk__in=root_pk_set))
+
+    cats = list(qs)
+    by_parent: dict[int | None, list[Category]] = defaultdict(list)
+    for c in cats:
+        by_parent[c.parent_id].append(c)
+
+    for lst in by_parent.values():
+        lst.sort(key=lambda x: x.name)
+
+    def walk(cat: Category) -> dict[str, Any]:
+        children = by_parent.get(cat.pk, [])
+        return {"slug": cat.slug, "name": cat.name, "subs": [walk(ch) for ch in children]}
+
+    return [walk(r) for r in roots]
 
 
 def filter_category_nav(payload: list[dict[str, Any]], q: str) -> list[dict[str, Any]]:
-    q = (q or "").strip().lower()
-    if not q:
+    qn = (q or "").strip().lower()
+    if not qn:
         return payload
-    result: list[dict[str, Any]] = []
+
+    def filt(node: dict[str, Any]) -> dict[str, Any] | None:
+        name_l = (node.get("name") or "").lower()
+        subs_in = node.get("subs") or []
+        filtered_children: list[dict[str, Any]] = []
+        for s in subs_in:
+            fs = filt(s)
+            if fs is not None:
+                filtered_children.append(fs)
+        if qn in name_l:
+            return {**node, "subs": subs_in}
+        if filtered_children:
+            return {**node, "subs": filtered_children}
+        return None
+
+    out: list[dict[str, Any]] = []
     for item in payload:
-        subs = item.get("subs") or []
-        root_match = q in (item.get("name") or "").lower()
-        matching_subs = [s for s in subs if q in (s.get("name") or "").lower()]
-        if not root_match and not matching_subs:
+        fi = filt(item)
+        if fi is not None:
+            out.append(fi)
+    return out
+
+
+def ancestor_shop_category_slugs_for_selection(selected_slugs: list[str]) -> set[str]:
+    """Цепочка slug от выбранных категорий вверх до корня — для раскрытия вложенных веток в меню."""
+    out: set[str] = set()
+    for slug in selected_slugs:
+        slug = (slug or "").strip()
+        if not slug:
             continue
-        if root_match:
-            result.append({**item, "subs": subs})
-        else:
-            result.append({**item, "subs": matching_subs})
-    return result
+        c = Category.objects.filter(slug=slug).only("slug", "parent_id").first()
+        while c:
+            out.add(c.slug)
+            c = c.parent
+    return out

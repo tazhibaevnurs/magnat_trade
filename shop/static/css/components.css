@@ -3239,6 +3239,15 @@ a.product-card__wish {
   padding-left: var(--spacing-md);
 }
 
+.shop-sidebar__subs--nested {
+  padding-left: var(--spacing-md);
+}
+
+.shop-sidebar__cat-row--nested .shop-sidebar__sublink--nested {
+  flex: 1;
+  min-width: 0;
+}
+
 .shop-sidebar__sublink {
   display: block;
   padding: var(--spacing-xs) var(--spacing-md);
@@ -3481,6 +3490,15 @@ a.product-card__wish {
 .cat-dropdown__subs {
   margin-top: var(--spacing-xs);
   padding-left: var(--spacing-lg);
+}
+
+.cat-dropdown__subs--nested {
+  padding-left: var(--spacing-md);
+}
+
+.cat-dropdown__row--nested .cat-dropdown__sublink--nested {
+  flex: 1;
+  min-width: 0;
 }
 
 .cat-dropdown__sublink {

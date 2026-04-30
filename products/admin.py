@@ -296,15 +296,32 @@ class CategoryAdmin(admin.ModelAdmin):
     def name_nav(self, obj: Category) -> str:
         req = getattr(self, "_cl_request", None)
         drilling = req.GET.get("parent__id__exact") if req else None
+        change_url = reverse("admin:products_category_change", args=[obj.pk])
+        has_children = Category.objects.filter(parent_id=obj.pk).exists()
+
         if obj.parent_id is None and not drilling:
-            url = (
+            drill_url = (
                 reverse("admin:products_category_changelist")
                 + "?parent__id__exact="
                 + quote(str(obj.pk))
             )
-            return format_html('<a href="{}">{}</a>', url, obj.name)
-        url = reverse("admin:products_category_change", args=[obj.pk])
-        return format_html('<a href="{}">{}</a>', url, obj.name)
+            return format_html('<a href="{}">{}</a>', drill_url, obj.name)
+
+        if has_children:
+            drill_url = (
+                reverse("admin:products_category_changelist")
+                + "?parent__id__exact="
+                + quote(str(obj.pk))
+            )
+            return format_html(
+                '<a href="{}">{}</a>'
+                '&nbsp;<span style="font-weight:normal;opacity:.75">· '
+                '<a href="{}">ред.</a></span>',
+                drill_url,
+                obj.name,
+                change_url,
+            )
+        return format_html('<a href="{}">{}</a>', change_url, obj.name)
 
     @admin.display(description="Товары раздела")
     def products_in_section_link(self, obj: Category) -> str:
