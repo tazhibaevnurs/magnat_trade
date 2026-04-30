@@ -101,6 +101,35 @@ class TestProductSync:
         assert p.name == "Имя 2"
         assert p.sku == "SKU-B"
 
+    def test_sync_leaves_manual_description_intact(
+        self, api_client, integration_headers, category, product_id
+    ):
+        """Ручное описание в БД не должно затираться апдейтом из 1С (поле не входит в defaults)."""
+        from products.models import Product
+
+        url = reverse("api-products-sync")
+        body = [
+            {
+                "id": str(product_id),
+                "sku": "SKU-X",
+                "name": "Товар А",
+                "category_id": str(category.id),
+                "prices": {"retail": 1.0, "wholesale": 1.0},
+                "stock": 1,
+            }
+        ]
+        api_client.post(url, body, format="json", **integration_headers)
+        manual = "Текст описания только для сайта — не из 1С."
+        Product.objects.filter(pk=product_id).update(description=manual)
+
+        body[0]["name"] = "Товар Б переименован"
+        r = api_client.post(url, body, format="json", **integration_headers)
+        assert r.status_code == 200
+
+        p = Product.objects.get(id=product_id)
+        assert p.name == "Товар Б переименован"
+        assert p.description == manual
+
 
 @pytest.mark.django_db
 class TestCustomerSync:

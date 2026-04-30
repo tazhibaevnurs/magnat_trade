@@ -163,6 +163,11 @@ class CatalogProductDisplay:
         return self._p.name
 
     @property
+    def description(self) -> str:
+        """Текст из админки каталога (products.Product.description); без свойства шаблон его не видит."""
+        return (getattr(self._p, "description", None) or "").strip()
+
+    @property
     def price(self):
         from .pricing import catalog_unit_price
 

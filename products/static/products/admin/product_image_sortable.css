@@ -1,5 +1,76 @@
 /* Drag-and-drop порядка фото в инлайне галереи (products.Product) */
 
+/* Таблица: верхнее выравнивание ячеек, без «сплющивания» колонки файла */
+/* id на внешнем .inline-group; .tabular может быть на fieldset/div внутри */
+#images-group table {
+  width: 100%;
+  table-layout: auto;
+}
+
+#images-group tbody td {
+  vertical-align: top;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+/* Колонка «исходная»: ручка + подпись записи не наезжают друг на друга */
+#images-group tbody td.original {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  min-width: 6.5rem;
+  max-width: 14rem;
+  white-space: normal;
+}
+
+#images-group tbody td.original > .js-gallery-drag-handle {
+  flex-shrink: 0;
+  margin-right: 0;
+  align-self: flex-start;
+  margin-top: 0.1rem;
+}
+
+#images-group tbody td.original > :not(.js-gallery-drag-handle) {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Колонка изображения: блоки «На данный момент» / файл — столбиком, длинные пути переносятся */
+#images-group td.field-image {
+  min-width: 260px;
+  max-width: 36rem;
+}
+
+#images-group td.field-image .file-upload {
+  display: block;
+  margin: 0.35rem 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#images-group td.field-image .file-upload:first-child {
+  margin-top: 0;
+}
+
+#images-group td.field-image input[type="file"] {
+  display: block;
+  margin-top: 0.25rem;
+  max-width: 100%;
+}
+
+#images-group td.field-sort_order {
+  white-space: nowrap;
+  width: 5rem;
+}
+
+#images-group td.delete {
+  text-align: center;
+}
+
 #images-group tbody tr.form-row.is-gallery-dragging {
   opacity: 0.65;
   background: var(--body-bg, #f8f8f8);
@@ -13,6 +84,7 @@
   min-height: 2rem;
   margin-right: 0.35rem;
   cursor: grab;
+  touch-action: none;
   color: var(--body-quiet-color, #666);
   user-select: none;
   vertical-align: middle;
@@ -27,4 +99,38 @@
 
 #images-group .js-gallery-drag-handle::before {
   content: "⠿";
+}
+
+/* Полоска превью над инлайном — перетаскивание миниатюр (SortableJS) */
+.product-gallery-admin-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.product-gallery-admin-strip-item {
+  cursor: grab;
+  border-radius: 8px;
+  border: 1px solid var(--hairline-color, #e2e8f0);
+  padding: 4px;
+  background: var(--body-bg, #fff);
+}
+
+.product-gallery-admin-strip-item:active {
+  cursor: grabbing;
+}
+
+.product-gallery-admin-strip-item img {
+  display: block;
+  max-height: 100px;
+  max-width: 120px;
+  object-fit: contain;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.product-gallery-admin-strip .sortable-ghost {
+  opacity: 0.45;
 }

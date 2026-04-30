@@ -90,10 +90,13 @@ class CategoryAdmin(admin.ModelAdmin):
 
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
-    extra = 1
+    extra = 0
 
     class Media:
-        js = ("products/admin/product_image_sortable.js",)
+        js = (
+            "products/admin/vendor/Sortable.min.js",
+            "products/admin/product_image_sortable.js",
+        )
         css = {"all": ("products/admin/product_image_sortable.css",)}
 
 

@@ -1,11 +1,11 @@
 /**
- * Перетаскивание строк инлайна галереи (ProductImage) для смены sort_order.
- * Формсет: related_name=images → id="images-group".
+ * Порядок фото галереи (products.Product): SortableJS на строках инлайна и на полоске превью.
  */
 (function () {
   "use strict";
 
   var GROUP_ID = "images-group";
+  var STRIP_ID = "product-gallery-admin-strip";
 
   function qs(root, sel) {
     return root.querySelector(sel);
@@ -17,14 +17,32 @@
     );
   }
 
+  /** Строка с реальным фото (иначе нельзя трогать sort_order — Django примет строку как заполненную и потребует файл). */
+  function countsForGallerySort(tr) {
+    if (tr.classList.contains("empty-form")) return false;
+    var delInput = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
+    if (delInput && delInput.checked) return false;
+    var idInput = tr.querySelector('input[name$="-id"]');
+    if (idInput && String(idInput.value).trim()) return true;
+    var fileInput = tr.querySelector('input[type="file"][name$="-image"]');
+    if (fileInput && fileInput.files && fileInput.files.length > 0) return true;
+    return false;
+  }
+
   function emptyRow(tbody) {
     return tbody.querySelector("tr.empty-form");
   }
 
   function syncSortOrder(tbody) {
-    dataRows(tbody).forEach(function (tr, i) {
+    var order = 0;
+    dataRows(tbody).forEach(function (tr) {
       var inp = tr.querySelector('input[name$="-sort_order"]');
-      if (inp) inp.value = String(i);
+      if (!inp) return;
+      if (countsForGallerySort(tr)) {
+        inp.value = String(order);
+        order += 1;
+      }
+      /* Пустые extra-строки: не меняем sort_order — иначе форма перестаёт считаться «пустой». */
     });
   }
 
@@ -34,7 +52,6 @@
       if (!orig || qs(orig, ".js-gallery-drag-handle")) return;
       var h = document.createElement("span");
       h.className = "js-gallery-drag-handle";
-      h.setAttribute("draggable", "true");
       h.setAttribute("role", "button");
       h.setAttribute("aria-label", "Перетащить для смены порядка фото");
       h.title = "Перетащите для смены порядка";
@@ -42,66 +59,103 @@
     });
   }
 
-  function getDragAfterElement(tbody, y, dragEl) {
-    var els = dataRows(tbody).filter(function (c) {
-      return c !== dragEl;
-    });
-    var closest = { offset: Number.NEGATIVE_INFINITY, element: null };
-    els.forEach(function (child) {
-      var box = child.getBoundingClientRect();
-      var offset = y - box.top - box.height / 2;
-      if (offset < 0 && offset > closest.offset) {
-        closest = { offset: offset, element: child };
+  function reorderRowsFromStrip(strip, tbody) {
+    var empty = emptyRow(tbody);
+    if (!empty) return;
+    var orderedPk = Array.prototype.map.call(
+      strip.querySelectorAll(".product-gallery-admin-strip-item"),
+      function (el) {
+        return el.getAttribute("data-image-id");
       }
+    );
+    var byPk = {};
+    var orphans = [];
+    dataRows(tbody).forEach(function (tr) {
+      var inp = tr.querySelector('input[name$="-id"]');
+      var pk = inp && inp.value;
+      if (pk) byPk[pk] = tr;
+      else orphans.push(tr);
     });
-    return closest.element;
+    orderedPk.forEach(function (pk) {
+      var tr = byPk[pk];
+      if (tr) tbody.insertBefore(tr, empty);
+    });
+    orphans.forEach(function (tr) {
+      tbody.insertBefore(tr, empty);
+    });
   }
 
-  function initGroup(root) {
-    var tbody = qs(root, "tbody");
-    if (!tbody) return;
+  function reorderStripFromTbody(strip, tbody) {
+    dataRows(tbody).forEach(function (tr) {
+      var inp = tr.querySelector('input[name$="-id"]');
+      if (!inp || !inp.value) return;
+      var pk = inp.value;
+      var item = strip.querySelector(".product-gallery-admin-strip-item[data-image-id=\"" + pk + '"]');
+      if (item) strip.appendChild(item);
+    });
+  }
+
+  function bindTableSortable(tbody) {
+    if (typeof Sortable === "undefined") return;
+    if (tbody.dataset.gallerySortableBound === "1") return;
+    tbody.dataset.gallerySortableBound = "1";
+
+    Sortable.create(tbody, {
+      handle: ".js-gallery-drag-handle",
+      /* Строки формы — прямые дочерние <tr> у tbody */
+      draggable: "> tr",
+      filter: "tr.empty-form, tr.row-form-errors",
+      preventOnFilter: false,
+      animation: 150,
+      /* Нативный HTML5-DnD для <tr> в таблице часто ломается в админке */
+      forceFallback: true,
+      fallbackOnBody: true,
+      fallbackTolerance: 8,
+      swapThreshold: 0.65,
+      onEnd: function () {
+        syncSortOrder(tbody);
+        var strip = document.getElementById(STRIP_ID);
+        if (strip) reorderStripFromTbody(strip, tbody);
+      },
+    });
+  }
+
+  function bindStripSortable(strip, tbody) {
+    if (typeof Sortable === "undefined") return;
+    if (strip.dataset.galleryStripSortBound === "1") return;
+    strip.dataset.galleryStripSortBound = "1";
+
+    Sortable.create(strip, {
+      draggable: ".product-gallery-admin-strip-item",
+      animation: 150,
+      ignore: "a",
+      forceFallback: true,
+      fallbackTolerance: 6,
+      onEnd: function () {
+        reorderRowsFromStrip(strip, tbody);
+        syncSortOrder(tbody);
+      },
+    });
+  }
+
+  function findGalleryTbody() {
+    var root = document.getElementById(GROUP_ID);
+    var tb = root ? root.querySelector("tbody") : null;
+    if (tb) return tb;
+    var inp = document.querySelector('tbody input[name^="images-"][name$="-sort_order"]');
+    return inp ? inp.closest("tbody") : null;
+  }
+
+  function initGalleryInline(tbody) {
+    if (!tbody || tbody.dataset.galleryInlineInit === "1") return;
+    tbody.dataset.galleryInlineInit = "1";
 
     addHandles(tbody);
     syncSortOrder(tbody);
+    bindTableSortable(tbody);
 
-    var dragRow = null;
-
-    tbody.addEventListener("dragstart", function (e) {
-      var handle = e.target.closest(".js-gallery-drag-handle");
-      if (!handle) return;
-      var tr = handle.closest("tr.form-row");
-      if (!tr || tr.classList.contains("empty-form") || !tbody.contains(tr)) return;
-      dragRow = tr;
-      e.dataTransfer.effectAllowed = "move";
-      try {
-        e.dataTransfer.setData("text/plain", tr.id || "row");
-      } catch (_err) {}
-      tr.classList.add("is-gallery-dragging");
-    });
-
-    tbody.addEventListener("dragend", function () {
-      if (dragRow) dragRow.classList.remove("is-gallery-dragging");
-      dragRow = null;
-      syncSortOrder(tbody);
-    });
-
-    tbody.addEventListener("dragover", function (e) {
-      e.preventDefault();
-      if (!dragRow) return;
-      e.dataTransfer.dropEffect = "move";
-      var afterEl = getDragAfterElement(tbody, e.clientY, dragRow);
-      var empty = emptyRow(tbody);
-      if (!afterEl) {
-        if (empty) tbody.insertBefore(dragRow, empty);
-        else tbody.appendChild(dragRow);
-      } else {
-        tbody.insertBefore(dragRow, afterEl);
-      }
-    });
-
-    tbody.addEventListener("drop", function (e) {
-      e.preventDefault();
-    });
+    var strip = document.getElementById(STRIP_ID);
+    if (strip) bindStripSortable(strip, tbody);
 
     var moTimer = null;
     var mo = new MutationObserver(function () {
@@ -113,11 +167,18 @@
       }, 50);
     });
     mo.observe(tbody, { childList: true });
+
+    tbody.addEventListener("change", function (ev) {
+      var t = ev.target;
+      if (t && t.matches && t.matches('input[type="file"][name$="-image"]')) {
+        syncSortOrder(tbody);
+      }
+    });
   }
 
   function boot() {
-    var root = document.getElementById(GROUP_ID);
-    if (root) initGroup(root);
+    var tbody = findGalleryTbody();
+    if (tbody) initGalleryInline(tbody);
   }
 
   if (document.readyState === "loading") {
@@ -125,4 +186,6 @@
   } else {
     boot();
   }
+  /* Медиа-скрипты админки иногда подключаются после DOMContentLoaded */
+  window.addEventListener("load", boot);
 })();

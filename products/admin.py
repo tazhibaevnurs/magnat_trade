@@ -130,12 +130,15 @@ class ProductCatalogRootSectionFilter(CatalogRootSectionFilter):
 
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
-    extra = 1
+    extra = 0
     fields = ("image", "sort_order")
     ordering = ("sort_order", "id")
 
     class Media:
-        js = ("products/admin/product_image_sortable.js",)
+        js = (
+            "products/admin/vendor/Sortable.min.js",
+            "products/admin/product_image_sortable.js",
+        )
         css = {"all": ("products/admin/product_image_sortable.css",)}
 
 
@@ -354,6 +357,16 @@ class ProductAdmin(admin.ModelAdmin):
         class Meta:
             model = Product
             fields = "__all__"
+            widgets = {
+                "description": forms.Textarea(
+                    attrs={
+                        "rows": 10,
+                        "cols": 80,
+                        "class": "vLargeTextField",
+                        "style": "width:100%;max-width:960px;box-sizing:border-box",
+                    }
+                ),
+            }
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -388,8 +401,15 @@ class ProductAdmin(admin.ModelAdmin):
         (
             None,
             {
-                "fields": ("id", "sku", "name", "description", "category"),
+                "fields": ("id", "sku", "name", "category"),
                 "description": "Артикул (SKU) можно оставить пустым.",
+            },
+        ),
+        (
+            "Описание для карточки на сайте",
+            {
+                "fields": ("description",),
+                "classes": ("wide",),
             },
         ),
         (
@@ -412,6 +432,12 @@ class ProductAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    def save_model(self, request, obj, form, change):
+        """Явно записываем описание из формы (защита от редких сбоев связывания полей в админке)."""
+        if "description" in form.cleaned_data:
+            obj.description = form.cleaned_data["description"]
+        super().save_model(request, obj, form, change)
 
     def get_urls(self):
         urls = super().get_urls()
@@ -503,14 +529,24 @@ class ProductAdmin(admin.ModelAdmin):
 
     @admin.display(description="Предпросмотр галереи")
     def gallery_preview(self, obj: Product) -> str:
-        imgs = list(obj.images.order_by("sort_order", "id")[:6])
+        imgs = list(obj.images.order_by("sort_order", "id"))
         if not imgs:
             return format_html(
                 '<span class="help">{}</span>',
                 "Фото не добавлены — на сайте будет заглушка.",
             )
-        return format_html_join(
-            "",
-            '<img src="{}" style="max-height:100px;max-width:120px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;margin:4px" alt="" />',
-            ((im.image.url,) for im in imgs),
+        hint = format_html(
+            '<p class="help" style="margin:0 0 8px">{}</p>',
+            "Перетащите миниатюры мышкой, чтобы изменить порядок на сайте (не забудьте «Сохранить» внизу страницы).",
         )
+        items = format_html_join(
+            "",
+            '<div class="product-gallery-admin-strip-item" data-image-id="{}" role="listitem">'
+            '<img src="{}" alt="" loading="lazy" /></div>',
+            ((str(im.pk), im.image.url) for im in imgs),
+        )
+        strip = format_html(
+            '<div id="product-gallery-admin-strip" class="product-gallery-admin-strip" role="list">{}</div>',
+            items,
+        )
+        return format_html("{}{}", hint, strip)
