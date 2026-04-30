@@ -134,6 +134,10 @@ class ProductImageInline(admin.TabularInline):
     fields = ("image", "sort_order")
     ordering = ("sort_order", "id")
 
+    class Media:
+        js = ("products/admin/product_image_sortable.js",)
+        css = {"all": ("products/admin/product_image_sortable.css",)}
+
 
 class ChildCategoryInline(admin.TabularInline):
     """Прямые подкатегории (управление деревом ниже корня)."""

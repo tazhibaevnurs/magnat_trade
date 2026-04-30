@@ -1,0 +1,30 @@
+/* Drag-and-drop порядка фото в инлайне галереи (products.Product) */
+
+#images-group tbody tr.form-row.is-gallery-dragging {
+  opacity: 0.65;
+  background: var(--body-bg, #f8f8f8);
+}
+
+#images-group .js-gallery-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  min-height: 2rem;
+  margin-right: 0.35rem;
+  cursor: grab;
+  color: var(--body-quiet-color, #666);
+  user-select: none;
+  vertical-align: middle;
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: -0.15em;
+}
+
+#images-group .js-gallery-drag-handle:active {
+  cursor: grabbing;
+}
+
+#images-group .js-gallery-drag-handle::before {
+  content: "⠿";
+}

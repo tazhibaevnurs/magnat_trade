@@ -92,6 +92,10 @@ class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
 
+    class Media:
+        js = ("products/admin/product_image_sortable.js",)
+        css = {"all": ("products/admin/product_image_sortable.css",)}
+
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
