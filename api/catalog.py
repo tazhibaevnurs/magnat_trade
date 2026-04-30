@@ -22,6 +22,7 @@ class ProductOutSerializer(serializers.ModelSerializer):
             "id",
             "sku",
             "name",
+            "description",
             "category_id",
             "retail_price",
             "wholesale_price",

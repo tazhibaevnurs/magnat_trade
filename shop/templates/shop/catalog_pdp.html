@@ -56,6 +56,10 @@
                 {% if product.sku %}Артикул: {{ product.sku }} · {% endif %}{{ product.unit }}
             </p>
 
+            {% if product.description %}
+            <div class="section-desc" style="margin-bottom:var(--spacing-lg);">{{ product.description|linebreaksbr }}</div>
+            {% endif %}
+
             <div class="product-info__price-block">
                 <span class="product-info__price">{{ catalog_facade.current_price }} сом</span>
             </div>

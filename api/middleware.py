@@ -1,4 +1,10 @@
+from django.conf import settings
 from django.http import JsonResponse
+
+
+def _is_admin_catalog_gallery_batch_upload(path: str) -> bool:
+    p = path.rstrip("/")
+    return "/admin/products/product/" in path and p.endswith("gallery-batch-upload")
 
 
 class RequestBodySizeLimitMiddleware:
@@ -18,7 +24,13 @@ class RequestBodySizeLimitMiddleware:
             content_length = 0
 
         is_api = request.path.startswith("/api/") or request.path.startswith("/api/v1/")
-        limit = self.API_LIMIT_BYTES if is_api else self.UPLOAD_LIMIT_BYTES
+        gallery_limit = getattr(settings, "ADMIN_GALLERY_BATCH_UPLOAD_MAX_BYTES", None)
+        if gallery_limit and _is_admin_catalog_gallery_batch_upload(request.path):
+            limit = gallery_limit
+        elif is_api:
+            limit = self.API_LIMIT_BYTES
+        else:
+            limit = self.UPLOAD_LIMIT_BYTES
         if content_length > limit:
             if is_api:
                 return JsonResponse(

@@ -4,7 +4,9 @@ from django.contrib import admin
 from django.conf import settings
 from django import forms
 from django.db.models import Case, IntegerField, When
-from django.urls import reverse
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
 
 from shop.category_nav import (
@@ -13,6 +15,7 @@ from shop.category_nav import (
     normalize_nav_root_title,
 )
 
+from .admin_gallery_batch import append_images_for_product, max_files_per_request
 from .models import Category, Product, ProductImage
 
 
@@ -342,6 +345,8 @@ class ProductAdmin(admin.ModelAdmin):
 
     form = ProductAdminForm
 
+    change_form_template = "admin/products/product/change_form.html"
+
     list_display = (
         "id",
         "image_thumb",
@@ -362,7 +367,7 @@ class ProductAdmin(admin.ModelAdmin):
         (
             None,
             {
-                "fields": ("id", "sku", "name", "category"),
+                "fields": ("id", "sku", "name", "description", "category"),
                 "description": "Артикул (SKU) можно оставить пустым.",
             },
         ),
@@ -376,7 +381,7 @@ class ProductAdmin(admin.ModelAdmin):
             "Галерея на сайте",
             {
                 "fields": ("gallery_preview",),
-                "description": "Добавьте одно или несколько фото в блоке ниже — порядок задаётся полем «Порядок».",
+                "description": "Добавьте фото в таблице ниже или воспользуйтесь блоком «Массовая загрузка фото» под таблицей — файлы отправляются порциями.",
             },
         ),
         (
@@ -386,6 +391,56 @@ class ProductAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        opts = self.opts
+        info = opts.app_label, opts.model_name
+        custom = [
+            path(
+                "<path:object_id>/gallery-batch-upload/",
+                self.admin_site.admin_view(self.gallery_batch_upload_view),
+                name="%s_%s_gallery_batch_upload" % info,
+            ),
+        ]
+        return custom + urls
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        if object_id:
+            extra_context["gallery_batch_upload_url"] = reverse(
+                "admin:%s_%s_gallery_batch_upload" % (self.opts.app_label, self.opts.model_name),
+                kwargs={"object_id": object_id},
+            )
+            extra_context["gallery_batch_files_per_batch"] = getattr(
+                settings,
+                "PRODUCT_GALLERY_UPLOAD_FILES_PER_BATCH",
+                8,
+            )
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def gallery_batch_upload_view(self, request, object_id):
+        """AJAX: приём одной порции файлов (несколько изображений за один POST)."""
+        if request.method != "POST":
+            return JsonResponse({"detail": "Только POST.", "created": 0, "errors": []}, status=405)
+        product = get_object_or_404(Product, pk=object_id)
+        if not self.has_change_permission(request, product):
+            return JsonResponse({"detail": "Недостаточно прав.", "created": 0, "errors": []}, status=403)
+        files = request.FILES.getlist("images")
+        max_n = max_files_per_request()
+        if len(files) > max_n:
+            return JsonResponse(
+                {
+                    "detail": f"В одном запросе не более {max_n} файлов.",
+                    "created": 0,
+                    "errors": [],
+                },
+                status=400,
+            )
+        if not files:
+            return JsonResponse({"detail": "Не переданы файлы.", "created": 0, "errors": []}, status=400)
+        created, errors = append_images_for_product(product, list(files))
+        return JsonResponse({"created": created, "errors": errors, "detail": ""})
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

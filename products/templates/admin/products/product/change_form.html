@@ -1,0 +1,66 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+.product-gallery-batch-panel {
+  border: 1px solid var(--hairline-color, #ccc);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  max-width: 640px;
+  background: var(--darkened-bg, #f8f8f8);
+}
+.product-gallery-batch-panel h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.product-gallery-batch-panel input[type="file"] {
+  display: block;
+  margin: 8px 0;
+}
+.product-gallery-batch-panel .batch-upload-status {
+  font-size: 12px;
+  margin-top: 8px;
+}
+.product-gallery-batch-panel .batch-upload-errors {
+  color: #ba2121;
+  font-size: 12px;
+  margin-top: 8px;
+  white-space: pre-wrap;
+}
+</style>
+{% endblock %}
+
+{% block after_related_objects %}
+{{ block.super }}
+{% if gallery_batch_upload_url %}
+<script src="{% static 'products/admin/product_gallery_batch_upload.js' %}"></script>
+<div
+  id="product-gallery-batch-root"
+  class="product-gallery-batch-panel"
+  data-upload-url="{{ gallery_batch_upload_url }}"
+  data-files-per-batch="{{ gallery_batch_files_per_batch }}"
+>
+  <h3>Массовая загрузка фото (батчами)</h3>
+  <p class="help">
+    Выберите несколько изображений — они отправятся на сервер порциями по
+    {{ gallery_batch_files_per_batch }} файлов (меньше нагрузка на браузер и лимиты запроса).
+    После успешной загрузки страница обновится.
+  </p>
+  <input type="file" id="product-gallery-batch-input" accept=".jpg,.jpeg,.png,.webp,.gif,image/*" multiple />
+  <button type="button" class="button" id="product-gallery-batch-submit">Загрузить выбранные</button>
+  <div class="batch-upload-status" id="product-gallery-batch-status" aria-live="polite"></div>
+  <div class="batch-upload-errors" id="product-gallery-batch-errors"></div>
+</div>
+<script>
+(function () {
+  var root = document.getElementById("product-gallery-batch-root");
+  if (root && window.initProductGalleryBatchUpload) {
+    window.initProductGalleryBatchUpload(root);
+  }
+})();
+</script>
+{% endif %}
+{% endblock %}

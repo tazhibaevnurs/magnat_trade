@@ -64,6 +64,12 @@ class Product(models.Model):
     id = models.CharField(primary_key=True, max_length=64, editable=False, verbose_name="Код товара")
     sku = models.CharField(max_length=120, db_index=True, blank=True, default="", verbose_name="Артикул")
     name = models.CharField(max_length=500, verbose_name="Название")
+    description = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Описание",
+        help_text="Текст для карточки товара на сайте; заполняется вручную в админке.",
+    )
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
