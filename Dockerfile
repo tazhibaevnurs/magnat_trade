@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt -r requirements-mysql.txt
 
 COPY . .
 
+RUN mkdir -p /app/staticfiles
+
 EXPOSE 8000
 
 CMD ["gunicorn", "magnat_trade_project.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
