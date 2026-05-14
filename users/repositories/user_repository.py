@@ -50,6 +50,10 @@ class UserRepository:
         with transaction.atomic():
             user = User.objects.filter(external_id=ext).first()
             if user:
+                if email and User.objects.filter(email=email).exclude(pk=user.pk).exists():
+                    # Email уже у другого пользователя (розница, другой контрагент) —
+                    # не затираем уникальный ключ, оставляем текущий email этой записи.
+                    defaults = {**defaults, "email": user.email}
                 for key, value in defaults.items():
                     setattr(user, key, value)
                 user.save()
