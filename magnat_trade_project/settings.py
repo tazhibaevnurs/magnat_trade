@@ -187,6 +187,10 @@ if not DEBUG:
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# При DEBUG=False стандартный ``static(MEDIA_URL, ...)`` в urls не подключается.
+# Для Docker/VPS без отдельного nginx на /media/ оставьте true — иначе картинки каталога 404.
+# Если reverse-proxy отдаёт MEDIA_ROOT с диска, задайте false.
+DJANGO_SERVE_MEDIA = os.getenv("DJANGO_SERVE_MEDIA", "true").lower() in ("1", "true", "yes")
 
 # Кэш статики в браузере (год); в DEBUG WhiteNoise не мешает dev-серверу раздавать исходники приложений
 if not DEBUG:
