@@ -368,15 +368,6 @@ class ProductAdmin(admin.ModelAdmin):
                 ),
             }
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            # В данных 1С поля цен исторически приходят инвертированно относительно бизнес-терминов.
-            # В админ-форме показываем привычные подписи для менеджеров.
-            if "wholesale_price" in self.fields:
-                self.fields["wholesale_price"].label = "Розничная цена"
-            if "retail_price" in self.fields:
-                self.fields["retail_price"].label = "Оптовая цена"
-
     form = ProductAdminForm
 
     change_form_template = "admin/products/product/change_form.html"
@@ -415,7 +406,7 @@ class ProductAdmin(admin.ModelAdmin):
         (
             "Цены и склад",
             {
-                "fields": ("wholesale_price", "retail_price", "stock", "unit", "is_active"),
+                "fields": ("retail_price", "wholesale_price", "stock", "unit", "is_active"),
             },
         ),
         (
