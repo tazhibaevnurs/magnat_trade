@@ -390,6 +390,12 @@ ONEC_VERIFY_SSL = os.getenv("ONEC_VERIFY_SSL", "true").lower() in ("1", "true", 
 ONEC_LEGACY_CATEGORY_LIST_FALLBACK = os.getenv(
     "ONEC_LEGACY_CATEGORY_LIST_FALLBACK", "false"
 ).lower() in ("1", "true", "yes")
+# В некоторых HTTP-выгрузках 1С (productList) числа под ключами retail/wholesale
+# названы относительно нашей модели «наоборот» — меняем местами только при синхронизации из 1С.
+# Интеграционный POST /api/v1/products/sync/ этого флага не использует (там семантика ровная).
+ONEC_PRODUCT_LIST_SWAP_PRICE_KEYS = os.getenv(
+    "ONEC_PRODUCT_LIST_SWAP_PRICE_KEYS", "true"
+).lower() in ("1", "true", "yes")
 ONEC_SEND_EXTRA_HEADERS = os.getenv("ONEC_SEND_EXTRA_HEADERS", "true").lower() in ("1", "true", "yes")
 ONEC_API_SOURCE = os.getenv("ONEC_API_SOURCE", "website")
 ONEC_API_TIMEOUT = float(os.getenv("ONEC_API_TIMEOUT", "120"))

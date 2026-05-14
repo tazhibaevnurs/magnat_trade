@@ -2,7 +2,8 @@
 
 GET каталога:
 - categories_products/categoryProductList (дерево категорий N-* и сопоставление товаров по наименованию)
-- products/productList (номенклатура, цены, остатки; category_id из 1С перезаписывается по дереву при совпадении имени)
+- products/productList (номенклатура, цены, остатки; category_id из 1С перезаписывается по дереву при совпадении имени).
+  Если ключи retail/wholesale в JSON перекрёстны относительно полей модели Django, включите перестановку при записи только для pull из 1С: ``ONEC_PRODUCT_LIST_SWAP_PRICE_KEYS`` (дефолт ``true``, см. settings).
 - при ``ONEC_LEGACY_CATEGORY_LIST_FALLBACK`` — categories/categoryList только для недостающих кодов категорий
 - counterparties/counterpartyList (опционально)
 
@@ -105,7 +106,14 @@ def _sync_products_with_name_map(
     prods = client.fetch_product_list()
     mapped = _apply_category_tree_to_products(prods, name_map)
     legacy = _sync_legacy_categories_for_missing_ids(client, mapped)
-    result = ProductSyncService.sync_batch(mapped)
+    result = ProductSyncService.sync_batch(
+        mapped,
+        onec_product_list_swaps_price_keys=getattr(
+            settings,
+            "ONEC_PRODUCT_LIST_SWAP_PRICE_KEYS",
+            True,
+        ),
+    )
     cache.delete("shop:catalog_products_exist")
     return legacy, result
 

@@ -97,14 +97,24 @@ def _extract_retail_wholesale(data: dict[str, Any]) -> tuple[Decimal, Decimal]:
 
 class ProductRepository:
     @staticmethod
-    def upsert_from_payload(data: dict[str, Any]) -> tuple[Product, bool]:
+    def upsert_from_payload(
+        data: dict[str, Any],
+        *,
+        onec_product_list_swaps_price_keys: bool = False,
+    ) -> tuple[Product, bool]:
         """
         Синхронизация по коду номенклатуры из 1С.
         sku и name не используются для поиска записи.
+
+        ``onec_product_list_swaps_price_keys``: для GET productList, если в JSON ключ
+        ``retail`` фактически соответствует оптовой цене, а ``wholesale`` — рознице
+        (см. ONEC_PRODUCT_LIST_SWAP_PRICE_KEYS). Для POST интеграций оставлять False.
         """
         pk = str(data["id"]).strip()
         category_id = str(data["category_id"]).strip()
         retail, wholesale = _extract_retail_wholesale(data)
+        if onec_product_list_swaps_price_keys:
+            retail, wholesale = wholesale, retail
 
         defaults = {
             "sku": (data.get("sku") or "").strip(),
