@@ -116,7 +116,7 @@ class CheckoutOrderView(APIView):
                     name_snapshot=name,
                     special_instructions=special_instructions,
                 )
-            for pid, qty, _, _ in lines:
+            for pid, qty, *_ in lines:
                 updated = Product.objects.filter(pk=pid, stock__gte=qty).update(
                     stock=F("stock") - qty
                 )

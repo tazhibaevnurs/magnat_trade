@@ -17,18 +17,14 @@ def user_sees_wholesale_prices(user: AbstractUser | None) -> bool:
 
 
 def catalog_unit_price(catalog_product, user: AbstractUser | None):
-    """Цена строки каталога для текущего пользователя.
+    """Цена строки каталога: поля модели совпадают с ключами JSON 1С (retail / wholesale).
 
-    Бизнес-правило: опт всегда дешевле розницы.
-    Если в источнике 1С поля перепутаны местами, выбираем:
-    - для опта: меньшую из двух цен;
-    - для розницы/гостей: большую из двух цен.
+    Розничная сумма всегда из ``retail_price``, оптовая — из ``wholesale_price``.
+    У менеджеров и розницы — розничное поле; у одобренного опта — оптовое.
     """
-    retail = catalog_product.retail_price
-    wholesale = catalog_product.wholesale_price
     if user_sees_wholesale_prices(user):
-        return wholesale if wholesale <= retail else retail
-    return retail if retail >= wholesale else wholesale
+        return catalog_product.wholesale_price
+    return catalog_product.retail_price
 
 
 def is_manager(user: AbstractUser | None) -> bool:

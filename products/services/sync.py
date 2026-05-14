@@ -72,20 +72,12 @@ logger = logging.getLogger(__name__)
 
 class ProductSyncService:
     @staticmethod
-    def sync_batch(
-        items: list[dict[str, Any]],
-        *,
-        onec_product_list_swaps_price_keys: bool = False,
-    ) -> dict[str, Any]:
+    def sync_batch(items: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Товары ссылаются на category_id из справочника категорий.
         Если в ответе productList есть ссылка на отсутствующую категорию — строка пропускается (SQLite FK).
         Категории задаются деревом categoryProductList (N-*); при ``ONEC_LEGACY_CATEGORY_LIST_FALLBACK`` — добор из categoryList.
-
-        Инверсию ключей ``retail``/``wholesale`` включает только выгрузка из 1С (см. ``onec_full_sync`` +
-        ``ONEC_PRODUCT_LIST_SWAP_PRICE_KEYS``). POST ``/api/v1/products/sync/`` использует параметр по умолчанию без свапа.
         """
-        swap = onec_product_list_swaps_price_keys
         valid_cats = {str(x) for x in Category.objects.values_list("id", flat=True)}
         created = 0
         updated = 0
@@ -108,10 +100,7 @@ class ProductSyncService:
                 continue
             try:
                 with transaction.atomic():
-                    _, was_created = ProductRepository.upsert_from_payload(
-                        raw,
-                        onec_product_list_swaps_price_keys=swap,
-                    )
+                    _, was_created = ProductRepository.upsert_from_payload(raw)
                 if was_created:
                     created += 1
                 else:

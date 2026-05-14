@@ -176,8 +176,8 @@ def export_to_excel(
 
     resolved = 0
     for idx, name in enumerate(product_names_in_order, start=1):
-        wholesale, retail = price_map.get(normalize_name(name), (None, None))
-        if wholesale is not None or retail is not None:
+        retail, wholesale = price_map.get(normalize_name(name), (None, None))
+        if retail is not None or wholesale is not None:
             resolved += 1
         ws.append(
             [
