@@ -91,23 +91,26 @@
       form.appendChild(inp);
     });
   }
-  document.body.addEventListener("htmx:beforeRequest", function (ev) {
+  document.body.addEventListener("htmx:configRequest", function (ev) {
     var el = ev.detail.elt;
     if (!el || !el.closest) return;
-    if (el.closest("[data-shop-category-nav]")) {
-      document.querySelectorAll("#shop-filters .shop-category-hidden").forEach(function (i) {
-        i.remove();
-      });
-      var form = document.getElementById("shop-filters");
-      if (form) {
-        var mainSearch = form.querySelector('input[name="search"]');
-        if (mainSearch) mainSearch.value = "";
-      }
-      var headerSearch = document.getElementById("header-search-input");
-      if (headerSearch) headerSearch.value = "";
-      var mobileSearch = document.getElementById("mobile-search-input");
-      if (mobileSearch) mobileSearch.value = "";
+    if (!el.closest("[data-shop-category-nav]")) return;
+    var params = ev.detail.parameters;
+    if (params && Object.prototype.hasOwnProperty.call(params, "search")) {
+      delete params.search;
     }
+    document.querySelectorAll("#shop-filters .shop-category-hidden").forEach(function (i) {
+      i.remove();
+    });
+    var form = document.getElementById("shop-filters");
+    if (form) {
+      var mainSearch = form.querySelector('input[name="search"]');
+      if (mainSearch) mainSearch.value = "";
+    }
+    var headerSearch = document.getElementById("header-search-input");
+    if (headerSearch) headerSearch.value = "";
+    var mobileSearch = document.getElementById("mobile-search-input");
+    if (mobileSearch) mobileSearch.value = "";
   });
   document.body.addEventListener("htmx:afterSwap", function (ev) {
     if (ev.detail.target && ev.detail.target.id === "product-grid") {
