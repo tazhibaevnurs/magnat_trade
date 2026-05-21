@@ -42,7 +42,7 @@ docker compose up -d
 
 Поднимется: **PostgreSQL**, **Redis**, **web** (Gunicorn), **celery**, **celery-beat**.
 
-- Миграции и `collectstatic` выполняются отдельным release-шагом (безопаснее, чем автозапуск в `web`).
+- Миграции по умолчанию выполняете вручную (`migrate`) или через `scripts/release.sh`. Статика (`collectstatic`) собирается **в образ** при `docker compose build` (см. `Dockerfile`); при обновлении можно повторно выполнить `collectstatic` в контейнере `web`, как в `scripts/release.sh`.
 - Загрузки пользователей (**media**) монтируются в том **`media_data`** — данные переживают пересборку образа.
 
 Проверка:
@@ -84,10 +84,21 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
 - [ ] `DJANGO_DEBUG=false`, `SECRET_KEY`, `ALLOWED_HOSTS`
 - [ ] База и миграции применены
-- [ ] `collectstatic` выполнен (в Docker — автоматически в `web`)
+- [ ] `collectstatic` выполнен: в Docker-образе (см. `Dockerfile`) и/или шаг в `scripts/release.sh` в контейнере `web`
 - [ ] Redis доступен приложению и Celery
 - [ ] Запущены **worker** и **beat** (или контейнеры `celery`, `celery-beat`)
 - [ ] HTTPS и cookie-флаги при работе по HTTPS
+
+### Админка без стилей («голый» HTML, как в браузере по умолчанию)
+
+Это значит, что **CSS админки не отдаются** с `/static/…`. Чаще всего:
+
+1. **Не выполнен** `python manage.py collectstatic --noinput` на сервере / в контейнере после деплоя.
+2. **Nginx** отдаёт `/static/` с пустой или чужой папкой — тогда запросы до Django/WhiteNoise не доходят. Либо уберите отдельный `location /static/` и отдайте статику через приложение (WhiteNoise уже в middleware), либо настройте `alias` на тот же каталог, куда кладётся `collectstatic` (`STATIC_ROOT`, по умолчанию `./staticfiles` в корне проекта).
+
+Проверка в браузере: откройте URL вида `https://ваш-домен/static/admin/css/base.css` — должен отдаваться файл, а не 404/HTML страницы сайта.
+
+После исправления конфигурации снова выполните `collectstatic` и перезапустите Gunicorn/контейнер `web`.
 
 ## 6. Vercel / serverless
 

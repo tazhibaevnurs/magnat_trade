@@ -16,7 +16,11 @@ RUN pip install --no-cache-dir -r requirements.txt -r requirements-mysql.txt
 
 COPY . .
 
-RUN mkdir -p /app/staticfiles
+# Админка и /static/ при DJANGO_DEBUG=false обслуживаются из STATIC_ROOT (WhiteNoise).
+# На время сборки включаем DEBUG=true — иначе settings.py требует полный production-набор
+# переменных (SECRET_KEY, SECURE_SSL_REDIRECT и т.д.) уже на этапе docker build.
+RUN DJANGO_DEBUG=true DJANGO_SECRET_KEY=collectstatic-build-only \
+    python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
