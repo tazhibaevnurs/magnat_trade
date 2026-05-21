@@ -99,6 +99,15 @@
       document.querySelectorAll("#shop-filters .shop-category-hidden").forEach(function (i) {
         i.remove();
       });
+      var form = document.getElementById("shop-filters");
+      if (form) {
+        var mainSearch = form.querySelector('input[name="search"]');
+        if (mainSearch) mainSearch.value = "";
+      }
+      var headerSearch = document.getElementById("header-search-input");
+      if (headerSearch) headerSearch.value = "";
+      var mobileSearch = document.getElementById("mobile-search-input");
+      if (mobileSearch) mobileSearch.value = "";
     }
   });
   document.body.addEventListener("htmx:afterSwap", function (ev) {
