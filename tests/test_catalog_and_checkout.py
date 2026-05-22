@@ -235,3 +235,25 @@ class TestShopCategoryDescendants:
         req.user = AnonymousUser()
         qs = filter_catalog_products(req, new_arrivals_only=True)
         assert qs.count() == 0
+
+    def test_new_arrivals_respects_auto_since_cutoff(self, product):
+        from datetime import date
+
+        from django.contrib.auth.models import AnonymousUser
+        from django.test import RequestFactory, override_settings
+
+        from shop.catalog_display import filter_catalog_products
+
+        rf = RequestFactory()
+        req = rf.get("/novinki/")
+        req.user = AnonymousUser()
+
+        future = date(2099, 1, 1)
+        with override_settings(SHOP_NEW_ARRIVALS_AUTO_SINCE=future):
+            qs_future = filter_catalog_products(req, new_arrivals_only=True)
+            assert product.id not in set(qs_future.values_list("pk", flat=True))
+
+        past = date(2020, 1, 1)
+        with override_settings(SHOP_NEW_ARRIVALS_AUTO_SINCE=past):
+            qs_past = filter_catalog_products(req, new_arrivals_only=True)
+            assert product.id in set(qs_past.values_list("pk", flat=True))

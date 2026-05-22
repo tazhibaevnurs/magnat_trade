@@ -73,10 +73,14 @@ def filter_catalog_products(
     """QuerySet товаров 1С с теми же GET-фильтрами, что и у витрины.
 
     При ``promotions_only=True`` — только товары из ``PromotionItem`` (1С).
-    При ``new_arrivals_only=True`` — только товары из ``NewArrivalItem`` (1С).
-    Если соответствующий список в БД пуст — пустой queryset.
+    При ``new_arrivals_only=True`` — записи из ``NewArrivalItem`` (активные) **и**
+    номенклатура с ``created_at`` не раньше ``SHOP_NEW_ARRIVALS_AUTO_SINCE`` (если дата задана в settings).
+    Если ни ручной списка, ни авто-даты эффективно нет — пустой queryset.
     """
-    from shop.services.new_arrival_items import catalog_new_arrival_product_ids_ordered
+    from shop.services.new_arrival_items import (
+        build_new_arrivals_or_q,
+        catalog_new_arrival_product_ids_ordered,
+    )
     from shop.services.promotion_items import catalog_promotion_product_ids_ordered
 
     qs = CatalogProduct.objects.filter(is_active=True).select_related("category").prefetch_related("images")
@@ -90,10 +94,11 @@ def filter_catalog_products(
             return CatalogProduct.objects.none()
         qs = qs.filter(pk__in=id_list)
     elif new_arrivals_only:
-        id_list = catalog_new_arrival_product_ids_ordered()
-        if not id_list:
+        manual_ids = catalog_new_arrival_product_ids_ordered()
+        combined = build_new_arrivals_or_q(manual_pks=list(manual_ids))
+        if combined is None:
             return CatalogProduct.objects.none()
-        qs = qs.filter(pk__in=id_list)
+        qs = qs.filter(combined)
 
     wholesale = user_sees_wholesale_prices(request.user)
     price_field = "wholesale_price" if wholesale else "retail_price"

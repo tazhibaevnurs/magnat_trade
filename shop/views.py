@@ -41,7 +41,6 @@ from .catalog_display import (
     filter_catalog_products,
     in_stock_only_from_request,
 )
-from .services.new_arrival_items import shop_new_arrival_product_ids_ordered
 from .services.promotion_items import shop_promotion_product_ids_ordered
 from .pricing import can_access_manager_panel, catalog_unit_price
 from .exceptions import InsufficientStockError
@@ -283,8 +282,17 @@ def _filter_products(request, *, promotions_only=False, new_arrivals_only=False)
             products = products.filter(discount_price__isnull=False).filter(discount_price__lt=F("price"))
 
     if new_arrivals_only:
-        na_ids = shop_new_arrival_product_ids_ordered()
-        products = products.filter(pk__in=na_ids)
+        from shop.services.new_arrival_items import (
+            build_new_arrivals_or_q,
+            shop_new_arrival_product_ids_ordered,
+        )
+
+        manual_ids = list(shop_new_arrival_product_ids_ordered())
+        combined = build_new_arrivals_or_q(manual_pks=manual_ids)
+        if combined is None:
+            products = products.none()
+        else:
+            products = products.filter(combined)
 
     sort_by = request.GET.get("sort_by", "name")
     if sort_by == "a-to-z":
@@ -483,7 +491,11 @@ def shop_new_arrivals(request):
     context.update(
         {
             "page_heading": "Новинки",
-            "page_lead": "Подборка из админки: добавляйте позиции в разделе «Новинки: товары».",
+            "page_lead": (
+                "Сюда автоматически попадают товары каталога 1С, впервые появившиеся в базе сайта после "
+                "даты порога (по умолчанию 5 мая 2026, настраивается SHOP_NEW_ARRIVALS_AUTO_SINCE). "
+                "Дополнительно можно закрепить позиции в админке: «Новинки: товары»."
+            ),
             "grid_url": reverse("shop_grid_new_arrivals"),
             "breadcrumb_items": [
                 {"name": "Главная", "url": "/"},

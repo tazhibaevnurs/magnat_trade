@@ -36,7 +36,17 @@ class NewArrivalItemAdmin(admin.ModelAdmin):
     ordering = ("sort_order", "id")
     raw_id_fields = ("catalog_product", "shop_product")
     fieldsets = (
-        ("Товар", {"fields": ("catalog_product", "shop_product"), "description": "Заполните только одно поле."}),
+        (
+            "Товар",
+            {
+                "fields": ("catalog_product", "shop_product"),
+                "description": (
+                    "Заполните только одно поле. Запись добавляет товар на «Новинки» дополнительно к автоматическому "
+                    "списку номенклатуры, впервые появившейся в базе после даты SHOP_NEW_ARRIVALS_AUTO_SINCE "
+                    "(см. настройки деплоя / .env)."
+                ),
+            },
+        ),
         ("На сайте", {"fields": ("sort_order", "is_active")}),
     )
 

@@ -30,6 +30,7 @@ def _integration_and_celery_settings(settings, integration_key):
         }
     }
     settings.ONEC_API_BASE_URL = ""
+    settings.SHOP_NEW_ARRIVALS_AUTO_SINCE = None
 
 
 @pytest.fixture

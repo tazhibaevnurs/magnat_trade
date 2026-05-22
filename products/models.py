@@ -81,6 +81,12 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0, verbose_name="Остаток")
     unit = models.CharField(max_length=32, default="pcs", verbose_name="Ед. изм.")
     is_active = models.BooleanField(default=True, db_index=True, verbose_name="Активен")
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        verbose_name="Первое появление в каталоге",
+        help_text="Заполняется при первой загрузке номенклатуры из 1С; для новинок на сайте используется вместе с датой SHOP_NEW_ARRIVALS_AUTO_SINCE.",
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Обновлено")
 
     class Meta:
@@ -90,6 +96,7 @@ class Product(models.Model):
         indexes = [
             models.Index(fields=["sku"]),
             models.Index(fields=["is_active", "updated_at"]),
+            models.Index(fields=["is_active", "created_at"]),
         ]
 
     def __str__(self) -> str:

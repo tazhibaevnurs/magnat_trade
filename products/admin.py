@@ -386,7 +386,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display_links = ("id", "name")
     search_fields = ("name", "sku", "id")
     list_filter = (SiteCatalogScopeFilter, ProductCatalogRootSectionFilter, "is_active", "category")
-    readonly_fields = ("id", "updated_at", "gallery_preview")
+    readonly_fields = ("id", "created_at", "updated_at", "gallery_preview")
     inlines = (ProductImageInline,)
     fieldsets = (
         (
@@ -419,7 +419,7 @@ class ProductAdmin(admin.ModelAdmin):
         (
             "Служебное",
             {
-                "fields": ("updated_at",),
+                "fields": ("created_at", "updated_at",),
             },
         ),
     )

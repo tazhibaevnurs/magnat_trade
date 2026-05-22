@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
 from dotenv import load_dotenv
 from importlib.util import find_spec
@@ -422,6 +422,24 @@ elif _shop_nav_roots_raw:
     SHOP_NAV_ROOT_CATEGORY_NAMES = [x.strip() for x in _shop_nav_roots_raw.split(",") if x.strip()]
 else:
     SHOP_NAV_ROOT_CATEGORY_NAMES = []
+
+# --- Новинки (/novinki/): авто-включение номенклатуры 1С по дате первого появления в БД ---
+# Формат YYYY-MM-DD. Если переменная задана пустой — только ручной список в админке. Если переменная не задана — 2026-05-05.
+if "SHOP_NEW_ARRIVALS_AUTO_SINCE" in os.environ:
+    _shop_na_since_raw = os.environ["SHOP_NEW_ARRIVALS_AUTO_SINCE"].strip().lower()
+else:
+    _shop_na_since_raw = "2026-05-05"
+if _shop_na_since_raw in ("", "0", "off", "false", "no", "none", "disable", "disabled"):
+    SHOP_NEW_ARRIVALS_AUTO_SINCE = None
+else:
+    _norm = _shop_na_since_raw.replace("/", "-")
+    _parts = [p for p in _norm.split("-") if p]
+    try:
+        if len(_parts) != 3:
+            raise ValueError
+        SHOP_NEW_ARRIVALS_AUTO_SINCE = date(int(_parts[0]), int(_parts[1]), int(_parts[2]))
+    except (ValueError, TypeError):
+        SHOP_NEW_ARRIVALS_AUTO_SINCE = date(2026, 5, 5)
 
 # --- Оплата ---
 PAYMENT_PROVIDER = os.getenv("PAYMENT_PROVIDER", "stub")
