@@ -25,7 +25,7 @@
                     <div>
                         <h1 class="catalog-toolbar__title">
                             Все товары
-                            <span class="catalog-toolbar__count">({% if page_obj %}{{ page_obj.paginator.count }}{% else %}{{ products|length }}{% endif %})</span>
+                            <span id="shop-catalog-toolbar-count" class="catalog-toolbar__count">({% if page_obj %}{{ page_obj.paginator.count }}{% else %}{{ products|length }}{% endif %})</span>
                         </h1>
                         <p class="catalog-toolbar__hint">Поиск, цена и сортировка — ниже.</p>
                     </div>

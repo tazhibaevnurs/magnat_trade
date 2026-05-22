@@ -499,6 +499,7 @@ def shop_new_arrivals(request):
 
 def shop_new_arrivals_grid(request):
     context = _shop_context(request, preset="new_arrivals")
+    context["hx_toolbar_count_oob"] = True
     return render(request, "shop/partials/product_grid.html", context)
 
 
@@ -524,12 +525,14 @@ def shop_promotions(request):
 
 def shop_promotions_grid(request):
     context = _shop_context(request, preset="promotions")
+    context["hx_toolbar_count_oob"] = True
     return render(request, "shop/partials/product_grid.html", context)
 
 
 def shop_grid(request):
     """HTMX: только сетка товаров (#product-grid)."""
     context = _shop_context(request)
+    context["hx_toolbar_count_oob"] = True
     return render(request, "shop/partials/product_grid.html", context)
 
 

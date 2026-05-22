@@ -36,3 +36,6 @@
     </nav>
     {% endif %}
 </div>
+{% if hx_toolbar_count_oob %}
+<span id="shop-catalog-toolbar-count" class="catalog-toolbar__count" hx-swap-oob="true">({% if page_obj %}{{ page_obj.paginator.count }}{% else %}{{ products|length }}{% endif %})</span>
+{% endif %}
