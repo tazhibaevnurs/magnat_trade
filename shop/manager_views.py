@@ -18,19 +18,20 @@ from django.db.models.functions import Replace
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_http_methods, require_POST
 
 from products.models import Category as CatalogCategory
 from products.models import Product as CatalogProduct
-from integrations.services.onec_registration import (
-    register_site_user_in_onec,
-    sync_site_user_counterparty_in_onec,
-)
+from integrations.services.onec_registration import register_site_user_in_onec
 from .category_nav import get_shop_catalog_product_category_roots
 from .pricing import can_access_manager_panel
 from users.models import User, WholesaleUpgradeRequest
+from users.services.wholesale_upgrade import (
+    WholesaleUpgradeError,
+    approve_wholesale_upgrade_request,
+    reject_wholesale_upgrade_request,
+)
 
 _MANAGER_TABS = frozenset({"requests", "products", "categories", "users"})
 
@@ -445,18 +446,11 @@ def manager_wholesale_approve(request, pk: int):
         pk=pk,
         status=WholesaleUpgradeRequest.Status.PENDING,
     )
-    with transaction.atomic():
-        u = User.objects.select_for_update().get(pk=wr.user_id)
-        if u.user_type == "manager":
-            messages.error(request, "Нельзя назначить опт менеджеру.")
-            return redirect("manager_dashboard")
-        u.user_type = "wholesale"
-        u.save(update_fields=["user_type"])
-        wr.status = WholesaleUpgradeRequest.Status.APPROVED
-        wr.reviewed_by = request.user
-        wr.reviewed_at = timezone.now()
-        wr.save(update_fields=["status", "reviewed_by", "reviewed_at"])
-    sync_site_user_counterparty_in_onec(u)
+    try:
+        u = approve_wholesale_upgrade_request(wr, reviewed_by=request.user)
+    except WholesaleUpgradeError as exc:
+        messages.error(request, str(exc))
+        return redirect("manager_dashboard")
     messages.success(request, f"Оптовый доступ выдан: {u.email}")
     return redirect("manager_dashboard")
 
@@ -471,11 +465,7 @@ def manager_wholesale_reject(request, pk: int):
         status=WholesaleUpgradeRequest.Status.PENDING,
     )
     note = (request.POST.get("manager_note") or "").strip()
-    wr.status = WholesaleUpgradeRequest.Status.REJECTED
-    wr.reviewed_by = request.user
-    wr.reviewed_at = timezone.now()
-    wr.manager_note = note
-    wr.save(update_fields=["status", "reviewed_by", "reviewed_at", "manager_note"])
+    reject_wholesale_upgrade_request(wr, reviewed_by=request.user, manager_note=note)
     messages.info(request, "Заявка отклонена.")
     return redirect("manager_dashboard")
 

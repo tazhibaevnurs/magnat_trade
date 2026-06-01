@@ -903,6 +903,60 @@ def sign_in(request):
     
     return render(request, 'shop/sign-in.html', context)
 
+
+def password_reset_request_page(request):
+    if request.user.is_authenticated:
+        return redirect('landing')
+    breadcrumb_items = [
+        {'name': 'Главная', 'url': '/'},
+        {'name': 'Вход', 'url': reverse('sign-in')},
+        {'name': 'Восстановление пароля', 'url': None},
+    ]
+    return render(
+        request,
+        'shop/password-reset-request.html',
+        {'breadcrumb_items': breadcrumb_items},
+    )
+
+
+def password_reset_confirm_page(request):
+    from django.contrib.auth.tokens import PasswordResetTokenGenerator
+    from django.utils.encoding import force_str
+    from django.utils.http import urlsafe_base64_decode
+
+    from users.models import User
+
+    if request.user.is_authenticated:
+        return redirect('landing')
+
+    uid = (request.GET.get('uid') or '').strip()
+    token = (request.GET.get('token') or '').strip()
+    link_valid = False
+    if uid and token:
+        try:
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.filter(pk=user_id, is_active=True).first()
+            if user and PasswordResetTokenGenerator().check_token(user, token):
+                link_valid = True
+        except Exception:
+            link_valid = False
+
+    breadcrumb_items = [
+        {'name': 'Главная', 'url': '/'},
+        {'name': 'Вход', 'url': reverse('sign-in')},
+        {'name': 'Новый пароль', 'url': None},
+    ]
+    return render(
+        request,
+        'shop/password-reset-confirm.html',
+        {
+            'breadcrumb_items': breadcrumb_items,
+            'uid': uid,
+            'token': token,
+            'link_valid': link_valid,
+        },
+    )
+
 def sign_up(request):
 
     # Redirect authenticated users to the home page

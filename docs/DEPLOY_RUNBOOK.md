@@ -152,7 +152,42 @@ cat /opt/magnat_trade/backups/postgres_YYYY-MM-DD_HH-MM-SS.dump | docker compose
 docker compose exec web python manage.py createsuperuser
 ```
 
-## 10. Краткий ежедневный чек-лист
+## 10. Почта (Mail.ru SMTP) — восстановление пароля
+
+Переменные **только в `.env` на сервере** (не в git). Пароль — «для внешнего приложения» из [id.mail.ru → Безопасность](https://id.mail.ru/security), не обычный пароль от ящика.
+
+```bash
+# В /opt/magnat_trade/.env добавить или обновить:
+EMAIL_HOST=smtp.mail.ru
+EMAIL_PORT=465
+EMAIL_USE_SSL=true
+EMAIL_USE_TLS=false
+EMAIL_HOST_USER=berekekanz@mail.ru
+EMAIL_HOST_PASSWORD=<пароль_приложения_mail.ru>
+DEFAULT_FROM_EMAIL=berekekanz@mail.ru
+SERVER_EMAIL=berekekanz@mail.ru
+```
+
+После изменения `.env`:
+
+```bash
+docker compose restart web celery celery-beat
+```
+
+Проверка отправки:
+
+```bash
+docker compose exec web python manage.py shell -c "
+from django.core.mail import send_mail
+from django.conf import settings
+send_mail('SMTP test', 'OK', settings.DEFAULT_FROM_EMAIL, [settings.EMAIL_HOST_USER])
+print('sent to', settings.EMAIL_HOST_USER)
+"
+```
+
+На сайте: `/password-reset/` → email зарегистрированного пользователя → письмо со ссылкой.
+
+## 11. Краткий ежедневный чек-лист
 
 ```bash
 cd /opt/magnat_trade

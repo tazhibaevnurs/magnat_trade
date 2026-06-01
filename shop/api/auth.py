@@ -8,6 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core import signing
 from django.core.cache import cache
+from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
 from django.http import HttpResponseBadRequest
@@ -111,6 +112,10 @@ def _make_email_verify_token(user_id: int) -> str:
     return signer.sign(str(user_id))
 
 
+def _mail_from_address() -> str:
+    return getattr(settings, "DEFAULT_FROM_EMAIL", "") or "no-reply@magnat-trade.local"
+
+
 def _send_verification_email(request, user):
     token = _make_email_verify_token(user.pk)
     verify_url = request.build_absolute_uri(f"{reverse('api-verify-email')}?token={token}")
@@ -121,21 +126,25 @@ def _send_verification_email(request, user):
         f"{verify_url}\n\n"
         "Ссылка действительна 24 часа."
     )
-    send_mail(subject, body, None, [user.email], fail_silently=False)
+    send_mail(subject, body, _mail_from_address(), [user.email], fail_silently=False)
 
 
 def _send_password_reset_email(request, user):
     token = PasswordResetTokenGenerator().make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
-    reset_url = request.build_absolute_uri(f"{reverse('api-password-reset-confirm')}?uid={uid}&token={token}")
-    subject = "Сброс пароля для Береке Канц"
+    reset_path = reverse("password-reset-confirm")
+    reset_url = request.build_absolute_uri(f"{reset_path}?uid={uid}&token={token}")
+    timeout_hours = max(1, int(getattr(settings, "PASSWORD_RESET_TIMEOUT", 3600)) // 3600)
+    subject = "Восстановление пароля — Береке Канц"
     body = (
         "Здравствуйте!\n\n"
-        "Чтобы сбросить пароль, перейдите по ссылке:\n"
+        "Вы запросили сброс пароля для аккаунта на berekekans.kg.\n"
+        "Чтобы задать новый пароль, перейдите по ссылке:\n"
         f"{reset_url}\n\n"
-        "Ссылка одноразовая и действует 1 час."
+        f"Ссылка одноразовая и действует {timeout_hours} ч.\n"
+        "Если вы не запрашивали сброс, просто проигнорируйте это письмо."
     )
-    send_mail(subject, body, None, [user.email], fail_silently=False)
+    send_mail(subject, body, _mail_from_address(), [user.email], fail_silently=False)
 
 
 @require_http_methods(["POST"])
@@ -363,7 +372,15 @@ def password_reset_request(request):
                 _send_password_reset_email(request, user)
             except Exception:
                 logger.exception("Не удалось отправить письмо сброса пароля")
-    return JsonResponse({"success": True})
+    return JsonResponse(
+        {
+            "success": True,
+            "message": (
+                "Если этот email зарегистрирован, мы отправили ссылку для сброса пароля. "
+                "Проверьте почту (и папку «Спам»)."
+            ),
+        }
+    )
 
 
 @require_http_methods(["POST"])

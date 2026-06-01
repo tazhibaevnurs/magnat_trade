@@ -62,6 +62,8 @@ async function loadPageModule() {
         { match: () => p === '/cart', load: () => import('./pages/cart.js') },
         { match: () => p === '/sign-in', load: () => import('./pages/sign-in.js') },
         { match: () => p === '/sign-up', load: () => import('./pages/sign-up.js') },
+        { match: () => p === '/password-reset', load: () => import('./pages/password-reset-request.js') },
+        { match: () => p === '/password-reset/confirm', load: () => import('./pages/password-reset-confirm.js') },
         { match: () => p.startsWith('/product'), load: () => import('./pages/pdp.js') },
         { match: () => p === '/about-us', load: () => import('./pages/about-us.js') },
         { match: () => p === '/contact-us', load: () => import('./pages/contact-us.js') },

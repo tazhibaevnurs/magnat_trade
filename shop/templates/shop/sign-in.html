@@ -40,7 +40,7 @@
                         <div class="form-field sign_in-form-group-input">
                             <div class="sign_in-password-label-row">
                                 <label for="password">Пароль</label>
-                                <a href="#" class="anchor-link sign_in-form-group-input-helper">Забыли пароль?</a>
+                                <a href="{% url 'password-reset-request' %}" class="anchor-link sign_in-form-group-input-helper">Забыли пароль?</a>
                             </div>
                             <div class="input-with-btn sign_in-form-group-input-container">
                                 <input class="input-nested" name="password" id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>

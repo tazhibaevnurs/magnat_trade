@@ -42,6 +42,48 @@ export const loginUser = async (data) => {
 
 };
 
+export const requestPasswordReset = async (data) => {
+    try {
+        const response = await fetch("/api/password-reset/request/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.err || "Не удалось отправить письмо.");
+        }
+        return result;
+    } catch (err) {
+        console.error("api/auth requestPasswordReset error: ", err);
+        throw err;
+    }
+};
+
+export const confirmPasswordReset = async (data) => {
+    try {
+        const response = await fetch("/api/password-reset/confirm/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.err || "Не удалось сменить пароль.");
+        }
+        return result;
+    } catch (err) {
+        console.error("api/auth confirmPasswordReset error: ", err);
+        throw err;
+    }
+};
+
 export const createUser = async (data) => {
 
     try {

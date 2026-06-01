@@ -4352,6 +4352,24 @@ a.product-card__wish {
   margin: 0;
 }
 
+.sign_in-form-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--color-success, #16a34a) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success, #16a34a) 35%, transparent);
+}
+
+.sign_in-form-success-text {
+  margin: 0;
+  color: var(--text-primary, inherit);
+  font-size: var(--text-sm, 0.875rem);
+  line-height: 1.5;
+}
+
 .sign_in-password-label-row {
   display: flex;
   flex-wrap: wrap;
