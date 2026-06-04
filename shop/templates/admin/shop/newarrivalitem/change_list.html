@@ -1,0 +1,59 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<div class="auto-new-arrivals-admin" style="margin-bottom: 28px;">
+  <h2 style="font-size: 18px; margin: 0 0 8px 0;">Автоматические новинки (как на /novinki/)</h2>
+  {% if auto_new_arrivals_disabled %}
+  <p class="help" style="margin: 0 0 12px 0;">
+    Авто-новинки отключены: в .env задано пустое <code>SHOP_NEW_ARRIVALS_AUTO_SINCE</code>.
+    На сайте в разделе «Новинки» остаются только ручные записи из таблицы ниже.
+  </p>
+  {% else %}
+  <p class="help" style="margin: 0 0 12px 0;">
+    Товары из <strong>Номенклатура → Товары</strong>, у которых
+    «Первое появление в каталоге» не раньше <strong>{{ auto_new_arrivals_since }}</strong>
+    (настройка <code>SHOP_NEW_ARRIVALS_AUTO_SINCE</code>).
+    Появляются на сайте без записи в таблице «Новинки: товары».
+    <a href="{{ auto_new_arrivals_products_changelist_url }}">Открыть все в списке товаров →</a>
+  </p>
+  {% if auto_new_arrivals_total == 0 %}
+  <p style="margin: 0;">Сейчас автоматических новинок нет.</p>
+  {% else %}
+  <p style="margin: 0 0 10px 0;">Всего: <strong>{{ auto_new_arrivals_total }}</strong>
+    {% if auto_new_arrivals_truncated %} (ниже первые 200){% endif %}
+  </p>
+  <div class="results">
+    <table id="auto-new-arrivals-table" style="width: 100%;">
+      <thead>
+        <tr>
+          <th scope="col">Код 1С</th>
+          <th scope="col">Название</th>
+          <th scope="col">Категория</th>
+          <th scope="col">Первое появление</th>
+          <th scope="col">Цена</th>
+          <th scope="col">Остаток</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in auto_new_arrivals %}
+        <tr>
+          <td><a href="{% url 'admin:products_product_change' p.pk %}">{{ p.id }}</a></td>
+          <td><a href="{% url 'admin:products_product_change' p.pk %}">{{ p.name|truncatechars:70 }}</a></td>
+          <td>{{ p.category.name|truncatechars:40 }}</td>
+          <td>{{ p.created_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ p.retail_price }}</td>
+          <td>{{ p.stock }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% endif %}
+  <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--hairline-color, #ccc);">
+  <h2 style="font-size: 18px; margin: 0 0 8px 0;">Ручные новинки (закрепление в админке)</h2>
+  <p class="help" style="margin: 0 0 12px 0;">Дополнительно к автоматическому списку. Редактирование — в таблице ниже.</p>
+</div>
+{{ block.super }}
+{% endblock %}

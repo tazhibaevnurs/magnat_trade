@@ -20,6 +20,20 @@ def shop_new_arrivals_include_since_datetime():
     return timezone.make_aware(datetime.combine(d, dtime.min))
 
 
+def auto_new_arrival_products_queryset():
+    """Номенклатура 1С, попадающая на /novinki/ по дате первого появления в БД (без ручного NewArrivalItem)."""
+    from products.models import Product
+
+    since_dt = shop_new_arrivals_include_since_datetime()
+    if since_dt is None:
+        return Product.objects.none()
+    return (
+        Product.objects.filter(is_active=True, created_at__gte=since_dt)
+        .select_related("category")
+        .order_by("-created_at")
+    )
+
+
 def build_new_arrivals_or_q(*, manual_pks: list[Any]) -> Q | None:
     """Объединяет фильтры: активные записи NewArrivalItem и товары с created_at >= SHOP_NEW_ARRIVALS_AUTO_SINCE.
 

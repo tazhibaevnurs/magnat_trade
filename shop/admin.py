@@ -1,11 +1,17 @@
 from datetime import date, timedelta
 
+from django.conf import settings
 from django.contrib import admin
 from django.contrib import messages
 from django.db.models import Count, DecimalField, F, Q, Sum
 from django.shortcuts import render
 from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
+
+from shop.services.new_arrival_items import (
+    auto_new_arrival_products_queryset,
+    shop_new_arrivals_include_since_datetime,
+)
 
 from .models import (
     Address,
@@ -30,6 +36,7 @@ admin.site.index_title = "Управление сайтом"
 
 @admin.register(NewArrivalItem)
 class NewArrivalItemAdmin(admin.ModelAdmin):
+    change_list_template = "admin/shop/newarrivalitem/change_list.html"
     list_display = ("id", "product_display", "sort_order", "is_active")
     list_editable = ("sort_order", "is_active")
     list_filter = ("is_active",)
@@ -43,12 +50,32 @@ class NewArrivalItemAdmin(admin.ModelAdmin):
                 "description": (
                     "Заполните только одно поле. Запись добавляет товар на «Новинки» дополнительно к автоматическому "
                     "списку номенклатуры, впервые появившейся в базе после даты SHOP_NEW_ARRIVALS_AUTO_SINCE "
-                    "(см. настройки деплоя / .env)."
+                    "(см. настройки деплоя / .env). Автоматический список отображается ниже на этой же странице."
                 ),
             },
         ),
         ("На сайте", {"fields": ("sort_order", "is_active")}),
     )
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        since_dt = shop_new_arrivals_include_since_datetime()
+        auto_qs = auto_new_arrival_products_queryset()
+        auto_total = auto_qs.count()
+        auto_limit = 200
+        extra_context.update(
+            {
+                "auto_new_arrivals_since": getattr(settings, "SHOP_NEW_ARRIVALS_AUTO_SINCE", None),
+                "auto_new_arrivals_since_dt": since_dt,
+                "auto_new_arrivals_disabled": since_dt is None,
+                "auto_new_arrivals_total": auto_total,
+                "auto_new_arrivals": auto_qs[:auto_limit],
+                "auto_new_arrivals_truncated": auto_total > auto_limit,
+                "auto_new_arrivals_products_changelist_url": reverse("admin:products_product_changelist")
+                + "?auto_novinki=1",
+            }
+        )
+        return super().changelist_view(request, extra_context=extra_context)
 
     @admin.display(description="Товар")
     def product_display(self, obj: NewArrivalItem) -> str:

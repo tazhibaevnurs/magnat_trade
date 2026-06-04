@@ -24,7 +24,7 @@
                 <div class="catalog-toolbar">
                     <div>
                         <h1 class="catalog-toolbar__title">{{ page_heading }}</h1>
-                        <p class="catalog-toolbar__hint">{{ page_lead }}</p>
+                        {% if page_lead %}<p class="catalog-toolbar__hint">{{ page_lead }}</p>{% endif %}
                     </div>
                 </div>
 

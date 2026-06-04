@@ -236,6 +236,18 @@ class TestShopCategoryDescendants:
         qs = filter_catalog_products(req, new_arrivals_only=True)
         assert qs.count() == 0
 
+    def test_auto_new_arrival_products_queryset_matches_since(self, product):
+        from datetime import date
+
+        from django.test import override_settings
+
+        from shop.services.new_arrival_items import auto_new_arrival_products_queryset
+
+        with override_settings(SHOP_NEW_ARRIVALS_AUTO_SINCE=date(2099, 1, 1)):
+            assert product.id not in set(auto_new_arrival_products_queryset().values_list("pk", flat=True))
+        with override_settings(SHOP_NEW_ARRIVALS_AUTO_SINCE=date(2020, 1, 1)):
+            assert product.id in set(auto_new_arrival_products_queryset().values_list("pk", flat=True))
+
     def test_new_arrivals_respects_auto_since_cutoff(self, product):
         from datetime import date
 

@@ -491,11 +491,6 @@ def shop_new_arrivals(request):
     context.update(
         {
             "page_heading": "Новинки",
-            "page_lead": (
-                "Сюда автоматически попадают товары каталога 1С, впервые появившиеся в базе сайта после "
-                "даты порога (по умолчанию 5 мая 2026, настраивается SHOP_NEW_ARRIVALS_AUTO_SINCE). "
-                "Дополнительно можно закрепить позиции в админке: «Новинки: товары»."
-            ),
             "grid_url": reverse("shop_grid_new_arrivals"),
             "breadcrumb_items": [
                 {"name": "Главная", "url": "/"},

@@ -15,6 +15,8 @@ from shop.category_nav import (
     normalize_nav_root_title,
 )
 
+from shop.services.new_arrival_items import auto_new_arrival_products_queryset
+
 from .admin_gallery_batch import append_images_for_product, max_files_per_request
 from .models import Category, Product, ProductImage
 
@@ -351,6 +353,22 @@ class CategoryAdmin(admin.ModelAdmin):
         return root.name
 
 
+class AutoNovinkiListFilter(admin.SimpleListFilter):
+    """Фильтр «как на /novinki/» по дате SHOP_NEW_ARRIVALS_AUTO_SINCE."""
+
+    title = "Новинки (авто)"
+    parameter_name = "auto_novinki"
+
+    def lookups(self, request, model_admin):
+        return (("1", "Попадают в авто-новинки"),)
+
+    def queryset(self, request, queryset):
+        if self.value() != "1":
+            return queryset
+        auto_ids = auto_new_arrival_products_queryset().values_list("pk", flat=True)
+        return queryset.filter(pk__in=auto_ids)
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     class ProductAdminForm(forms.ModelForm):
@@ -382,10 +400,18 @@ class ProductAdmin(admin.ModelAdmin):
         "retail_price",
         "stock",
         "is_active",
+        "first_seen_at",
     )
     list_display_links = ("id", "name")
     search_fields = ("name", "sku", "id")
-    list_filter = (SiteCatalogScopeFilter, ProductCatalogRootSectionFilter, "is_active", "category")
+    list_filter = (
+        AutoNovinkiListFilter,
+        SiteCatalogScopeFilter,
+        ProductCatalogRootSectionFilter,
+        "is_active",
+        "category",
+    )
+    date_hierarchy = "created_at"
     readonly_fields = ("id", "created_at", "updated_at", "gallery_preview")
     inlines = (ProductImageInline,)
     fieldsets = (
@@ -490,6 +516,12 @@ class ProductAdmin(admin.ModelAdmin):
         if restrict is not None and request.GET.get("site_scope") != "all":
             qs = qs.filter(category_id__in=restrict)
         return qs
+
+    @admin.display(description="Первое появление", ordering="created_at")
+    def first_seen_at(self, obj: Product) -> str:
+        if not obj.created_at:
+            return "—"
+        return obj.created_at.strftime("%Y-%m-%d %H:%M")
 
     @admin.display(description="Корневой раздел")
     def catalog_root_display(self, obj: Product) -> str:
