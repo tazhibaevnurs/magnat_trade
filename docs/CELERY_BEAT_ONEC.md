@@ -2,7 +2,7 @@
 
 Пути HTTP-сервиса задаются относительно `ONEC_API_BASE_URL` (база до `/hs`, без слэша в конце), например:
 
-`https://rdp.it-help.kg:4443/bereke_test/hs`
+`https://rdp.it-help.kg:4443/bereke/hs`
 
 | URL (подставляется к базе) | Назначение |
 |----------------------------|------------|
@@ -21,7 +21,7 @@
 ## Интервал 60 минут для «всего сразу»
 
 1. В `.env`:
-   - `ONEC_API_BASE_URL=https://rdp.it-help.kg:4443/bereke_test/hs` (и учётные данные Basic/Bearer).
+   - `ONEC_API_BASE_URL=https://rdp.it-help.kg:4443/bereke/hs` (и учётные данные Basic/Bearer).
    - `ONEC_BEAT_SYNC_ENABLED=true`
    - **`ONEC_BEAT_PRODUCT_SYNC_MINUTES=0`** — отключить частую задачу «только товары».
    - **`ONEC_BEAT_FULL_SYNC_MINUTES=60`** — полная синхронизация раз в час.

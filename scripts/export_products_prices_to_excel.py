@@ -24,7 +24,10 @@ from dotenv import load_dotenv
 from openpyxl import Workbook
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 load_dotenv(ROOT / ".env")
+
+from integrations.onec_constants import ONEC_DEFAULT_BASE_URL  # noqa: E402
 
 PATH_CATEGORY_PRODUCT_LIST = "/categories_products/categoryProductList"
 PATH_PRODUCT_LIST = "/products/productList"
@@ -138,7 +141,7 @@ def build_headers() -> dict[str, str]:
 def fetch_json(path: str, timeout: float, verify_ssl: bool) -> Any:
     base_url = (os.getenv("ONEC_API_BASE_URL") or "").rstrip("/")
     if not base_url:
-        base_url = "https://rdp.it-help.kg:4443/bereke_test/hs"
+        base_url = ONEC_DEFAULT_BASE_URL
     url = f"{base_url}{path}"
 
     with httpx.Client(timeout=timeout, verify=verify_ssl) as client:

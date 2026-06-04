@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from dotenv import load_dotenv
+from integrations.onec_constants import ONEC_DEFAULT_BASE_URL  # noqa: E402
 
 load_dotenv(ROOT / ".env")
 
@@ -20,7 +20,7 @@ import httpx  # noqa: E402
 def main() -> None:
     base = (os.getenv("ONEC_API_BASE_URL") or "").rstrip("/")
     if not base:
-        base = "https://rdp.it-help.kg:4443/bereke_test/hs"
+        base = ONEC_DEFAULT_BASE_URL
         print("ONEC_API_BASE_URL пуст, используем:", base, file=sys.stderr)
     path = "/categories_products/categoryProductList"
     url = f"{base}{path}"

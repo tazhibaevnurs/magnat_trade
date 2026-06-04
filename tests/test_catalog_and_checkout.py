@@ -79,7 +79,7 @@ class TestCheckout:
         assert r.status_code == 403
 
     def test_requires_external_id_when_onec_configured(self, api_client, product, settings):
-        settings.ONEC_API_BASE_URL = "https://example.test/bereke_test/hs"
+        settings.ONEC_API_BASE_URL = "https://example.test/bereke/hs"
         from django.contrib.auth import get_user_model
 
         User = get_user_model()

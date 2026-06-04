@@ -386,7 +386,7 @@ LOGGING = {
 }
 
 # --- Интеграция 1С (HTTP-сервис, см. «Руководство к API.docx») ---
-# Пример: https://rdp.it-help.kg:4443/bereke_test/hs
+# Пример: https://rdp.it-help.kg:4443/bereke/hs
 ONEC_API_BASE_URL = os.getenv("ONEC_API_BASE_URL", "").rstrip("/")
 ONEC_AUTH_TYPE = os.getenv("ONEC_AUTH_TYPE", "basic").strip().lower()
 ONEC_API_TOKEN = os.getenv("ONEC_API_TOKEN", "").strip()

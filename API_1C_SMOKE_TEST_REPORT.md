@@ -1,10 +1,12 @@
-# Отчёт: проверка URL HTTP-сервиса 1С (bereke_test)
+# Отчёт: проверка URL HTTP-сервиса 1С (bereke)
 
-**Дата проверки:** 2026-03-25  
+**Дата проверки:** 2026-03-25 (обновлено 2026-06-04 — публикация `bereke`)  
 **Источник:** «Руководство к API.docx» (реальные адреса и авторизация).  
-**Базовый URL:** `https://rdp.it-help.kg:4443/bereke_test/hs`
+**Базовый URL:** `https://rdp.it-help.kg:4443/bereke/hs`
 
 > Учётные данные из руководства в отчёт не дублируются — храните их только в защищённых местах.
+
+**Автопроверка:** `python manage.py smoke_onec_urls` или `pytest tests/test_onec_urls_smoke.py` (live: bash `ONEC_SMOKE_LIVE=1 pytest … -m integration`; PowerShell `$env:ONEC_SMOKE_LIVE="1"; pytest … -m integration`).
 
 ---
 
@@ -118,7 +120,7 @@ SSL certificate problem: self signed certificate
 
 | Компонент | Статус |
 |-----------|--------|
-| Доступность хоста и публикации `bereke_test/hs` | OK |
+| Доступность хоста и публикации `bereke/hs` | OK |
 | Три GET (списки) | OK, HTTP 200 |
 | POST создание клиента | OK, HTTP 200 |
 | POST создание заказа | OK при валидных `customer_id` / `product_id` из базы; **не OK** для проверенного контрагента `НФ-000238` (HTTP 500, разбор на стороне 1С) |

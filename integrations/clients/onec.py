@@ -16,7 +16,9 @@ from integrations.models import OneCInteractionLog
 
 logger = logging.getLogger(__name__)
 
-# Пути относительно ONEC_API_BASE_URL (например …/bereke_test/hs)
+from integrations.onec_constants import ONEC_DEFAULT_BASE_URL
+
+# Пути относительно ONEC_API_BASE_URL (например …/bereke/hs)
 PATH_CREATE_COUNTERPARTY = "/counterparties/create_counterparty"
 PATH_COUNTERPARTY_LIST = "/counterparties/counterpartyList"
 PATH_CATEGORY_LIST = "/categories/categoryList"
