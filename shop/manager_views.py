@@ -28,6 +28,7 @@ from products.models import Category as CatalogCategory
 from products.models import Product as CatalogProduct
 from integrations.services.onec_registration import register_site_user_in_onec
 from .category_nav import get_shop_catalog_product_category_roots
+from .order_display import attach_line_display_products
 from .pricing import can_access_manager_panel
 from users.models import User, WholesaleUpgradeRequest
 from users.services.wholesale_upgrade import (
@@ -288,6 +289,40 @@ def manager_orders_pdf(request):
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="client-orders.pdf"'
     return response
+
+
+@login_required
+@manager_required
+@require_http_methods(["GET"])
+def manager_order_detail(request, order_id):
+    """Детальная страница заказа для менеджера."""
+    oid = order_id
+    if not isinstance(oid, uuid.UUID):
+        try:
+            oid = uuid.UUID(str(order_id))
+        except ValueError as err:
+            from django.http import Http404
+
+            raise Http404 from err
+    order = get_object_or_404(
+        Order.objects.select_related("user").prefetch_related("items"),
+        pk=oid,
+    )
+    attach_line_display_products(order)
+    breadcrumb_items = [
+        {"name": "Главная", "url": "/"},
+        {"name": "Профиль", "url": reverse("profile")},
+        {"name": "Панель менеджера", "url": f"{reverse('manager_dashboard')}?tab=orders"},
+        {"name": f"Заказ №{str(order.id)[:8].upper()}", "url": None},
+    ]
+    return render(
+        request,
+        "shop/manager_order_detail.html",
+        {
+            "order": order,
+            "breadcrumb_items": breadcrumb_items,
+        },
+    )
 
 
 @login_required

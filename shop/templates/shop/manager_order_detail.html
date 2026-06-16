@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Заказ №{{ order.id|stringformat:"s"|slice:":8"|upper }}{% endblock %}
+
+{% block content %}
+<div class="container page-block manager-page">
+    {% include "includes/breadcrumbs.html" %}
+
+    <header class="profile-hero" style="margin-bottom:var(--spacing-lg);">
+        <div style="display:flex;flex-wrap:wrap;gap:var(--spacing-md);align-items:flex-start;justify-content:space-between;">
+            <div>
+                <h1 class="profile-hero__title">Заказ №{{ order.id|stringformat:"s"|slice:":8"|upper }}</h1>
+                <p class="profile-hero__subtitle">Оформлен {{ order.created_at|date:"d.m.Y H:i" }}</p>
+            </div>
+            <a href="{% url 'manager_dashboard' %}?tab=orders" class="btn-secondary">← К списку заказов</a>
+        </div>
+    </header>
+
+    <div class="space-y-6">
+        <div style="display:grid;gap:var(--spacing-lg);grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+            <section class="auth-card contact-page__form-card">
+                <h2 class="contact-page__form-title" style="font-size:1rem;">Статус заказа</h2>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <span class="profile-badge" style="background:var(--color-tag-bg);color:var(--color-primary);">
+                        {% if order.status == 'pending' %}В обработке{% elif order.status == 'delivered' %}Доставлен{% elif order.status == 'draft' %}Черновик{% else %}{{ order.status }}{% endif %}
+                    </span>
+                    <span class="profile-badge" style="background:var(--color-bg-light, #f1f5f9);color:var(--color-text-secondary);">
+                        {{ order.onec_sync_state_label }}
+                    </span>
+                </div>
+                {% if order.user %}
+                <p class="manager-table__muted" style="margin:var(--spacing-sm) 0 0;">
+                    Аккаунт: {{ order.user.email }}
+                </p>
+                {% endif %}
+            </section>
+
+            <section class="auth-card contact-page__form-card">
+                <h2 class="contact-page__form-title" style="font-size:1rem;">Доставка и контакты</h2>
+                <p class="section-desc" style="margin:0 0 8px;"><strong>{{ order.delivery_full_name|default:"—" }}</strong></p>
+                <p class="section-desc" style="margin:0 0 8px;"><strong>Телефон:</strong> {{ order.delivery_phone|default:"—" }}</p>
+                <p class="section-desc" style="margin:0 0 8px;"><strong>Email:</strong> {{ order.delivery_email|default:"—" }}</p>
+                <p class="section-desc" style="margin:0 0 8px;"><strong>Адрес:</strong> {{ order.delivery_address|default:"—" }}</p>
+                <p class="section-desc" style="margin:0 0 8px;"><strong>Способ доставки:</strong> {{ order.delivery_method_label }}</p>
+                {% if order.customer_comment %}
+                <p class="section-desc" style="margin:0;"><strong>Комментарий:</strong> {{ order.customer_comment }}</p>
+                {% endif %}
+            </section>
+        </div>
+
+        <section class="auth-card contact-page__form-card">
+            <h2 class="contact-page__form-title" style="font-size:1rem;">Товары в заказе ({{ order.items.count }})</h2>
+            <div class="manager-table-wrap">
+                <table class="manager-table">
+                    <thead>
+                        <tr>
+                            <th>Наименование</th>
+                            <th>Кол-во</th>
+                            <th>Цена</th>
+                            <th>Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                        <tr>
+                            <td>
+                                {{ item.name_snapshot|default:item.product_id }}
+                                {% if item.special_instructions %}
+                                <div class="manager-table__muted">Отметка: {{ item.special_instructions }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.price }} сом</td>
+                            <td><strong>{{ item.line_total }} сом</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="manager-empty">Позиции отсутствуют</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="auth-card contact-page__form-card">
+            <h2 class="contact-page__form-title" style="font-size:1rem;">Итого</h2>
+            <div style="display:grid;gap:10px;max-width:24rem;">
+                <div class="product-spec-row" style="padding:0;border:none;">
+                    <span>Сумма товаров</span>
+                    <span>{{ order.goods_subtotal }} сом</span>
+                </div>
+                <div class="product-spec-row" style="padding:0;border:none;">
+                    <span>Доставка</span>
+                    <span>{{ order.shipping_fee }} сом</span>
+                </div>
+                <div class="product-spec-row" style="padding-top:10px;border-top:1px solid var(--color-border-light);font-weight:700;">
+                    <span>Итого к оплате</span>
+                    <span style="color:var(--color-primary);">{{ order.total_amount }} сом</span>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:var(--spacing-md);">
+                <a href="{% url 'manager_order_pdf' order.id %}" class="btn-primary contact-page__btn-submit" target="_blank" rel="noopener">Скачать PDF</a>
+                <a href="{% url 'manager_dashboard' %}?tab=orders" class="btn-secondary">К списку заказов</a>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

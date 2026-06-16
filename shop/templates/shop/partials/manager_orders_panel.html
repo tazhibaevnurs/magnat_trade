@@ -37,7 +37,9 @@
                 {% for order in orders_page %}
                 <tr>
                     <td>
-                        <span class="manager-table__mono">{{ order.id|stringformat:"s"|slice:":8"|upper }}</span>
+                        <a href="{% url 'manager_order_detail' order.id %}" class="manager-table__mono" style="color:var(--color-primary);text-decoration:none;font-weight:600;">
+                            {{ order.id|stringformat:"s"|slice:":8"|upper }}
+                        </a>
                     </td>
                     <td>
                         <div>{{ order.delivery_full_name|default:"—" }}</div>
@@ -58,9 +60,14 @@
                         {% else %}{{ order.status }}{% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'manager_order_pdf' order.id %}" class="btn-secondary" style="padding:0.35rem 0.65rem;font-size:0.8125rem;white-space:nowrap;" target="_blank" rel="noopener">
-                            PDF
-                        </a>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;justify-content:flex-end;">
+                            <a href="{% url 'manager_order_detail' order.id %}" class="btn-primary" style="padding:0.35rem 0.65rem;font-size:0.8125rem;white-space:nowrap;">
+                                Открыть
+                            </a>
+                            <a href="{% url 'manager_order_pdf' order.id %}" class="btn-secondary" style="padding:0.35rem 0.65rem;font-size:0.8125rem;white-space:nowrap;" target="_blank" rel="noopener">
+                                PDF
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}

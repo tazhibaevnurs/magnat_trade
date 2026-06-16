@@ -38,6 +38,7 @@ urlpatterns = [
     path('profile/manager/', manager_views.manager_dashboard, name='manager_dashboard'),
     path('profile/manager/orders-panel/', manager_views.manager_orders_panel, name='manager_orders_panel'),
     path('profile/manager/orders/pdf/', manager_views.manager_orders_pdf, name='manager_orders_pdf'),
+    path('profile/manager/orders/<uuid:order_id>/', manager_views.manager_order_detail, name='manager_order_detail'),
     path('profile/manager/orders/<uuid:order_id>/pdf/', manager_views.manager_order_pdf, name='manager_order_pdf'),
     path('profile/manager/products-panel/', manager_views.manager_products_panel, name='manager_products_panel'),
     path('profile/manager/categories-panel/', manager_views.manager_categories_panel, name='manager_categories_panel'),
