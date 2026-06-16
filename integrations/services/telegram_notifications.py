@@ -7,6 +7,8 @@ import threading
 import httpx
 from django.conf import settings
 
+from orders.services.order_pdf import build_order_pdf
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,13 +19,20 @@ def _telegram_notifications_enabled() -> bool:
     return enabled and bool(token) and bool(chat_id)
 
 
+def _telegram_http_timeout(*, for_document: bool = False) -> float:
+    base = float(getattr(settings, "TELEGRAM_HTTP_TIMEOUT", 3.0))
+    if for_document:
+        return max(base, 15.0)
+    return base
+
+
 def _send_telegram_message(text: str) -> bool:
     if not _telegram_notifications_enabled():
         return False
 
     token = (getattr(settings, "TELEGRAM_BOT_TOKEN", "") or "").strip()
     chat_id = (getattr(settings, "TELEGRAM_GROUP_CHAT_ID", "") or "").strip()
-    timeout = float(getattr(settings, "TELEGRAM_HTTP_TIMEOUT", 3.0))
+    timeout = _telegram_http_timeout()
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": chat_id,
@@ -43,6 +52,41 @@ def _send_telegram_message(text: str) -> bool:
         return False
 
 
+def _send_telegram_document(
+    pdf_bytes: bytes,
+    filename: str,
+    *,
+    caption: str = "",
+) -> bool:
+    if not _telegram_notifications_enabled():
+        return False
+
+    token = (getattr(settings, "TELEGRAM_BOT_TOKEN", "") or "").strip()
+    chat_id = (getattr(settings, "TELEGRAM_GROUP_CHAT_ID", "") or "").strip()
+    timeout = _telegram_http_timeout(for_document=True)
+    url = f"https://api.telegram.org/bot{token}/sendDocument"
+    data = {
+        "chat_id": chat_id,
+        "caption": (caption or "")[:1024],
+        "parse_mode": "HTML",
+    }
+    files = {"document": (filename, pdf_bytes, "application/pdf")}
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.post(url, data=data, files=files)
+        if resp.status_code >= 400:
+            logger.warning(
+                "Telegram document failed: HTTP %s %s",
+                resp.status_code,
+                resp.text[:300],
+            )
+            return False
+        return True
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Telegram document exception: %s", exc)
+        return False
+
+
 def _dispatch_message(text: str) -> bool:
     async_mode = bool(getattr(settings, "TELEGRAM_ASYNC_SEND", True))
     if not async_mode:
@@ -56,15 +100,25 @@ def _dispatch_message(text: str) -> bool:
     return True
 
 
-def notify_order_created(order) -> bool:
-    lines = list(order.items.all()[:12])
-    items_preview = "\n".join(
-        f"• {html.escape(line.name_snapshot or line.product_id)} × {line.quantity} = {line.line_total}"
-        for line in lines
-    )
-    if order.items.count() > len(lines):
-        items_preview += "\n• …"
+def _dispatch_order_notification(text: str, pdf_bytes: bytes, filename: str, caption: str) -> bool:
+    def _send():
+        _send_telegram_message(text)
+        _send_telegram_document(pdf_bytes, filename, caption=caption)
 
+    async_mode = bool(getattr(settings, "TELEGRAM_ASYNC_SEND", True))
+    if not async_mode:
+        _send()
+        return True
+    threading.Thread(
+        target=_send,
+        daemon=True,
+        name="telegram-order-notify",
+    ).start()
+    return True
+
+
+def notify_order_created(order) -> bool:
+    item_count = order.items.count()
     customer = html.escape(order.delivery_full_name or "-")
     phone = html.escape(getattr(order, "delivery_phone", "") or "-")
     email = html.escape(order.delivery_email or "-")
@@ -89,9 +143,17 @@ def notify_order_created(order) -> bool:
         f"• Доставка: {order.shipping_fee}\n"
         f"• Итого к оплате: <b>{order.total_amount}</b>\n\n"
         f"💬 <b>Комментарий:</b> {comment}\n\n"
-        f"📦 <b>Состав заказа:</b>\n{items_preview}"
+        f"📦 <b>Позиций в заказе:</b> {item_count}\n"
+        "Полный состав заказа — во вложенном PDF."
     )
-    return _dispatch_message(text)
+
+    pdf_bytes = build_order_pdf(order)
+    filename = f"order-{order.id}.pdf"
+    caption = (
+        f"Заказ <code>{order_id}</code> · {item_count} поз. · "
+        f"итого <b>{order.total_amount}</b> сом"
+    )
+    return _dispatch_order_notification(text, pdf_bytes, filename, caption)
 
 
 def notify_feedback_created(*, name: str, email: str, category: str, subject: str, message: str) -> bool:

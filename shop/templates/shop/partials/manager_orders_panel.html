@@ -1,0 +1,103 @@
+<div id="manager-orders-panel-inner">
+    <form method="get" class="manager-products-search manager-products-search--bar mb-4" data-manager-orders-search>
+        <input type="hidden" name="tab" value="orders">
+        <label class="sr-only" for="manager-order-q">Поиск заказов</label>
+        <input
+            id="manager-order-q"
+            name="order_q"
+            type="search"
+            value="{{ order_q }}"
+            placeholder="Email, имя, телефон или номер заказа"
+            class="manager-inline-field flex-1 min-w-0"
+            autocomplete="off">
+        <button type="submit" class="btn-secondary contact-page__btn-reset">Найти</button>
+        {% if order_q %}
+        <a href="{% url 'manager_dashboard' %}?tab=orders" class="btn-secondary contact-page__btn-reset">Сбросить</a>
+        {% endif %}
+    </form>
+
+    <p class="manager-empty" style="margin-bottom:1rem;">
+        Всего заказов: <strong>{{ orders_total_count }}</strong>
+    </p>
+
+    <div class="manager-table-wrap manager-table-wrap--medium">
+        <table class="manager-table">
+            <thead>
+                <tr>
+                    <th>Заказ</th>
+                    <th>Клиент</th>
+                    <th>Дата</th>
+                    <th>Позиций</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders_page %}
+                <tr>
+                    <td>
+                        <span class="manager-table__mono">{{ order.id|stringformat:"s"|slice:":8"|upper }}</span>
+                    </td>
+                    <td>
+                        <div>{{ order.delivery_full_name|default:"—" }}</div>
+                        <div class="manager-table__muted">
+                            {% if order.delivery_email %}{{ order.delivery_email }}{% elif order.user %}{{ order.user.email }}{% else %}—{% endif %}
+                        </div>
+                        {% if order.delivery_phone %}
+                        <div class="manager-table__muted">{{ order.delivery_phone }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="manager-table__muted">{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ order.items.count }}</td>
+                    <td><strong>{{ order.total_amount }} сом</strong></td>
+                    <td>
+                        {% if order.status == 'pending' %}В обработке
+                        {% elif order.status == 'delivered' %}Доставлен
+                        {% elif order.status == 'draft' %}Черновик
+                        {% else %}{{ order.status }}{% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'manager_order_pdf' order.id %}" class="btn-secondary" style="padding:0.35rem 0.65rem;font-size:0.8125rem;white-space:nowrap;" target="_blank" rel="noopener">
+                            PDF
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="manager-empty">Заказов пока нет.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if orders_page.has_other_pages %}
+    <div class="manager-pagination" style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:1rem;flex-wrap:wrap;">
+        {% if orders_page.has_previous %}
+        <a href="{% url 'manager_dashboard' %}?tab=orders&amp;order_page={{ orders_page.previous_page_number }}{% if order_q %}&amp;order_q={{ order_q|urlencode }}{% endif %}" class="btn-secondary">Назад</a>
+        {% endif %}
+        <span class="manager-table__muted">Страница {{ orders_page.number }} из {{ orders_page.paginator.num_pages }}</span>
+        {% if orders_page.has_next %}
+        <a href="{% url 'manager_dashboard' %}?tab=orders&amp;order_page={{ orders_page.next_page_number }}{% if order_q %}&amp;order_q={{ order_q|urlencode }}{% endif %}" class="btn-secondary">Вперёд</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if orders_total_count %}
+    <div class="manager-orders-pdf-bar" style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--color-border-light, #e5e7eb);display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;justify-content:space-between;">
+        <div>
+            <p class="contact-page__form-title" style="margin:0;font-size:1rem;">Сводный PDF</p>
+            <p class="manager-table__muted" style="margin:0.35rem 0 0;">
+                Все {{ orders_total_count }} заказов{% if order_q %} по текущему поиску{% endif %} в одном файле для просмотра и печати.
+            </p>
+        </div>
+        <a
+            href="{% url 'manager_orders_pdf' %}{% if order_q %}?order_q={{ order_q|urlencode }}{% endif %}"
+            class="btn-primary contact-page__btn-submit"
+            style="white-space:nowrap;"
+            target="_blank"
+            rel="noopener">
+            Скачать PDF (все заказы)
+        </a>
+    </div>
+    {% endif %}
+</div>

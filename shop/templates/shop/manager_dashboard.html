@@ -8,11 +8,12 @@
 
     <header class="profile-hero">
         <h1 class="profile-hero__title">Панель менеджера</h1>
-        <p class="profile-hero__subtitle">Заявки на опт, цены каталога 1С, категории и пользователи</p>
+        <p class="profile-hero__subtitle">Заявки на опт, заказы клиентов, цены каталога 1С, категории и пользователи</p>
     </header>
 
     <div class="manager-tabs" aria-label="Разделы панели">
         <button type="button" class="manager-tab" data-manager-tab-btn="requests" aria-pressed="false">Заявки на опт</button>
+        <button type="button" class="manager-tab" data-manager-tab-btn="orders" aria-pressed="false">Заказы</button>
         <button type="button" class="manager-tab" data-manager-tab-btn="products" aria-pressed="false">Товары и цены</button>
         <button type="button" class="manager-tab" data-manager-tab-btn="categories" aria-pressed="false">Категории</button>
         <button type="button" class="manager-tab" data-manager-tab-btn="users" aria-pressed="false">Пользователи</button>
@@ -78,6 +79,14 @@
         </div>
     </section>
 
+    {# Заказы клиентов #}
+    <section class="auth-card contact-page__form-card" data-manager-tab-pane="orders" hidden>
+        <h2 class="contact-page__form-title">Заказы клиентов</h2>
+        <div id="manager-orders-panel">
+            {% include "shop/partials/manager_orders_panel.html" %}
+        </div>
+    </section>
+
     {# Товары #}
     <section data-manager-tab-pane="products" hidden>
         <div class="auth-card contact-page__form-card">
@@ -130,7 +139,7 @@
         var root = document.querySelector('[data-manager-root]');
         if (!root) return;
 
-        var tabs = ['requests', 'products', 'categories', 'users'];
+        var tabs = ['requests', 'orders', 'products', 'categories', 'users'];
         var activeTab = (root.getAttribute('data-initial-tab') || 'requests').toLowerCase();
         if (tabs.indexOf(activeTab) === -1) activeTab = 'requests';
 

@@ -1,4 +1,4 @@
-"""Панель менеджера: заявки на опт, цены, категории, пользователи."""
+"""Панель менеджера: заявки на опт, заказы, цены, категории, пользователи."""
 
 from __future__ import annotations
 
@@ -11,16 +11,19 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError, Q, Value
 from django.db.models.functions import Replace
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.text import slugify
 from django.views.decorators.http import require_http_methods, require_POST
 
+from orders.models import Order
+from orders.services.order_pdf import build_order_pdf, build_orders_pdf
 from products.models import Category as CatalogCategory
 from products.models import Product as CatalogProduct
 from integrations.services.onec_registration import register_site_user_in_onec
@@ -33,7 +36,8 @@ from users.services.wholesale_upgrade import (
     reject_wholesale_upgrade_request,
 )
 
-_MANAGER_TABS = frozenset({"requests", "products", "categories", "users"})
+_MANAGER_TABS = frozenset({"requests", "orders", "products", "categories", "users"})
+_MANAGER_ORDERS_PAGE_SIZE = 25
 
 
 def _manager_initial_tab(request) -> str:
@@ -51,7 +55,50 @@ def _manager_initial_tab(request) -> str:
         return "products"
     if (request.GET.get("user_q") or "").strip():
         return "users"
+    if (request.GET.get("order_q") or "").strip() or (request.GET.get("order_page") or "").strip():
+        return "orders"
     return "requests"
+
+
+def _manager_orders_queryset(order_q: str = ""):
+    qs = (
+        Order.objects.filter(items__isnull=False)
+        .distinct()
+        .select_related("user")
+        .prefetch_related("items")
+        .order_by("-created_at")
+    )
+    order_q = (order_q or "").strip()
+    if not order_q:
+        return qs
+    filters = (
+        Q(delivery_email__icontains=order_q)
+        | Q(delivery_full_name__icontains=order_q)
+        | Q(delivery_phone__icontains=order_q)
+        | Q(user__email__icontains=order_q)
+    )
+    try:
+        filters |= Q(pk=uuid.UUID(order_q))
+    except ValueError:
+        pass
+    return qs.filter(filters)
+
+
+def _orders_panel_context(request):
+    order_q = (request.GET.get("order_q") or "").strip()
+    orders_qs = _manager_orders_queryset(order_q)
+    paginator = Paginator(orders_qs, _MANAGER_ORDERS_PAGE_SIZE)
+    page_number = request.GET.get("order_page") or request.GET.get("page") or 1
+    try:
+        page_number = max(1, int(str(page_number).strip()))
+    except (TypeError, ValueError):
+        page_number = 1
+    orders_page = paginator.get_page(page_number)
+    return {
+        "orders_page": orders_page,
+        "order_q": order_q,
+        "orders_total_count": paginator.count,
+    }
 
 
 def _products_panel_context(request):
@@ -186,6 +233,8 @@ def manager_dashboard(request):
 
     users_panel = _users_panel_context(request)
 
+    orders_panel = _orders_panel_context(request)
+
     breadcrumb_items = [
         {"name": "Главная", "url": "/"},
         {"name": "Профиль", "url": reverse("profile")},
@@ -209,8 +258,56 @@ def manager_dashboard(request):
             "search_q": products_panel["search_q"],
             "include_inactive": products_panel["include_inactive"],
             "edit_product": products_panel["edit_product"],
+            "orders_page": orders_panel["orders_page"],
+            "order_q": orders_panel["order_q"],
+            "orders_total_count": orders_panel["orders_total_count"],
         },
     )
+
+
+@login_required
+@manager_required
+@require_http_methods(["GET"])
+def manager_orders_panel(request):
+    """AJAX partial for orders block in manager dashboard."""
+    return render(
+        request,
+        "shop/partials/manager_orders_panel.html",
+        _orders_panel_context(request),
+    )
+
+
+@login_required
+@manager_required
+@require_http_methods(["GET"])
+def manager_orders_pdf(request):
+    """Сводный PDF всех заказов клиентов (с учётом поиска)."""
+    order_q = (request.GET.get("order_q") or "").strip()
+    orders = list(_manager_orders_queryset(order_q))
+    pdf_bytes = build_orders_pdf(orders)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="client-orders.pdf"'
+    return response
+
+
+@login_required
+@manager_required
+@require_http_methods(["GET"])
+def manager_order_pdf(request, order_id):
+    """PDF одного заказа для менеджера."""
+    oid = order_id
+    if not isinstance(oid, uuid.UUID):
+        try:
+            oid = uuid.UUID(str(order_id))
+        except ValueError as err:
+            from django.http import Http404
+
+            raise Http404 from err
+    order = get_object_or_404(Order.objects.prefetch_related("items"), pk=oid)
+    pdf_bytes = build_order_pdf(order)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="order-{order.id}.pdf"'
+    return response
 
 
 @login_required

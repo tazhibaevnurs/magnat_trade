@@ -61,13 +61,8 @@ from integrations.services.telegram_notifications import (
     notify_wholesale_request_created,
 )
 from orders.models import Order as CatalogOrder
+from orders.services.order_pdf import build_order_pdf
 from products.models import Product as CatalogProduct
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.utils import simpleSplit
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
 from PIL import Image, UnidentifiedImageError
 
 # Главная: две полные строки при 4 колонках сетки (4 + 4)
@@ -75,7 +70,6 @@ LANDING_SECTION_LIMIT = 8
 COURIER_SHIPPING_FEE = Decimal("300.00")
 FREE_SHIPPING_THRESHOLD = Decimal("3000.00")
 MAX_PAGINATION_PAGE = 1000
-MAX_CART_ITEM_QTY = 100
 MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024
 ALLOWED_PROFILE_PICTURE_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 ALLOWED_PROFILE_PICTURE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
@@ -145,6 +139,14 @@ def _parse_positive_int_bounded(raw, *, default: int, min_value: int = 1, max_va
     except (TypeError, ValueError):
         return default
     return max(min_value, min(max_value, val))
+
+
+def _parse_cart_quantity(raw, *, default: int, min_value: int = 1) -> int:
+    try:
+        val = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return default
+    return max(min_value, val)
 
 
 def _sanitize_special_instructions(raw: str | None) -> str:
@@ -1151,11 +1153,10 @@ def add_to_cart(request):
     """Add product to cart or increment quantity (shop.Product или каталог 1С)."""
     catalog_product_id = (request.POST.get("catalog_product_id") or "").strip()
     product_id = request.POST.get("product_id")
-    qty = _parse_positive_int_bounded(
+    qty = _parse_cart_quantity(
         request.POST.get("quantity", 1),
         default=1,
         min_value=1,
-        max_value=MAX_CART_ITEM_QTY,
     )
     special_instructions = _sanitize_special_instructions(
         request.POST.get("special_instructions")
@@ -1298,11 +1299,10 @@ def update_cart_item(request, item_id):
         if is_ajax:
             return JsonResponse({"success": False, "error": "Неверная корзина"}, status=403)
         return redirect("cart")
-    qty = _parse_positive_int_bounded(
+    qty = _parse_cart_quantity(
         request.POST.get("quantity", item.quantity),
         default=item.quantity,
         min_value=0,
-        max_value=MAX_CART_ITEM_QTY,
     )
     special_instructions = _sanitize_special_instructions(
         request.POST.get("special_instructions")
@@ -2286,212 +2286,6 @@ def order_detail(request, order_id):
     return render(request, 'shop/order_detail.html', context)
 
 
-def _draw_order_pdf(order: CatalogOrder) -> bytes:
-    buf = BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4)
-    width, height = A4
-    margin = 34
-    y = height - margin
-    content_width = width - (margin * 2)
-    font_name = "Helvetica"
-    try:
-        font_candidates = [
-            Path("C:/Windows/Fonts/arial.ttf"),
-            Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
-            Path("/usr/share/fonts/dejavu/DejaVuSans.ttf"),
-        ]
-        for f in font_candidates:
-            if f.exists():
-                pdfmetrics.registerFont(TTFont("OrderFont", str(f)))
-                font_name = "OrderFont"
-                break
-    except Exception:
-        pass
-
-    primary = colors.HexColor("#ef4444")
-    primary_dark = colors.HexColor("#dc2626")
-    text_main = colors.HexColor("#111827")
-    text_muted = colors.HexColor("#6b7280")
-    border = colors.HexColor("#e5e7eb")
-    soft_bg = colors.HexColor("#f8fafc")
-
-    def new_page():
-        nonlocal y
-        c.showPage()
-        y = height - margin
-
-    def ensure_space(space_needed: float):
-        nonlocal y
-        if y - space_needed < margin:
-            new_page()
-
-    def draw_wrapped_text(
-        text: str,
-        x: float,
-        y_top: float,
-        max_width: float,
-        size: int = 11,
-        color=colors.black,
-        leading: float = 14,
-    ) -> float:
-        c.setFont(font_name, size)
-        c.setFillColor(color)
-        lines = simpleSplit((text or "-").strip(), font_name, size, max_width)
-        cur_y = y_top
-        for line in lines:
-            c.drawString(x, cur_y, line)
-            cur_y -= leading
-        return cur_y
-
-    # Brand header
-    c.setFillColor(primary)
-    c.roundRect(margin, y - 40, content_width, 42, 10, fill=1, stroke=0)
-    c.setFillColor(colors.white)
-    c.setFont(font_name, 16)
-    c.drawString(margin + 14, y - 24, "Береке Канц")
-    c.setFont(font_name, 11)
-    c.drawRightString(margin + content_width - 14, y - 22, "Подтверждение заказа")
-    y -= 58
-
-    c.setFillColor(text_main)
-    c.setFont(font_name, 24)
-    c.drawString(margin, y, "Спасибо за заказ!")
-    y -= 26
-    c.setFillColor(text_muted)
-    c.setFont(font_name, 11)
-    c.drawString(margin, y, "Мы получили вашу заявку и уже передали ее в обработку.")
-    y -= 24
-
-    # Order info card
-    ensure_space(78)
-    c.setFillColor(soft_bg)
-    c.setStrokeColor(border)
-    c.roundRect(margin, y - 64, content_width, 62, 10, fill=1, stroke=1)
-    c.setFillColor(text_main)
-    c.setFont(font_name, 11)
-    c.drawString(margin + 12, y - 20, f"Номер заказа: {order.id}")
-    c.drawString(margin + 12, y - 38, f"Дата оформления: {order.created_at.strftime('%d.%m.%Y %H:%M')}")
-    c.setFillColor(primary_dark)
-    c.setFont(font_name, 12)
-    c.drawRightString(margin + content_width - 12, y - 29, f"Итого: {order.total_amount} сом")
-    y -= 84
-
-    # Order items section
-    c.setFillColor(text_main)
-    c.setFont(font_name, 14)
-    c.drawString(margin, y, "Состав заказа")
-    y -= 14
-
-    for item in order.items.all():
-        item_name = (item.name_snapshot or str(item.product_id or "")).strip() or "Товар"
-        if item.special_instructions:
-            item_name = f"{item_name} (отметка: {item.special_instructions})"
-        qty_text = f"x {item.quantity}"
-        price_text = f"{item.line_total} сом"
-
-        wrapped_name = simpleSplit(item_name, font_name, 11, content_width - 210)
-        row_height = max(30, 18 + (len(wrapped_name) - 1) * 13)
-        ensure_space(row_height + 8)
-
-        c.setFillColor(colors.white)
-        c.setStrokeColor(border)
-        c.roundRect(margin, y - row_height, content_width, row_height, 6, fill=1, stroke=1)
-        c.setFillColor(text_main)
-        c.setFont(font_name, 11)
-
-        name_y = y - 17
-        for line in wrapped_name:
-            c.drawString(margin + 10, name_y, line)
-            name_y -= 13
-
-        c.setFillColor(text_muted)
-        c.setFont(font_name, 10)
-        c.drawString(margin + content_width - 154, y - 17, qty_text)
-        c.setFillColor(primary_dark)
-        c.setFont(font_name, 11)
-        c.drawRightString(margin + content_width - 10, y - 17, price_text)
-        y -= row_height + 8
-
-    y -= 8
-
-    # Delivery block
-    ensure_space(150)
-    c.setFillColor(text_main)
-    c.setFont(font_name, 14)
-    c.drawString(margin, y, "Доставка и контакты")
-    y -= 12
-
-    c.setFillColor(soft_bg)
-    c.setStrokeColor(border)
-    c.roundRect(margin, y - 130, content_width, 126, 10, fill=1, stroke=1)
-
-    x_left = margin + 12
-    x_right = margin + (content_width / 2) + 8
-    base_y = y - 20
-    left_items = [
-        f"Способ доставки: {order.delivery_method_label}",
-        f"Стоимость доставки: {order.shipping_fee} сом",
-        f"Клиент: {order.delivery_full_name or '-'}",
-    ]
-    right_items = [
-        f"Телефон: {order.delivery_phone or '-'}",
-        f"Email: {order.delivery_email or '-'}",
-    ]
-
-    c.setFont(font_name, 10)
-    c.setFillColor(text_main)
-    cur_left = base_y
-    for text in left_items:
-        c.drawString(x_left, cur_left, text[:80])
-        cur_left -= 16
-
-    cur_right = base_y
-    for text in right_items:
-        c.drawString(x_right, cur_right, text[:80])
-        cur_right -= 16
-
-    address_bottom_y = draw_wrapped_text(
-        f"Адрес: {order.delivery_address or '-'}",
-        x_left,
-        y - 74,
-        content_width - 24,
-        size=10,
-        color=text_main,
-        leading=14,
-    )
-    if order.customer_comment:
-        draw_wrapped_text(
-            f"Комментарий: {order.customer_comment}",
-            x_left,
-            address_bottom_y - 4,
-            content_width - 24,
-            size=10,
-            color=text_muted,
-            leading=13,
-        )
-    y = y - 142
-
-    # Totals footer card
-    ensure_space(90)
-    c.setFillColor(colors.white)
-    c.setStrokeColor(border)
-    c.roundRect(margin, y - 72, content_width, 70, 10, fill=1, stroke=1)
-    c.setFillColor(text_main)
-    c.setFont(font_name, 11)
-    c.drawString(margin + 12, y - 22, f"Сумма товаров: {order.goods_subtotal} сом")
-    c.drawString(margin + 12, y - 42, f"Доставка: {order.shipping_fee} сом")
-    c.setFillColor(primary)
-    c.setFont(font_name, 14)
-    c.drawRightString(margin + content_width - 12, y - 33, f"Итого: {order.total_amount} сом")
-
-    c.setFillColor(text_muted)
-    c.setFont(font_name, 9)
-    c.drawString(margin, margin - 8, "Спасибо, что выбрали Береке Канц")
-    c.showPage()
-    c.save()
-    return buf.getvalue()
-
-
 @login_required
 def order_pdf(request, order_id):
     oid = order_id
@@ -2506,7 +2300,7 @@ def order_pdf(request, order_id):
         user=request.user,
     )
 
-    pdf_bytes = _draw_order_pdf(order)
+    pdf_bytes = build_order_pdf(order)
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="order-{order.id}.pdf"'
     return response

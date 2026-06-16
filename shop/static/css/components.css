@@ -5529,6 +5529,12 @@ ul.manager-list {
   color: var(--color-text-secondary);
 }
 
+.manager-table .manager-table__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+
 .manager-btn-approve {
   display: inline-flex;
   align-items: center;
