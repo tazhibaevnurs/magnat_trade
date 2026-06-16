@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from io import BytesIO
 from pathlib import Path
 from typing import Iterable
@@ -15,29 +16,48 @@ from reportlab.pdfgen import canvas
 
 from orders.models import Order
 
+logger = logging.getLogger(__name__)
+
 _FONT_REGISTERED = False
-_FONT_NAME = "Helvetica"
+_FONT_NAME = "OrderFont"
+_BUNDLED_FONT = Path(__file__).resolve().parent.parent / "fonts" / "DejaVuSans.ttf"
+
+
+def _font_candidates() -> list[Path]:
+    candidates = [_BUNDLED_FONT]
+    candidates.extend(
+        [
+            Path("C:/Windows/Fonts/arial.ttf"),
+            Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+            Path("/usr/share/fonts/dejavu/DejaVuSans.ttf"),
+            Path("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"),
+        ]
+    )
+    return candidates
 
 
 def _ensure_pdf_font() -> str:
     global _FONT_REGISTERED, _FONT_NAME
     if _FONT_REGISTERED:
         return _FONT_NAME
-    try:
-        font_candidates = [
-            Path("C:/Windows/Fonts/arial.ttf"),
-            Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
-            Path("/usr/share/fonts/dejavu/DejaVuSans.ttf"),
-        ]
-        for f in font_candidates:
-            if f.exists():
-                pdfmetrics.registerFont(TTFont("OrderFont", str(f)))
-                _FONT_NAME = "OrderFont"
-                break
-    except Exception:
-        pass
+
+    for font_path in _font_candidates():
+        if not font_path.is_file():
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont(_FONT_NAME, str(font_path)))
+            _FONT_REGISTERED = True
+            logger.debug("PDF font registered: %s", font_path)
+            return _FONT_NAME
+        except Exception:
+            logger.exception("Failed to register PDF font from %s", font_path)
+
+    logger.error(
+        "No Cyrillic-capable PDF font found; bundled font expected at %s",
+        _BUNDLED_FONT,
+    )
     _FONT_REGISTERED = True
-    return _FONT_NAME
+    return "Helvetica"
 
 
 def _draw_order_on_canvas(c: canvas.Canvas, order: Order, *, page_break_before: bool = False) -> None:
