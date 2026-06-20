@@ -1,5 +1,16 @@
 <div class="manager-products">
-    <h2 class="contact-page__form-title">Каталог 1С — розница и опт</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+        <h2 class="contact-page__form-title" style="margin:0;">Каталог 1С — розница и опт</h2>
+        <a
+            href="{% url 'manager_products_excel' %}{% if include_inactive %}?include_inactive=1{% endif %}"
+            class="btn-primary contact-page__btn-submit"
+            style="white-space:nowrap;">
+            Экспорт в Excel
+        </a>
+    </div>
+    <p class="manager-table__muted" style="margin:0 0 1rem;">
+        Выгрузка всех товаров магазина{% if include_inactive %} (включая неактивные){% endif %} с путём раздела и отдельным листом «Разделы».
+    </p>
 
     <form method="get" class="manager-products-search manager-products-search--bar" data-manager-products-search>
         <input type="search" name="q" value="{{ search_q }}" placeholder="Артикул, название, код…" class="manager-products-search__input" autocomplete="off">

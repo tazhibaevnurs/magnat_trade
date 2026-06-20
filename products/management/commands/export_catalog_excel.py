@@ -7,34 +7,9 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils import timezone
-from openpyxl import Workbook
 
 from products.models import Product
-
-
-def _excel_row(p: Product) -> list:
-    cat = p.category
-    cat_id = str(cat.pk)
-    cat_name = cat.name
-    upd = p.updated_at
-    if upd is not None and timezone.is_aware(upd):
-        upd = timezone.localtime(upd).replace(tzinfo=None)
-    elif upd is not None:
-        upd = upd.replace(tzinfo=None)
-    return [
-        str(p.pk),
-        (p.sku or "").strip(),
-        p.name,
-        cat_id,
-        cat_name,
-        float(p.retail_price),
-        float(p.wholesale_price),
-        int(p.stock),
-        (p.unit or "").strip(),
-        bool(p.is_active),
-        upd,
-    ]
+from products.services.catalog_excel_export import build_catalog_excel_bytes
 
 
 class Command(BaseCommand):
@@ -55,10 +30,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        qs = Product.objects.select_related("category").order_by("category__name", "name")
-        if options["active_only"]:
-            qs = qs.filter(is_active=True)
-
+        active_only = bool(options["active_only"])
         out_arg = options.get("output")
         if out_arg:
             out_path = Path(out_arg).expanduser().resolve()
@@ -67,31 +39,11 @@ class Command(BaseCommand):
             out_path = (Path(settings.BASE_DIR) / "exports" / f"catalog_products_{ts}.xlsx").resolve()
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
+        data = build_catalog_excel_bytes(active_only=active_only)
+        out_path.write_bytes(data)
 
-        wb = Workbook(write_only=True)
-        ws = wb.create_sheet(title="Товары", index=0)
-        hdr = (
-            "Код 1С (id)",
-            "Артикул",
-            "Название",
-            "Код категории",
-            "Категория",
-            "Розничная цена",
-            "Оптовая цена",
-            "Остаток",
-            "Ед. изм.",
-            "Активен",
-            "Обновлён в БД",
-        )
-        ws.append(list(hdr))
-
-        n = 0
-        total = qs.count()
-        for p in qs.iterator(chunk_size=500):
-            ws.append(_excel_row(p))
-            n += 1
-            if n % 2000 == 0:
-                self.stdout.write(f"... строк: {n} / {total}")
-
-        wb.save(out_path)
+        qs = Product.objects.all()
+        if active_only:
+            qs = qs.filter(is_active=True)
+        n = qs.count()
         self.stdout.write(self.style.SUCCESS(f"Готово: {n} товаров -> {out_path}"))

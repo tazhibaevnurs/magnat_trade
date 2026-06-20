@@ -16,6 +16,7 @@ def test_build_payload_matches_onec_contract(order_with_items):
     assert payload["source"] == "website"
     assert len(payload["items"]) == 1
     assert payload["items"][0]["product_id"] == str(order_with_items.items.first().product_id)
+    assert payload["items"][0]["quantity"] == order_with_items.items.first().quantity
     assert "total_amount" in payload
 
 

@@ -19,6 +19,7 @@ from django.db.models.functions import Replace
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -26,6 +27,7 @@ from orders.models import Order
 from orders.services.order_pdf import build_order_pdf, build_orders_pdf
 from products.models import Category as CatalogCategory
 from products.models import Product as CatalogProduct
+from products.services.catalog_excel_export import build_catalog_excel_bytes
 from integrations.services.onec_registration import register_site_user_in_onec
 from .category_nav import get_shop_catalog_product_category_roots
 from .order_display import attach_line_display_products
@@ -355,6 +357,24 @@ def manager_products_panel(request):
         "shop/partials/manager_products_panel.html",
         _products_panel_context(request),
     )
+
+
+@login_required
+@manager_required
+@require_http_methods(["GET"])
+def manager_products_excel(request):
+    """Excel: все товары каталога и лист разделов."""
+    include_inactive = request.GET.get("include_inactive") == "1"
+    data = build_catalog_excel_bytes(active_only=not include_inactive)
+    ts = timezone.localtime().strftime("%Y-%m-%d")
+    suffix = "all" if include_inactive else "active"
+    filename = f"catalog-products-{suffix}-{ts}.xlsx"
+    response = HttpResponse(
+        data,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 @login_required

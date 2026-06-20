@@ -41,6 +41,7 @@ urlpatterns = [
     path('profile/manager/orders/<uuid:order_id>/', manager_views.manager_order_detail, name='manager_order_detail'),
     path('profile/manager/orders/<uuid:order_id>/pdf/', manager_views.manager_order_pdf, name='manager_order_pdf'),
     path('profile/manager/products-panel/', manager_views.manager_products_panel, name='manager_products_panel'),
+    path('profile/manager/products/export.xlsx', manager_views.manager_products_excel, name='manager_products_excel'),
     path('profile/manager/categories-panel/', manager_views.manager_categories_panel, name='manager_categories_panel'),
     path('profile/manager/users-panel/', manager_views.manager_users_panel, name='manager_users_panel'),
     path(
