@@ -69,6 +69,9 @@ class CategorySyncService:
 
 logger = logging.getLogger(__name__)
 
+ONEC_LAST_PRODUCT_LIST_COUNT_CACHE_KEY = "shop:onec_last_product_list_count"
+_ONEC_LAST_PRODUCT_LIST_COUNT_TTL = 60 * 60 * 24 * 7
+
 
 class ProductSyncService:
     @staticmethod
@@ -113,3 +116,71 @@ class ProductSyncService:
             logger.warning("Синхронизация товаров: пропущено строк: %s", skipped)
         cache.delete("shop:catalog_products_exist")
         return out
+
+    @staticmethod
+    def reconcile_missing_from_onec(onec_product_ids: set[str]) -> dict[str, Any]:
+        """
+        Деактивировать товары в БД, которых больше нет в ответе GET productList.
+
+        Вызывается только после успешной загрузки полного списка из 1С
+        (``integrations.services.onec_full_sync``), не при ручном POST sync.
+        """
+        from django.conf import settings
+
+        from products.models import Product
+
+        if not getattr(settings, "ONEC_SYNC_DEACTIVATE_MISSING_PRODUCTS", True):
+            return {"deactivated": 0, "skipped": True, "reason": "disabled"}
+
+        onec_ids = {str(x).strip() for x in onec_product_ids if str(x).strip()}
+        if not onec_ids:
+            logger.warning(
+                "reconcile_missing_from_onec: пустой productList — деактивация пропущена"
+            )
+            return {"deactivated": 0, "skipped": True, "reason": "empty_product_list"}
+
+        min_ratio = float(getattr(settings, "ONEC_SYNC_RECONCILE_MIN_COUNT_RATIO", 0.5))
+        prev_count = cache.get(ONEC_LAST_PRODUCT_LIST_COUNT_CACHE_KEY)
+        if prev_count is not None and len(onec_ids) < int(prev_count) * min_ratio:
+            logger.error(
+                "reconcile_missing_from_onec: подозрительное падение числа товаров "
+                "%s → %s (порог %.0f%%) — деактивация пропущена",
+                prev_count,
+                len(onec_ids),
+                min_ratio * 100,
+            )
+            return {
+                "deactivated": 0,
+                "skipped": True,
+                "reason": "suspicious_count_drop",
+                "previous_count": int(prev_count),
+                "current_count": len(onec_ids),
+            }
+
+        cache.set(
+            ONEC_LAST_PRODUCT_LIST_COUNT_CACHE_KEY,
+            len(onec_ids),
+            _ONEC_LAST_PRODUCT_LIST_COUNT_TTL,
+        )
+
+        qs = Product.objects.filter(is_active=True).exclude(id__in=onec_ids)
+        deactivated_ids = list(qs.values_list("id", flat=True))
+        count = len(deactivated_ids)
+        if count:
+            qs.update(is_active=False)
+            logger.info(
+                "reconcile_missing_from_onec: деактивировано %s товаров (нет в productList)",
+                count,
+            )
+            sample = deactivated_ids[:20]
+            if count <= 20:
+                logger.info("deactivated ids: %s", sample)
+            else:
+                logger.info("deactivated ids (first 20): %s …", sample)
+
+        cache.delete("shop:catalog_products_exist")
+        return {
+            "deactivated": count,
+            "skipped": False,
+            "deactivated_ids_sample": deactivated_ids[:20],
+        }

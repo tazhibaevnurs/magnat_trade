@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from django.test import override_settings
 from django.urls import reverse
 
 
@@ -129,6 +130,130 @@ class TestProductSync:
         p = Product.objects.get(id=product_id)
         assert p.name == "Товар Б переименован"
         assert p.description == manual
+
+
+@pytest.mark.django_db
+class TestProductSyncReconcile:
+    def test_deactivates_products_missing_from_onec(self, category):
+        from django.core.cache import cache
+
+        from products.models import Product
+        from products.services import ProductSyncService
+
+        cache.clear()
+        p_keep = Product.objects.create(
+            id="НФ-KEEP-001",
+            sku="K1",
+            name="Остаётся",
+            category=category,
+            retail_price="10.00",
+            wholesale_price="9.00",
+            stock=1,
+            is_active=True,
+        )
+        p_drop = Product.objects.create(
+            id="НФ-DROP-001",
+            sku="D1",
+            name="Удалён в 1С",
+            category=category,
+            retail_price="20.00",
+            wholesale_price="18.00",
+            stock=0,
+            is_active=True,
+        )
+        already_off = Product.objects.create(
+            id="НФ-OFF-001",
+            sku="O1",
+            name="Уже снят",
+            category=category,
+            retail_price="5.00",
+            wholesale_price="4.00",
+            stock=0,
+            is_active=False,
+        )
+
+        result = ProductSyncService.reconcile_missing_from_onec({p_keep.id})
+
+        assert result["deactivated"] == 1
+        assert result["skipped"] is False
+        assert p_drop.id in result["deactivated_ids_sample"]
+
+        p_keep.refresh_from_db()
+        p_drop.refresh_from_db()
+        already_off.refresh_from_db()
+        assert p_keep.is_active is True
+        assert p_drop.is_active is False
+        assert already_off.is_active is False
+
+    def test_skips_empty_product_list(self, product):
+        from django.core.cache import cache
+
+        from products.services import ProductSyncService
+
+        cache.clear()
+        result = ProductSyncService.reconcile_missing_from_onec(set())
+
+        assert result["skipped"] is True
+        assert result["reason"] == "empty_product_list"
+        product.refresh_from_db()
+        assert product.is_active is True
+
+    def test_skips_suspicious_count_drop(self, category, product):
+        from django.core.cache import cache
+
+        from products.models import Product
+        from products.services import ProductSyncService
+        from products.services.sync import ONEC_LAST_PRODUCT_LIST_COUNT_CACHE_KEY
+
+        cache.clear()
+        cache.set(ONEC_LAST_PRODUCT_LIST_COUNT_CACHE_KEY, 1000, 3600)
+
+        orphan = Product.objects.create(
+            id="НФ-ORPHAN-001",
+            sku="X1",
+            name="Осиротевший",
+            category=category,
+            retail_price="1.00",
+            wholesale_price="1.00",
+            stock=0,
+            is_active=True,
+        )
+
+        with override_settings(ONEC_SYNC_RECONCILE_MIN_COUNT_RATIO=0.5):
+            result = ProductSyncService.reconcile_missing_from_onec({product.id})
+
+        assert result["skipped"] is True
+        assert result["reason"] == "suspicious_count_drop"
+        orphan.refresh_from_db()
+        product.refresh_from_db()
+        assert orphan.is_active is True
+        assert product.is_active is True
+
+    def test_respects_disable_setting(self, category):
+        from django.core.cache import cache
+
+        from products.models import Product
+        from products.services import ProductSyncService
+
+        cache.clear()
+        orphan = Product.objects.create(
+            id="НФ-ORPHAN-002",
+            sku="X2",
+            name="Не трогать",
+            category=category,
+            retail_price="1.00",
+            wholesale_price="1.00",
+            stock=0,
+            is_active=True,
+        )
+
+        with override_settings(ONEC_SYNC_DEACTIVATE_MISSING_PRODUCTS=False):
+            result = ProductSyncService.reconcile_missing_from_onec({"НФ-OTHER-001"})
+
+        assert result["skipped"] is True
+        assert result["reason"] == "disabled"
+        orphan.refresh_from_db()
+        assert orphan.is_active is True
 
 
 @pytest.mark.django_db

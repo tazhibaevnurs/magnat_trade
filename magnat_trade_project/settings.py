@@ -403,6 +403,17 @@ ONEC_SEND_EXTRA_HEADERS = os.getenv("ONEC_SEND_EXTRA_HEADERS", "true").lower() i
 ONEC_API_SOURCE = os.getenv("ONEC_API_SOURCE", "website")
 ONEC_API_TIMEOUT = float(os.getenv("ONEC_API_TIMEOUT", "120"))
 ONEC_PUSH_ON_REGISTER = os.getenv("ONEC_PUSH_ON_REGISTER", "true").lower() in ("1", "true", "yes")
+# После GET productList деактивировать товары в БД, которых больше нет в 1С (не удалять — сохраняются заказы/описания)
+ONEC_SYNC_DEACTIVATE_MISSING_PRODUCTS = os.getenv(
+    "ONEC_SYNC_DEACTIVATE_MISSING_PRODUCTS", "true"
+).lower() in ("1", "true", "yes")
+try:
+    ONEC_SYNC_RECONCILE_MIN_COUNT_RATIO = float(
+        os.getenv("ONEC_SYNC_RECONCILE_MIN_COUNT_RATIO", "0.5")
+    )
+except ValueError:
+    ONEC_SYNC_RECONCILE_MIN_COUNT_RATIO = 0.5
+ONEC_SYNC_RECONCILE_MIN_COUNT_RATIO = max(0.0, min(1.0, ONEC_SYNC_RECONCILE_MIN_COUNT_RATIO))
 # При полной синхронизации по расписанию не тянуть контрагентов (только категории + товары) — быстрее
 ONEC_BEAT_SKIP_CUSTOMERS = os.getenv("ONEC_BEAT_SKIP_CUSTOMERS", "false").lower() in ("1", "true", "yes")
 try:

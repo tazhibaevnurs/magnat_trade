@@ -103,9 +103,15 @@ def _sync_products_with_name_map(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     logger.info("1С: products GET %s", PATH_PRODUCT_LIST)
     prods = client.fetch_product_list()
+    onec_ids = {
+        str(raw.get("id", "") or "").strip()
+        for raw in prods
+        if str(raw.get("id", "") or "").strip()
+    }
     mapped = _apply_category_tree_to_products(prods, name_map)
     legacy = _sync_legacy_categories_for_missing_ids(client, mapped)
     result = ProductSyncService.sync_batch(mapped)
+    result["reconcile"] = ProductSyncService.reconcile_missing_from_onec(onec_ids)
     cache.delete("shop:catalog_products_exist")
     return legacy, result
 

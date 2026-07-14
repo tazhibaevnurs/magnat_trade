@@ -16,6 +16,8 @@
 - **`integrations.tasks.sync_all_from_onec`** — полный цикл: `categoryProductList` → синхронизация категорий → зеркало `shop` → `productList` → при необходимости контрагенты (`counterpartyList`, если `ONEC_BEAT_SKIP_CUSTOMERS=false`).
 - **`integrations.tasks.sync_products_from_onec`** — ускоренное обновление номенклатуры (`productList`, при пустом кэше ещё `categoryProductList`).
 
+После каждого GET **`productList`** (полная и частая синхронизация) выполняется **сверка с БД**: товары, которых больше нет в ответе 1С, получают `is_active=false` и исчезают с витрины (запись в БД сохраняется для заказов и ручных описаний). Управление: `ONEC_SYNC_DEACTIVATE_MISSING_PRODUCTS`, защита от пустого ответа — `ONEC_SYNC_RECONCILE_MIN_COUNT_RATIO`.
+
 Расписание задаётся в **`magnat_trade_project/settings.py`** через **`CELERY_BEAT_SCHEDULE`** (переменные окружения ниже).
 
 ## Интервал 60 минут для «всего сразу»
