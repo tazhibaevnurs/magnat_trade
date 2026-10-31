@@ -17,8 +17,9 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    command: redis-server --appendonly yes --protected-mode yes
+    restart: unless-stopped
+    # Redis only on the Docker network (do not publish 6379 to the host — exposed Redis gets exploited).
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

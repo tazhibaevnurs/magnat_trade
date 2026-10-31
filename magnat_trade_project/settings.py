@@ -263,7 +263,7 @@ REDIS_URL = os.getenv("REDIS_URL", "").strip()
 if REDIS_URL:
     CACHES = {
         "default": {
-            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "BACKEND": "magnat_trade_project.cache_backends.ResilientRedisCache",
             "LOCATION": REDIS_URL,
             "OPTIONS": {},
         }
